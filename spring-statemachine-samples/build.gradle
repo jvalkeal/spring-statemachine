@@ -40,6 +40,7 @@ project('spring-statemachine-samples-zookeeper') {
 	dependencies {
 		compile project(":spring-statemachine-samples-common")
 		compile project(":spring-statemachine-zookeeper")
+		compile project(":spring-statemachine-samples-common")
 	}
 }
 
@@ -48,6 +49,7 @@ project('spring-statemachine-samples-persist') {
 	dependencies {
 		compile project(":spring-statemachine-samples-common")
 		compile project(":spring-statemachine-recipes-common")
+		compile project(":spring-statemachine-samples-common")
 		compile ("org.hsqldb:hsqldb:2.3.1")
 		compile ("org.springframework:spring-jdbc:$springVersion")
 	}
@@ -70,6 +72,7 @@ project('spring-statemachine-samples-web') {
 project('spring-statemachine-samples-scope') {
 	description = 'Spring State Machine Web Scope Sample'
 	dependencies {
+		compile project(":spring-statemachine-core")
 		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
 	}
 }
@@ -77,6 +80,7 @@ project('spring-statemachine-samples-scope') {
 project('spring-statemachine-samples-security') {
 	description = 'Spring State Machine Web Security Sample'
 	dependencies {
+		compile project(":spring-statemachine-core")
 		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
 		compile("org.springframework.boot:spring-boot-starter-security:$springBootVersion")
 		compile("org.springframework.security:spring-security-config:$springSecurityVersion")
@@ -89,7 +93,18 @@ project('spring-statemachine-samples-eventservice') {
 	dependencies {
 		compile project(":spring-statemachine-redis")
 		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
-//		compile("org.springframework.boot:spring-boot-starter-redis:$springBootVersion")
 		compile("org.apache.commons:commons-pool2:2.4.2")
 	}
 }
+
+project('spring-statemachine-samples-session') {
+	description = 'Spring State Machine Session Sample'
+	dependencies {
+		compile project(":spring-statemachine-recipes-common")
+		compile project(":spring-statemachine-kryo")
+		compile("org.springframework.boot:spring-boot-starter-actuator:$springBootVersion")
+		compile("org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion")
+		compile("org.springframework.session:spring-session-data-redis:$springSessionVersion")
+	}
+}
+

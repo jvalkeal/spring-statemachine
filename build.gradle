@@ -46,6 +46,7 @@ configure(allprojects) {
 	repositories {
 		mavenCentral()
 		maven { url "http://repo.springsource.org/libs-release" }
+		maven { url "http://repo.springsource.org/libs-snapshot" }
 	}
 
 	task integrationTest(type: Test) {
@@ -226,7 +227,6 @@ configure(sampleProjects()) {
 	configurations.archives.artifacts.removeAll { it.archiveTask.is jar }
 	tasks.findByPath("artifactoryPublish")?.enabled = false
 	dependencies {
-//		compile project(":spring-statemachine-samples-common")
 		compile project(":spring-statemachine-core")
 		compile "org.springframework:spring-context-support:$springVersion"
 		testCompile "org.springframework:spring-test:$springVersion"
