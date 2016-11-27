@@ -41,8 +41,8 @@ configure(allprojects) {
 	}
 
 	compileJava {
-		sourceCompatibility = 1.7
-		targetCompatibility = 1.7
+		sourceCompatibility = 1.8
+		targetCompatibility = 1.8
 	}
 
 	compileTestJava {
@@ -121,6 +121,8 @@ project('spring-statemachine-core') {
 	dependencies {
 		compile "org.springframework:spring-tx:$springVersion"
 		compile "org.springframework:spring-messaging:$springVersion"
+		compile "io.projectreactor:reactor-core:$reactorVersion"
+		testCompile "io.projectreactor.addons:reactor-test:$reactorVersion"
 		optional "org.springframework.security:spring-security-core:$springSecurityVersion"
 
 		testCompile "org.springframework:spring-test:$springVersion"
