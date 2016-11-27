@@ -1,13 +1,15 @@
 buildscript {
 	repositories {
 		maven { url 'http://repo.springsource.org/libs-release'}
+		maven { url 'http://repo.springsource.org/libs-milestone'}
 		maven { url 'http://repo.springsource.org/plugins-release' }
+		maven { url 'http://repo.springsource.org/plugins-snapshot' }
 	}
 	dependencies {
 		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
 		classpath('org.asciidoctor:asciidoctor-gradle-plugin:1.5.2')
 		classpath("io.spring.gradle:docbook-reference-plugin:0.3.1")
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.0.BUILD-SNAPSHOT")
 	}
 }
 
@@ -58,6 +60,7 @@ configure(allprojects) {
 		mavenCentral()
 		maven { url "http://repo.springsource.org/libs-release" }
 		maven { url "http://repo.springsource.org/libs-milestone" }
+		maven { url "http://repo.springsource.org/libs-snapshot" }
 	}
 
 	task integrationTest(type: Test) {
