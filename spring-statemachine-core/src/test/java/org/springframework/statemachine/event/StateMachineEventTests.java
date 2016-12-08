@@ -183,7 +183,8 @@ public class StateMachineEventTests extends AbstractStateMachineTests {
 		assertThat(machine.getState().getIds(), contains(TestStates.S1, TestStates.S11, TestStates.S111));
 
 		listener.reset(1);
-		machine.sendEvent(TestEvents.E1);
+		boolean accepted = machine.sendEvent(TestEvents.E1);
+		assertThat(accepted, is(true));
 		assertThat(machine.getState().getIds(), contains(TestStates.S1, TestStates.S11, TestStates.S111));
 		assertThat(listener.eventNotAcceptedLatch.await(1, TimeUnit.SECONDS), is(false));
 		assertThat(listener.eventNotAccepted.size(), is(0));

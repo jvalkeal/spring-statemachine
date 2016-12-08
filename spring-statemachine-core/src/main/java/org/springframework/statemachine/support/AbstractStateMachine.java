@@ -231,12 +231,16 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		boolean accepted = acceptEvent(event);
 		stateMachineExecutor.execute();
 		if (!accepted) {
-			if (parentMachine == null) {
-				notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
-			}
-//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
+			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
 		}
 		return accepted;
+	}
+
+	@Override
+	protected void notifyEventNotAccepted(StateContext<S, E> stateContext) {
+		if (parentMachine == null) {
+			super.notifyEventNotAccepted(stateContext);
+		}
 	}
 
 	@Override
