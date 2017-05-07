@@ -17,6 +17,7 @@ buildscript {
 	}
 	repositories {
 		maven { url 'http://repo.springsource.org/libs-release'}
+		maven { url 'http://repo.springsource.org/libs-milestone'}
 		maven { url 'http://repo.springsource.org/plugins-release' }
 		maven { url 'http://repo.springsource.org/plugins-snapshot' }
 	}
@@ -59,8 +60,8 @@ configure(allprojects) {
 	}
 
 	compileJava {
-		sourceCompatibility = 1.7
-		targetCompatibility = 1.7
+		sourceCompatibility = 1.8
+		targetCompatibility = 1.8
 	}
 
 	compileTestJava {
@@ -77,6 +78,7 @@ configure(allprojects) {
 		maven { url "http://repo.springsource.org/libs-snapshot" }
 		maven { url "http://repo.springsource.org/libs-release" }
 		maven { url "http://repo.springsource.org/libs-milestone" }
+		maven { url "http://repo.springsource.org/libs-snapshot" }
 	}
 
 	dependencyManagement {
@@ -165,6 +167,7 @@ project('spring-statemachine-core') {
 	dependencies {
 		compile "org.springframework:spring-tx"
 		compile "org.springframework:spring-messaging"
+		compile "io.projectreactor:reactor-core"
 		optional "org.springframework.security:spring-security-core"
 
 		testCompile "org.springframework:spring-test"
@@ -180,6 +183,7 @@ project('spring-statemachine-core') {
 		testCompile "org.springframework.security:spring-security-config"
 		testCompile "org.springframework.security:spring-security-test"
 		testCompile "javax.servlet:javax.servlet-api"
+		testCompile "io.projectreactor.addons:reactor-test"
 		testRuntime "org.apache.logging.log4j:log4j-core"
 	}
 }
