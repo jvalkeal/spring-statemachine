@@ -62,8 +62,7 @@ public class WaitErrorConceptTests extends AbstractBuildTests {
 				StateMachineTestPlanBuilder.<String, String>builder()
 					.stateMachine(stateMachine)
 					.step().expectState("READY").and()
-//					.step().sendEvent(message).expectStateChanged(5).expectStates("READY").and()
-					.step().sendEvent(message).expectStateChanged(11).expectStates("READY").and()
+					.step().sendEvent(message).expectStateChanged(5).expectStates("READY").and()
 					.build();
 		plan.test();
 	}

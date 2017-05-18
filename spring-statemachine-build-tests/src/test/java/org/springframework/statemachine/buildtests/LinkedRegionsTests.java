@@ -51,8 +51,7 @@ public class LinkedRegionsTests extends AbstractBuildTests {
 		StateMachineTestPlan<String, String> plan =
 				StateMachineTestPlanBuilder.<String, String>builder()
 					.stateMachine(stateMachine)
-//					.step().expectStateChanged(19).expectStates("S3").and()
-					.step().expectStateChanged(20).expectStates("S3").and()
+					.step().expectStateChanged(19).expectStates("S3").and()
 					.build();
 		plan.test();
 		assertThat(listener.statesEntered, not(hasItem(startsWith("JOIN"))));

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2017 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.statemachine.support;
 
 import java.util.ArrayList;
@@ -13,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Processor;
 import org.springframework.context.Lifecycle;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -24,7 +38,6 @@ import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.state.JoinPseudoState;
 import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.state.State;
-import org.springframework.statemachine.support.StateMachineExecutor.StateMachineExecutorTransit;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.DefaultTriggerContext;
 import org.springframework.statemachine.trigger.TimerTrigger;
@@ -33,8 +46,6 @@ import org.springframework.statemachine.trigger.TriggerListener;
 
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.WorkQueueProcessor;
 
 public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport implements StateMachineExecutor<S, E> {
 
@@ -42,7 +53,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 	private StateMachineExecutorTransit<S, E> stateMachineExecutorTransit;
 	private final AtomicBoolean initialHandled = new AtomicBoolean(false);
-
 	private final StateMachine<S, E> stateMachine;
 	private final StateMachine<S, E> relayStateMachine;
 	private final Map<Trigger<S, E>, Transition<S,E>> triggerToTransitionMap;
@@ -50,23 +60,14 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private final Collection<Transition<S,E>> transitions;
 	private final Transition<S, E> initialTransition;
 	private final Message<E> initialEvent;
-
 	private final Set<Transition<S, E>> joinSyncTransitions = new HashSet<>();
 	private final Set<State<S, E>> joinSyncStates = new HashSet<>();
-
 	private final StateMachineInterceptorList<S, E> interceptors =
 			new StateMachineInterceptorList<S, E>();
-
 	private volatile Message<E> forwardedInitialEvent;
-
 	private final List<Message<E>> deferList = new ArrayList<Message<E>>();
-
-//	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor = WorkQueueProcessor.create();
-//	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = WorkQueueProcessor.create();
 	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create();
 	private EmitterProcessor<Flux<Message<E>>> eventProcessor = EmitterProcessor.create();
-
-//	private volatile Message<E> queuedMessage = null;
 
 	public ReactiveStateMachineExecutor(StateMachine<S, E> stateMachine, StateMachine<S, E> relayStateMachine,
 			Collection<Transition<S, E>> transitions, Map<Trigger<S, E>, Transition<S, E>> triggerToTransitionMap,
@@ -117,7 +118,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 	@Override
 	public void execute() {
-		handleTriggerlessTransitions(null);
+		queueTrigger(null, null);
 	}
 
 	@Override
@@ -135,10 +136,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			// TODO: should we merge if initial event is actually used?
 			if (initialEvent != null) {
 				handleInitialTrans(initialTransition, initialEvent);
-//				handleTriggerlessTransitions(initialEvent);
 			} else {
 				handleInitialTrans(initialTransition, forwardedInitialEvent);
-//				handleTriggerlessTransitions(forwardedInitialEvent);
 			}
 		}
 		handleTriggerlessTransitions(null);

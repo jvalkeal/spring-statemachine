@@ -234,16 +234,30 @@ public class TransitionEventHeaderTests extends AbstractStateMachineTests {
 
 		@Override
 		public void configure(StateMachineStateConfigurer<TestStates, TestEvents> states) throws Exception {
-			states.withStates().initial(TestStates.S1).state(TestStates.S1, eventCheckAction1(), null)
-					.state(TestStates.S2, eventCheckAction2(), null).state(TestStates.S3, eventCheckAction3(), null)
+			states
+				.withStates()
+					.initial(TestStates.S1)
+					.state(TestStates.S1, eventCheckAction1(), null)
+					.state(TestStates.S2, eventCheckAction2(), null)
+					.state(TestStates.S3, eventCheckAction3(), null)
 					.state(TestStates.S4, eventCheckAction4(), null);
 		}
 
 		@Override
 		public void configure(StateMachineTransitionConfigurer<TestStates, TestEvents> transitions) throws Exception {
-			transitions.withExternal().source(TestStates.S1).target(TestStates.S2).event(TestEvents.E1).and()
-					.withExternal().source(TestStates.S2).target(TestStates.S3).and().withExternal()
-					.source(TestStates.S3).target(TestStates.S4);
+			transitions
+				.withExternal()
+					.source(TestStates.S1)
+					.target(TestStates.S2)
+					.event(TestEvents.E1)
+					.and()
+				.withExternal()
+					.source(TestStates.S2)
+					.target(TestStates.S3)
+					.and()
+				.withExternal()
+					.source(TestStates.S3)
+					.target(TestStates.S4);
 		}
 
 		@Bean
