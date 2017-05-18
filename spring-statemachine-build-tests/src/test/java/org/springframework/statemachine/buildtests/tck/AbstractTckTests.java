@@ -472,4 +472,40 @@ public abstract class AbstractTckTests {
 			return !(foo == null || !foo.equals(match));
 		}
 	}
+
+	/**
+	 * Return state machine for forkjoin tests.
+	 *
+	 * @return StateMachine for SimpleForkJoinMachine
+	 */
+	protected abstract StateMachine<String, String> getSimpleForkJoinMachine() throws Exception;
+
+	@Test
+	public void testForkJoinMachine() throws Exception {
+		StateMachine<String,String> stateMachine = getSimpleForkJoinMachine();
+		StateMachineTestPlan<String, String> plan =
+				StateMachineTestPlanBuilder.<String, String>builder()
+					.stateMachine(stateMachine)
+					.step().expectStates("SI").and()
+					.step()
+						.sendEvent("E1")
+						.expectStateChanged(2)
+						.expectStateEntered(3)
+						.expectStateExited(1)
+						.expectStates("S2", "S20", "S30").and()
+					.step()
+						.sendEvent("E2")
+						.expectStateChanged(1)
+						.expectStateEntered(1)
+						.expectStateExited(1)
+						.expectStates("S2", "S21", "S30").and()
+					.step()
+						.sendEvent("E3")
+						.expectStateChanged(2)
+						.expectStateEntered(2)
+						.expectStateExited(4)
+						.expectStates("SF").and()
+					.build();
+		plan.test();
+	}
 }

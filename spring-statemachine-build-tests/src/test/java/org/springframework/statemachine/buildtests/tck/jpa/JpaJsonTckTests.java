@@ -71,6 +71,12 @@ public class JpaJsonTckTests extends AbstractTckTests {
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}
 
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Configuration
 	public static class SimpleMachineConfig {
 

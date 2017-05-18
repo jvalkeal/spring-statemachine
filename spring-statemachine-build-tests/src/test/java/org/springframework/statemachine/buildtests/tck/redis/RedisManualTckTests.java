@@ -241,6 +241,12 @@ public class RedisManualTckTests extends AbstractTckTests {
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}
 
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Configuration
 	@EnableStateMachineFactory
 	public static class StateMachineFactoryConfig extends StateMachineConfigurerAdapter<String, String> {

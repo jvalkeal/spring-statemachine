@@ -59,6 +59,12 @@ public class AnnotationTckTests extends AbstractTckTests {
 		return getStateMachineFromContext();
 	}
 
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Configuration
 	@EnableStateMachine
 	static class SimpleMachineConfig extends StateMachineConfigurerAdapter<String, String> {

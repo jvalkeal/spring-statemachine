@@ -175,4 +175,10 @@ public class BuilderTckTests extends AbstractTckTests {
 
 		return builder.build();
 	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

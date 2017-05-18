@@ -60,6 +60,13 @@ public class UmlTckTests extends AbstractTckTests {
 		return getStateMachineFromContext();
 	}
 
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(SimpleForkJoinMachineConfig.class);
+		context.refresh();
+		return getStateMachineFromContext();
+	}
+
 	@Configuration
 	@EnableStateMachine
 	public static class SimpleMachineConfig extends StateMachineConfigurerAdapter<String, String> {
@@ -123,6 +130,23 @@ public class UmlTckTests extends AbstractTckTests {
 		@Bean
 		public FooAction fooAction() {
 			return new FooAction();
+		}
+	}
+
+	@Configuration
+	@EnableStateMachine
+	public static class SimpleForkJoinMachineConfig extends StateMachineConfigurerAdapter<String, String> {
+
+		@Override
+		public void configure(StateMachineModelConfigurer<String, String> model) throws Exception {
+			model
+				.withModel()
+					.factory(modelFactory());
+		}
+
+		@Bean
+		public StateMachineModelFactory<String, String> modelFactory() {
+			return new UmlStateMachineModelFactory("classpath:org/springframework/statemachine/buildtests/tck/uml/SimpleForkJoinMachine.uml");
 		}
 	}
 }
