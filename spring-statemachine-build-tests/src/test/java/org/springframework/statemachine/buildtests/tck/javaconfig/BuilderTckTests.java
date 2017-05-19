@@ -175,4 +175,51 @@ public class BuilderTckTests extends AbstractTckTests {
 
 		return builder.build();
 	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		Builder<String, String> builder = StateMachineBuilder.builder();
+
+		builder.configureStates()
+			.withStates()
+				.initial("SI")
+				.fork("S1")
+				.state("S2")
+				.join("S3")
+				.end("SF")
+				.and()
+				.withStates()
+					.parent("S2")
+					.initial("S20")
+					.state("S21")
+					.and()
+				.withStates()
+					.parent("S2")
+					.initial("S30")
+					.state("S31");
+
+		builder.configureTransitions()
+			.withExternal()
+				.source("SI").target("S1")
+				.event("E1")
+				.and()
+			.withFork()
+				.source("S1").target("S20").target("S30")
+				.and()
+			.withJoin()
+				.source("S21").source("S31").target("S3")
+				.and()
+			.withExternal()
+				.source("S3").target("SF")
+				.and()
+			.withExternal()
+				.source("S20").target("S21")
+				.event("E2")
+				.and()
+			.withExternal()
+				.source("S30").target("S31")
+				.event("E3");
+
+		return builder.build();
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,13 @@ public class JpaJsonTckTests extends AbstractTckTests {
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}
 
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(TestConfig.class, SimpleForkJoinMachineConfig.class, StateMachineFactoryConfig.class);
+		context.refresh();
+		return getStateMachineFactoryFromContext().getStateMachine();
+	}
+
 	@Configuration
 	public static class SimpleMachineConfig {
 
@@ -100,6 +107,17 @@ public class JpaJsonTckTests extends AbstractTckTests {
 		public StateMachineJackson2RepositoryPopulatorFactoryBean jackson2RepositoryPopulatorFactoryBean() {
 			StateMachineJackson2RepositoryPopulatorFactoryBean factoryBean = new StateMachineJackson2RepositoryPopulatorFactoryBean();
 			factoryBean.setResources(new Resource[]{new ClassPathResource("org/springframework/statemachine/buildtests/tck/jpa/ShowcaseMachine.json")});
+			return factoryBean;
+		}
+	}
+
+	@Configuration
+	public static class SimpleForkJoinMachineConfig {
+
+		@Bean
+		public StateMachineJackson2RepositoryPopulatorFactoryBean jackson2RepositoryPopulatorFactoryBean() {
+			StateMachineJackson2RepositoryPopulatorFactoryBean factoryBean = new StateMachineJackson2RepositoryPopulatorFactoryBean();
+			factoryBean.setResources(new Resource[]{new ClassPathResource("org/springframework/statemachine/buildtests/tck/jpa/SimpleForkJoinMachine.json")});
 			return factoryBean;
 		}
 	}

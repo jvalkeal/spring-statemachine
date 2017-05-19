@@ -223,7 +223,13 @@ public class RepositoryStateMachineModelFactory extends AbstractStateMachineMode
 			TransitionKind kind = t.getKind();
 
 			Guard<String, String> guard = resolveGuard(t);
-			transitionData.add(new TransitionData<>(t.getSource().getState(), t.getTarget().getState(), t.getEvent(), actions, guard, kind != null ? kind : TransitionKind.EXTERNAL));
+
+			// special case for fork/join which should not get created
+			// as a normal transitions
+			if (t.getSource().getKind() != PseudoStateKind.FORK && t.getTarget().getKind() != PseudoStateKind.JOIN) {
+				transitionData.add(new TransitionData<>(t.getSource().getState(), t.getTarget().getState(), t.getEvent(), actions, guard,
+						kind != null ? kind : TransitionKind.EXTERNAL));
+			}
 
 			if (t.getSource().getKind() == PseudoStateKind.ENTRY) {
 				entrys.add(new EntryData<String, String>(t.getSource().getState(), t.getTarget().getState()));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.springframework.statemachine.data.redis.RedisRepositoryState;
 import org.springframework.statemachine.data.redis.RedisRepositoryTransition;
 import org.springframework.statemachine.data.redis.RedisStateRepository;
 import org.springframework.statemachine.data.redis.RedisTransitionRepository;
+import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.transition.TransitionKind;
 
 /**
@@ -237,6 +238,76 @@ public class RedisManualTckTests extends AbstractTckTests {
 		transitionRepository.save(transitionS211ToS12);
 		transitionRepository.save(transitionS11);
 		transitionRepository.save(transitionS2ToS1);
+
+		return getStateMachineFactoryFromContext().getStateMachine();
+	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(TestConfig.class, StateMachineFactoryConfig.class);
+		context.refresh();
+
+		RedisStateRepository stateRepository = context.getBean(RedisStateRepository.class);
+		RedisTransitionRepository transitionRepository = context.getBean(RedisTransitionRepository.class);
+
+		RedisRepositoryState stateSI = new RedisRepositoryState("SI", true);
+		RedisRepositoryState stateS1 = new RedisRepositoryState("S1");
+		stateS1.setKind(PseudoStateKind.FORK);
+		RedisRepositoryState stateS2 = new RedisRepositoryState("S2");
+		RedisRepositoryState stateS20 = new RedisRepositoryState("S20", true);
+		stateS20.setParentState(stateS2);
+		stateS20.setRegion("r2");
+		RedisRepositoryState stateS21 = new RedisRepositoryState("S21");
+		stateS21.setParentState(stateS2);
+		stateS21.setRegion("r2");
+		RedisRepositoryState stateS30 = new RedisRepositoryState("S30", true);
+		stateS30.setParentState(stateS2);
+		stateS30.setRegion("r3");
+		RedisRepositoryState stateS31 = new RedisRepositoryState("S31");
+		stateS31.setParentState(stateS2);
+		stateS31.setRegion("r3");
+		RedisRepositoryState stateS3 = new RedisRepositoryState("S3");
+		stateS3.setKind(PseudoStateKind.JOIN);
+		RedisRepositoryState stateSF = new RedisRepositoryState("SF");
+		stateSF.setKind(PseudoStateKind.END);
+
+		stateRepository.save(stateSI);
+		stateRepository.save(stateS1);
+		stateRepository.save(stateS2);
+		stateRepository.save(stateS20);
+		stateRepository.save(stateS21);
+		stateRepository.save(stateS30);
+		stateRepository.save(stateS31);
+		stateRepository.save(stateS3);
+		stateRepository.save(stateSF);
+
+		RedisRepositoryTransition transitionSIToS1 = new RedisRepositoryTransition(stateSI, stateS1, "E1");
+		RedisRepositoryTransition transitionS1ToS20 = new RedisRepositoryTransition();
+		transitionS1ToS20.setSource(stateS1);
+		transitionS1ToS20.setTarget(stateS20);
+		RedisRepositoryTransition transitionS1ToS30 = new RedisRepositoryTransition();
+		transitionS1ToS30.setSource(stateS1);
+		transitionS1ToS30.setTarget(stateS30);
+		RedisRepositoryTransition transitionS20ToS31 = new RedisRepositoryTransition(stateS20, stateS21, "E2");
+		RedisRepositoryTransition transitionS30ToS31 = new RedisRepositoryTransition(stateS30, stateS31, "E3");
+		RedisRepositoryTransition transitionS21ToS3 = new RedisRepositoryTransition();
+		transitionS21ToS3.setSource(stateS21);
+		transitionS21ToS3.setTarget(stateS3);
+		RedisRepositoryTransition transitionS31ToS3 = new RedisRepositoryTransition();
+		transitionS31ToS3.setSource(stateS31);
+		transitionS31ToS3.setTarget(stateS3);
+		RedisRepositoryTransition transitionS3ToSF = new RedisRepositoryTransition();
+		transitionS3ToSF.setSource(stateS3);
+		transitionS3ToSF.setTarget(stateSF);
+
+		transitionRepository.save(transitionSIToS1);
+		transitionRepository.save(transitionS1ToS20);
+		transitionRepository.save(transitionS1ToS30);
+		transitionRepository.save(transitionS20ToS31);
+		transitionRepository.save(transitionS30ToS31);
+		transitionRepository.save(transitionS21ToS3);
+		transitionRepository.save(transitionS31ToS3);
+		transitionRepository.save(transitionS3ToSF);
 
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}

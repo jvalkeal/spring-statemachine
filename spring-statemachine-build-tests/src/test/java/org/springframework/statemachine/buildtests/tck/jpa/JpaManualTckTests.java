@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.springframework.statemachine.data.jpa.JpaRepositoryState;
 import org.springframework.statemachine.data.jpa.JpaRepositoryTransition;
 import org.springframework.statemachine.data.jpa.JpaStateRepository;
 import org.springframework.statemachine.data.jpa.JpaTransitionRepository;
+import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.transition.TransitionKind;
 
 /**
@@ -218,6 +219,76 @@ public class JpaManualTckTests extends AbstractTckTests {
 		transitionRepository.save(transitionS211ToS12);
 		transitionRepository.save(transitionS11);
 		transitionRepository.save(transitionS2ToS1);
+
+		return getStateMachineFactoryFromContext().getStateMachine();
+	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(TestConfig.class, StateMachineFactoryConfig.class);
+		context.refresh();
+
+		JpaStateRepository stateRepository = context.getBean(JpaStateRepository.class);
+		JpaTransitionRepository transitionRepository = context.getBean(JpaTransitionRepository.class);
+
+		JpaRepositoryState stateSI = new JpaRepositoryState("SI", true);
+		JpaRepositoryState stateS1 = new JpaRepositoryState("S1");
+		stateS1.setKind(PseudoStateKind.FORK);
+		JpaRepositoryState stateS2 = new JpaRepositoryState("S2");
+		JpaRepositoryState stateS20 = new JpaRepositoryState("S20", true);
+		stateS20.setParentState(stateS2);
+		stateS20.setRegion("r2");
+		JpaRepositoryState stateS21 = new JpaRepositoryState("S21");
+		stateS21.setParentState(stateS2);
+		stateS21.setRegion("r2");
+		JpaRepositoryState stateS30 = new JpaRepositoryState("S30", true);
+		stateS30.setParentState(stateS2);
+		stateS30.setRegion("r3");
+		JpaRepositoryState stateS31 = new JpaRepositoryState("S31");
+		stateS31.setParentState(stateS2);
+		stateS31.setRegion("r3");
+		JpaRepositoryState stateS3 = new JpaRepositoryState("S3");
+		stateS3.setKind(PseudoStateKind.JOIN);
+		JpaRepositoryState stateSF = new JpaRepositoryState("SF");
+		stateSF.setKind(PseudoStateKind.END);
+
+		stateRepository.save(stateSI);
+		stateRepository.save(stateS1);
+		stateRepository.save(stateS2);
+		stateRepository.save(stateS20);
+		stateRepository.save(stateS21);
+		stateRepository.save(stateS30);
+		stateRepository.save(stateS31);
+		stateRepository.save(stateS3);
+		stateRepository.save(stateSF);
+
+		JpaRepositoryTransition transitionSIToS1 = new JpaRepositoryTransition(stateSI, stateS1, "E1");
+		JpaRepositoryTransition transitionS1ToS20 = new JpaRepositoryTransition();
+		transitionS1ToS20.setSource(stateS1);
+		transitionS1ToS20.setTarget(stateS20);
+		JpaRepositoryTransition transitionS1ToS30 = new JpaRepositoryTransition();
+		transitionS1ToS30.setSource(stateS1);
+		transitionS1ToS30.setTarget(stateS30);
+		JpaRepositoryTransition transitionS20ToS31 = new JpaRepositoryTransition(stateS20, stateS21, "E2");
+		JpaRepositoryTransition transitionS30ToS31 = new JpaRepositoryTransition(stateS30, stateS31, "E3");
+		JpaRepositoryTransition transitionS21ToS3 = new JpaRepositoryTransition();
+		transitionS21ToS3.setSource(stateS21);
+		transitionS21ToS3.setTarget(stateS3);
+		JpaRepositoryTransition transitionS31ToS3 = new JpaRepositoryTransition();
+		transitionS31ToS3.setSource(stateS31);
+		transitionS31ToS3.setTarget(stateS3);
+		JpaRepositoryTransition transitionS3ToSF = new JpaRepositoryTransition();
+		transitionS3ToSF.setSource(stateS3);
+		transitionS3ToSF.setTarget(stateSF);
+
+		transitionRepository.save(transitionSIToS1);
+		transitionRepository.save(transitionS1ToS20);
+		transitionRepository.save(transitionS1ToS30);
+		transitionRepository.save(transitionS20ToS31);
+		transitionRepository.save(transitionS30ToS31);
+		transitionRepository.save(transitionS21ToS3);
+		transitionRepository.save(transitionS31ToS3);
+		transitionRepository.save(transitionS3ToSF);
 
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}

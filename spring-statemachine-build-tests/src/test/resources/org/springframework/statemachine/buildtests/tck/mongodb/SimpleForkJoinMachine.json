@@ -1,0 +1,110 @@
+[
+	{
+		"@id": "1",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": true,
+		"state": "SI"
+	},
+	{
+		"@id": "2",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"state": "S1",
+		"kind": "FORK"
+	},
+	{
+		"@id": "3",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"state": "S2"
+	},
+	{
+		"@id": "4",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": true,
+		"region": "r2",
+		"parentState": "3",
+		"state": "S20"
+	},
+	{
+		"@id": "5",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"region": "r2",
+		"parentState": "3",
+		"state": "S21"
+	},
+	{
+		"@id": "6",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": true,
+		"region": "r3",
+		"parentState": "3",
+		"state": "S30"
+	},
+	{
+		"@id": "7",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"region": "r3",
+		"parentState": "3",
+		"state": "S31"
+	},
+	{
+		"@id": "8",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"state": "S3",
+		"kind": "JOIN"
+	},
+	{
+		"@id": "9",
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryState",
+		"initial": false,
+		"state": "SF",
+		"kind": "END"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "1",
+		"target": "2",
+		"event": "E1"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "4",
+		"target": "5",
+		"event": "E2"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "6",
+		"target": "7",
+		"event": "E3"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "2",
+		"target": "4"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "2",
+		"target": "6"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "5",
+		"target": "8"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "7",
+		"target": "8"
+	},
+	{
+		"_class": "org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition",
+		"source": "8",
+		"target": "9"
+	}
+]

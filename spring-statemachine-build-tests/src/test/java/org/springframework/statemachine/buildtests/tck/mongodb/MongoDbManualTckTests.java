@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.springframework.statemachine.data.mongodb.MongoDbRepositoryState;
 import org.springframework.statemachine.data.mongodb.MongoDbRepositoryTransition;
 import org.springframework.statemachine.data.mongodb.MongoDbStateRepository;
 import org.springframework.statemachine.data.mongodb.MongoDbTransitionRepository;
+import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.transition.TransitionKind;
 
 /**
@@ -236,6 +237,76 @@ public class MongoDbManualTckTests extends AbstractTckTests {
 		transitionRepository.save(transitionS211ToS12);
 		transitionRepository.save(transitionS11);
 		transitionRepository.save(transitionS2ToS1);
+
+		return getStateMachineFactoryFromContext().getStateMachine();
+	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(TestConfig.class, StateMachineFactoryConfig.class);
+		context.refresh();
+
+		MongoDbStateRepository stateRepository = context.getBean(MongoDbStateRepository.class);
+		MongoDbTransitionRepository transitionRepository = context.getBean(MongoDbTransitionRepository.class);
+
+		MongoDbRepositoryState stateSI = new MongoDbRepositoryState("SI", true);
+		MongoDbRepositoryState stateS1 = new MongoDbRepositoryState("S1");
+		stateS1.setKind(PseudoStateKind.FORK);
+		MongoDbRepositoryState stateS2 = new MongoDbRepositoryState("S2");
+		MongoDbRepositoryState stateS20 = new MongoDbRepositoryState("S20", true);
+		stateS20.setParentState(stateS2);
+		stateS20.setRegion("r2");
+		MongoDbRepositoryState stateS21 = new MongoDbRepositoryState("S21");
+		stateS21.setParentState(stateS2);
+		stateS21.setRegion("r2");
+		MongoDbRepositoryState stateS30 = new MongoDbRepositoryState("S30", true);
+		stateS30.setParentState(stateS2);
+		stateS30.setRegion("r3");
+		MongoDbRepositoryState stateS31 = new MongoDbRepositoryState("S31");
+		stateS31.setParentState(stateS2);
+		stateS31.setRegion("r3");
+		MongoDbRepositoryState stateS3 = new MongoDbRepositoryState("S3");
+		stateS3.setKind(PseudoStateKind.JOIN);
+		MongoDbRepositoryState stateSF = new MongoDbRepositoryState("SF");
+		stateSF.setKind(PseudoStateKind.END);
+
+		stateRepository.save(stateSI);
+		stateRepository.save(stateS1);
+		stateRepository.save(stateS2);
+		stateRepository.save(stateS20);
+		stateRepository.save(stateS21);
+		stateRepository.save(stateS30);
+		stateRepository.save(stateS31);
+		stateRepository.save(stateS3);
+		stateRepository.save(stateSF);
+
+		MongoDbRepositoryTransition transitionSIToS1 = new MongoDbRepositoryTransition(stateSI, stateS1, "E1");
+		MongoDbRepositoryTransition transitionS1ToS20 = new MongoDbRepositoryTransition();
+		transitionS1ToS20.setSource(stateS1);
+		transitionS1ToS20.setTarget(stateS20);
+		MongoDbRepositoryTransition transitionS1ToS30 = new MongoDbRepositoryTransition();
+		transitionS1ToS30.setSource(stateS1);
+		transitionS1ToS30.setTarget(stateS30);
+		MongoDbRepositoryTransition transitionS20ToS31 = new MongoDbRepositoryTransition(stateS20, stateS21, "E2");
+		MongoDbRepositoryTransition transitionS30ToS31 = new MongoDbRepositoryTransition(stateS30, stateS31, "E3");
+		MongoDbRepositoryTransition transitionS21ToS3 = new MongoDbRepositoryTransition();
+		transitionS21ToS3.setSource(stateS21);
+		transitionS21ToS3.setTarget(stateS3);
+		MongoDbRepositoryTransition transitionS31ToS3 = new MongoDbRepositoryTransition();
+		transitionS31ToS3.setSource(stateS31);
+		transitionS31ToS3.setTarget(stateS3);
+		MongoDbRepositoryTransition transitionS3ToSF = new MongoDbRepositoryTransition();
+		transitionS3ToSF.setSource(stateS3);
+		transitionS3ToSF.setTarget(stateSF);
+
+		transitionRepository.save(transitionSIToS1);
+		transitionRepository.save(transitionS1ToS20);
+		transitionRepository.save(transitionS1ToS30);
+		transitionRepository.save(transitionS20ToS31);
+		transitionRepository.save(transitionS30ToS31);
+		transitionRepository.save(transitionS21ToS3);
+		transitionRepository.save(transitionS31ToS3);
+		transitionRepository.save(transitionS3ToSF);
 
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}

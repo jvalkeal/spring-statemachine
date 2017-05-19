@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,13 @@ public class AnnotationFactoryTckTests extends AbstractTckTests {
 	@Override
 	protected StateMachine<String, String> getShowcaseMachine() throws Exception {
 		context.register(ShowcaseMachineConfig.class);
+		context.refresh();
+		return getStateMachineFactoryFromContext().getStateMachine();
+	}
+
+	@Override
+	protected StateMachine<String, String> getSimpleForkJoinMachine() throws Exception {
+		context.register(SimpleForkJoinMachineConfig.class);
 		context.refresh();
 		return getStateMachineFactoryFromContext().getStateMachine();
 	}
@@ -238,6 +245,57 @@ public class AnnotationFactoryTckTests extends AbstractTckTests {
 		@Bean
 		public FooAction fooAction() {
 			return new FooAction();
+		}
+	}
+
+	@Configuration
+	@EnableStateMachineFactory
+	static class SimpleForkJoinMachineConfig extends StateMachineConfigurerAdapter<String, String> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("SI")
+					.fork("S1")
+					.state("S2")
+					.join("S3")
+					.end("SF")
+					.and()
+					.withStates()
+						.parent("S2")
+						.initial("S20")
+						.state("S21")
+						.and()
+					.withStates()
+						.parent("S2")
+						.initial("S30")
+						.state("S31");
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("SI").target("S1")
+					.event("E1")
+					.and()
+				.withFork()
+					.source("S1").target("S20").target("S30")
+					.and()
+				.withJoin()
+					.source("S21").source("S31").target("S3")
+					.and()
+				.withExternal()
+					.source("S3").target("SF")
+					.and()
+				.withExternal()
+					.source("S20").target("S21")
+					.event("E2")
+					.and()
+				.withExternal()
+					.source("S30").target("S31")
+					.event("E3");
 		}
 	}
 }
