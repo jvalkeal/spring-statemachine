@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.context.Lifecycle;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -706,6 +707,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (stateSet && stateMachineContext.getExtendedState() != null) {
 			this.extendedState = stateMachineContext.getExtendedState();
 		}
+
+		if (currentState instanceof Lifecycle) {
+			((Lifecycle)currentState).start();
+		}
+
+//		List<Trigger<S,E>> triggers = ((AbstractState<S, E>)currentState).getTriggers();
+//		for (Trigger<S,E> trigger : triggers) {
+//			trigger.arm();
+//		}
 	}
 
 	@Override

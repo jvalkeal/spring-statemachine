@@ -292,6 +292,17 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
+	@Override
+	protected void doStart() {
+		for (Trigger<S, E> trigger : triggers) {
+			trigger.arm();
+		}
+	}
+
+	@Override
+	protected void doStop() {
+	}
+
 	/**
 	 * Gets the submachine.
 	 *
