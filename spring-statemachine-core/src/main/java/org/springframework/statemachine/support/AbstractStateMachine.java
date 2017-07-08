@@ -355,6 +355,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			// dispatched via executor
 			StateContext<S, E> stateContext = buildStateContext(Stage.STATEMACHINE_START, null, null, getRelayStateMachine());
 			notifyStateMachineStarted(stateContext);
+			if (currentState != null && currentState.isSubmachineState()) {
+				StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+				submachine.start();
+			} else if (currentState != null && currentState.isOrthogonal()) {
+				Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+				for (Region<S, E> region : regions) {
+					region.start();
+				}
+			}
 			return;
 		}
 		registerPseudoStateListener();
@@ -613,7 +622,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 								}
 							});
 						}
-						submachine.start();
+//						submachine.start();
 					} else if (s.isOrthogonal() && stateMachineContext.getChilds() != null) {
 						Collection<Region<S, E>> regions = ((AbstractState<S, E>)s).getRegions();
 						for (Region<S, E> region : regions) {
@@ -627,9 +636,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 								});
 							}
 						}
-						for (Region<S, E> region : regions) {
-							region.start();
-						}
+//						for (Region<S, E> region : regions) {
+//							region.start();
+//						}
 					}
 
 					if (log.isDebugEnabled()) {
@@ -652,9 +661,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 								});
 							}
 						}
-						for (Region<S, E> region : regions) {
-							region.start();
-						}
+//						for (Region<S, E> region : regions) {
+//							region.start();
+//						}
 					}
 				}
 			}
@@ -951,23 +960,29 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 			State<S, E> notifyFrom = currentState;
 			currentState = state;
-			if (!isRunning()) {
-				start();
-			}
+//			if (!isRunning()) {
+//				start();
+//			}
 			entryToState(state, message, transition, stateMachine);
 			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, state));
 			nonDeepStatePresent = true;
+			if (!isRunning()) {
+				start();
+			}
 		} else if (currentState == null && StateMachineUtils.isSubstate(findDeep, state)) {
 			if (exit) {
 				exitCurrentState(findDeep, message, transition, stateMachine, sources, targets);
 			}
 			State<S, E> notifyFrom = currentState;
 			currentState = findDeep;
+//			if (!isRunning()) {
+//				start();
+//			}
+			entryToState(findDeep, message, transition, stateMachine);
+			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
 			if (!isRunning()) {
 				start();
 			}
-			entryToState(findDeep, message, transition, stateMachine);
-			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
 		}
 
 		if (currentState != null && !nonDeepStatePresent) {
