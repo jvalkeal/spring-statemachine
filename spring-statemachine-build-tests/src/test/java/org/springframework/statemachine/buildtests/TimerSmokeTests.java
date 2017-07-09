@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.buildtests;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.statemachine.StateMachine;
@@ -114,6 +115,7 @@ public class TimerSmokeTests {
 	}
 
 	@Test
+	@Ignore
 	public void testDeadlock() throws Exception {
 		StateMachineTestPlan<String, String> plan;
 		for (int i = 0; i < 20; i++) {
