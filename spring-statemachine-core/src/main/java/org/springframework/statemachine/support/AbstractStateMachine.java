@@ -38,6 +38,7 @@ import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.action.ActionListener;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
+import org.springframework.statemachine.reactive.EventResult;
 import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.state.AbstractState;
 import org.springframework.statemachine.state.ForkPseudoState;
@@ -56,6 +57,8 @@ import org.springframework.statemachine.trigger.DefaultTriggerContext;
 import org.springframework.statemachine.trigger.Trigger;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -572,6 +575,12 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
 		}
 		return accepted;
+	}
+
+	public Mono<EventResult> handleEvent(Message<E> event) {
+//		Mono.from
+		acceptEvent(event);
+		return Mono.just(new EventResult());
 	}
 
 	private StateMachine<S, E> getRelayStateMachine() {
