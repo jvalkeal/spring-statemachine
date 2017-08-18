@@ -1,17 +1,24 @@
 package org.springframework.statemachine.support;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.reactivestreams.Processor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.statemachine.reactive.EventResult;
+import org.springframework.statemachine.trigger.Trigger;
 import org.springframework.util.ObjectUtils;
 
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.WorkQueueProcessor;
 import reactor.test.StepVerifier;
 
-@Ignore
+//@Ignore
 public class ReactorConceptTests {
 
 	@Test
@@ -140,7 +147,71 @@ public class ReactorConceptTests {
 		just.doOnNext(System.out::println).subscribe();
 	}
 
+	@Test
+	public void test12() throws Exception {
+		TestExecutor<String, String> executor = new TestExecutor<>();
+		executor.onInit();
+		Mono<EventResult> mono = executor.sendEvent(MessageBuilder.withPayload("hello").build());
+		System.out.println("block1 ");
+		EventResult result = mono.block();
+		System.out.println("block2 ");
+		Thread.sleep(2000);
+		assertThat(result, notNullValue());
+	}
+	
+	public static class TestExecutor<S, E> {
+		private EmitterProcessor<TriggerQueueItem<S, E>> triggerProcessor = EmitterProcessor.create();
+		private EmitterProcessor<Flux<Message<E>>> eventProcessor = EmitterProcessor.create();
+		private EmitterProcessor<Mono<Message<E>>> eventProcessor2 = EmitterProcessor.create();
 
+		public void onInit() throws Exception {
+			Flux.from(eventProcessor).doOnNext(flux -> {
+				flux.doOnNext(message -> {
+					System.out.println("doOnNext " + message);
+					handleEvent(message);
+				}).subscribe();
+			}).subscribe();
+
+			Flux.from(triggerProcessor).doOnNext(item -> {
+				handleTrigger(item);
+			}).subscribe();
+		}
+
+		public Mono<EventResult> sendEvent(Message<E> event) {
+			System.out.println("sendEvent " + event);
+			
+			Mono<EventResult> defer = Mono.defer(() -> {
+				Flux<Message<E>> messageFlux = Flux.just(event);
+				eventProcessor.onNext(messageFlux);
+				return Mono.just(new EventResult());
+			});
+			return defer;
+//			Mono<String> xx = null;
+//			xx = Mono.error(null);
+//			return Mono.just(new EventResult());
+		}
+
+		private void handleTrigger(TriggerQueueItem<S, E> item) {
+		}
+
+		public void queueTrigger(Trigger<S, E> trigger, Message<E> message) {
+			triggerProcessor.onNext(new TriggerQueueItem<S, E>(trigger, message));
+		}
+
+		private void handleEvent(Message<E> message) {
+			System.out.println("handleEvent " + message);
+		}
+	}
+
+	private static class TriggerQueueItem<S, E> {
+		Trigger<S, E> trigger;
+		Message<E> message;
+		public TriggerQueueItem(Trigger<S, E> trigger, Message<E> message) {
+			this.trigger = trigger;
+			this.message = message;
+		}
+	}
+	
 	public static class SomeType {
 		private String value;
 
