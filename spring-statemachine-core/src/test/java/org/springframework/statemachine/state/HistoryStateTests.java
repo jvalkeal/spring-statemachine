@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,16 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.AbstractStateMachineTests;
 import org.springframework.statemachine.ObjectStateMachine;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineSystemConstants;
+import org.springframework.statemachine.TestUtils;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.config.configurers.StateConfigurer.History;
+import org.springframework.util.ObjectUtils;
 
 public class HistoryStateTests extends AbstractStateMachineTests {
 
@@ -346,4 +350,98 @@ public class HistoryStateTests extends AbstractStateMachineTests {
 					.target(TestStates.S33);
 		}
 	}
+
+	private static <S, E> State<S, E> findState(StateMachine<S, E> stateMachine, S id) {
+		for (State<S, E> state1 : stateMachine.getStates()) {
+			if (ObjectUtils.nullSafeEquals(state1.getId(), id)) {
+				return state1;
+			}
+			if (state1.getStates() != null) {
+				for (State<S, E> state2 : state1.getStates()) {
+					if (ObjectUtils.nullSafeEquals(state2.getId(), id)) {
+						return state2;
+					}
+				}
+
+			}
+		}
+		return null;
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testXXX1() {
+		context.register(Config5.class);
+		context.refresh();
+		ObjectStateMachine<String, String> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
+		assertThat(machine, notNullValue());
+		machine.start();
+
+		State<String, String> stateHMAINDEEP = findState(machine, "HMAINDEEP");
+		State<String, String> stateHS1DEEP = findState(machine, "HS1DEEP");
+		assertThat(stateHMAINDEEP, notNullValue());
+		assertThat(stateHS1DEEP, notNullValue());
+
+		HistoryPseudoState<String, String> pseudoStateHMAINDEEP = (HistoryPseudoState<String, String>) stateHMAINDEEP.getPseudoState();
+		HistoryPseudoState<String, String> pseudoStateHS1DEEP = (HistoryPseudoState<String, String>) stateHS1DEEP.getPseudoState();
+		assertThat(pseudoStateHMAINDEEP, notNullValue());
+
+		machine.sendEvent("E1");
+		assertThat(machine.getState().getIds(), contains("S1", "S1I"));
+	}
+
+	@Configuration
+	@EnableStateMachine
+	static class Config5 extends StateMachineConfigurerAdapter<String, String> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("SI")
+					.state("S1")
+					.state("S2")
+					.history("HMAINDEEP", History.DEEP)
+//					.history("HMAINSHALLOW", History.SHALLOW)
+					.and()
+					.withStates()
+						.parent("S1")
+						.initial("S1I")
+						.state("S10")
+						.history("HS1DEEP", History.DEEP)
+						.history("HS1SHALLOW", History.SHALLOW)
+						.and()
+						.withStates()
+							.parent("S10")
+							.initial("S100I")
+							.state("S100")
+							.history("HS10DEEP", History.DEEP)
+							.history("HS10SHALLOW", History.SHALLOW)
+							.and()
+					.withStates()
+						.parent("S2")
+						.initial("S2I")
+						.state("S20")
+						.history("HS2DEEP", History.DEEP)
+						.history("HS2SHALLOW", History.SHALLOW)
+						.and()
+						.withStates()
+							.parent("S20")
+							.initial("S200I")
+							.state("S200")
+							.history("HS20DEEP", History.DEEP)
+							.history("HS20SHALLOW", History.SHALLOW);
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("SI")
+					.target("S1")
+					.event("E1");
+		}
+	}
+
 }
