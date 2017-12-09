@@ -57,7 +57,10 @@ public class CdPlayer {
 	}
 
 	public void eject() {
-		stateMachine.sendEvent(Events.EJECT);
+		System.out.println("UUU1");
+		boolean sendEvent = stateMachine.sendEvent(Events.EJECT);
+		System.out.println("UUU2 " + sendEvent);
+
 	}
 
 	public void forward() {

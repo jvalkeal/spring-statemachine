@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +48,8 @@ import demo.cdplayer.Application.Events;
 import demo.cdplayer.Application.States;
 
 public class CdPlayerTests {
+
+	private final static Log log = LogFactory.getLog(CdPlayerTests.class);
 
 	private AnnotationConfigApplicationContext context;
 
@@ -147,11 +151,17 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayPause() throws Exception {
+		log.info("XXX 1");
 		listener.reset(4, 0, 0);
+		log.info("XXX 2");
 		player.eject();
+		log.info("XXX 3");
 		player.load(library.getCollection().get(0));
+		log.info("XXX 4");
 		player.eject();
+		log.info("XXX 5");
 		player.play();
+		log.info("XXX 6");
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.stateChangedCount, is(4));
 		assertThat(machine.getState().getIds(), contains(States.BUSY, States.PLAYING));
@@ -189,11 +199,17 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayStop() throws Exception {
+		System.out.println("DDD 1");
 		listener.reset(4, 0, 0);
+		System.out.println("DDD 2");
 		player.eject();
+		System.out.println("DDD 3");
 		player.load(library.getCollection().get(0));
+		System.out.println("DDD 4");
 		player.eject();
+		System.out.println("DDD 5");
 		player.play();
+		System.out.println("DDD 6");
 
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.stateChangedCount, is(4));
@@ -241,10 +257,14 @@ public class CdPlayerTests {
 		machine = context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
 		player = context.getBean(CdPlayer.class);
 		library = context.getBean(Library.class);
-		listener = context.getBean(TestListener.class);
+//		listener = context.getBean(TestListener.class);
+
+		listener = new TestListener();
+		machine.addStateListener(listener);
+
 		machine.start();
 		// lets do a little sleep to wait sm to start
-		Thread.sleep(1000);
+//		Thread.sleep(1000);
 	}
 
 	@After
@@ -260,15 +280,15 @@ public class CdPlayerTests {
 
 	static class TestConfig {
 
-		@Autowired
-		private StateMachine<States,Events> machine;
-
-		@Bean
-		public StateMachineListener<States, Events> stateMachineListener() {
-			TestListener listener = new TestListener();
-			machine.addStateListener(listener);
-			return listener;
-		}
+//		@Autowired
+//		private StateMachine<States,Events> machine;
+//
+//		@Bean
+//		public StateMachineListener<States, Events> stateMachineListener() {
+//			TestListener listener = new TestListener();
+//			machine.addStateListener(listener);
+//			return listener;
+//		}
 
 		@Bean
 		public Library library() {
