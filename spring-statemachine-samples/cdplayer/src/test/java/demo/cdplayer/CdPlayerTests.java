@@ -263,13 +263,18 @@ public class CdPlayerTests {
 		machine.addStateListener(listener);
 
 		machine.start();
+		assertThat(listener.stateMachineStartedLatch.await(1, TimeUnit.SECONDS), is(true));
+
 		// lets do a little sleep to wait sm to start
 //		Thread.sleep(1000);
 	}
 
 	@After
-	public void clean() {
+	public void clean() throws InterruptedException {
+		TestListener l = new TestListener();
+		machine.addStateListener(l);
 		machine.stop();
+		assertThat(l.stateMachineStoppedLatch.await(1, TimeUnit.SECONDS), is(true));
 		context.close();
 		context = null;
 		machine = null;
@@ -306,6 +311,8 @@ public class CdPlayerTests {
 
 	static class TestListener extends StateMachineListenerAdapter<States, Events> {
 
+		volatile CountDownLatch stateMachineStartedLatch = new CountDownLatch(1);
+		volatile CountDownLatch stateMachineStoppedLatch = new CountDownLatch(1);
 		volatile CountDownLatch stateChangedLatch = new CountDownLatch(1);
 		volatile CountDownLatch stateEnteredLatch = new CountDownLatch(2);
 		volatile CountDownLatch stateExitedLatch = new CountDownLatch(0);
@@ -314,6 +321,18 @@ public class CdPlayerTests {
 		volatile int transitionCount = 0;
 		List<State<States, Events>> statesEntered = new ArrayList<State<States,Events>>();
 		List<State<States, Events>> statesExited = new ArrayList<State<States,Events>>();
+
+		@Override
+		public void stateMachineStarted(StateMachine<States, Events> stateMachine) {
+			log.info("STARTED");
+			stateMachineStartedLatch.countDown();
+		}
+
+		@Override
+		public void stateMachineStopped(StateMachine<States, Events> stateMachine) {
+			log.info("STOPPED");
+			stateMachineStoppedLatch.countDown();
+		}
 
 		@Override
 		public void stateChanged(State<States, Events> from, State<States, Events> to) {

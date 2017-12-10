@@ -13,5 +13,6 @@
 	</root>
 
 		<logger name="demo" level="INFO"/>
+		<logger name="org.springframework.statemachine" level="INFO"/>
 
 </configuration>

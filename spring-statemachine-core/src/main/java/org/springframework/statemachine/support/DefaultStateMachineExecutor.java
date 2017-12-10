@@ -276,6 +276,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	}
 
 	private void scheduleEventQueueProcessing() {
+		log.info("TTT 1");
 		TaskExecutor executor = getTaskExecutor();
 		if (executor == null) {
 			return;
@@ -311,20 +312,26 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 					}
 					taskRef.set(null);
 				} finally {
+					log.info("TTT 5");
 					lock.unlock();
 				}
 
 				// do second attempt which should reduse risk
 				// of threading causing failed run to completion
+				log.info("TTT 6");
 				if (requestTask.getAndSet(false)) {
+					log.info("TTT 7");
 					scheduleEventQueueProcessing();
 				}
 			}
 		};
 
 		if (taskRef.compareAndSet(null, task)) {
+			log.info("TTT 2");
 			executor.execute(task);
+			log.info("TTT 3");
 		} else {
+			log.info("TTT 4");
 			requestTask.set(true);
 		}
 	}
