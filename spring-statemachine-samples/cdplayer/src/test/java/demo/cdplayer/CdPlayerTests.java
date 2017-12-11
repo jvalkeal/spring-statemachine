@@ -129,12 +129,15 @@ public class CdPlayerTests {
 		listener.reset(0, 0, 0, 1);
 		assertThat(listener.transitionLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.transitionCount, is(1));
-		assertLcdStatusContains("00:01");
+		assertLcdStatusContains("00:0");
+		String ldcStatus1 = player.getLdcStatus();
 
 		listener.reset(0, 0, 0, 1);
 		assertThat(listener.transitionLatch.await(2, TimeUnit.SECONDS), is(true));
-		assertLcdStatusContains("00:02");
+		assertLcdStatusContains("00:0");
 		assertThat(listener.transitionCount, is(1));
+		String ldcStatus2 = player.getLdcStatus();
+		assertThat(ldcStatus1, not(is(ldcStatus2)));
 
 		listener.reset(0, 0, 0, 2);
 		assertThat(listener.transitionLatch.await(4, TimeUnit.SECONDS), is(true));
@@ -160,19 +163,23 @@ public class CdPlayerTests {
 		listener.reset(0, 0, 0, 1);
 		assertThat(listener.transitionLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.transitionCount, is(1));
-		assertLcdStatusContains("00:01");
+		String ldcStatus1 = player.getLdcStatus();
+		assertLcdStatusContains("00:0");
 
 		listener.reset(0, 0, 0, 1);
 		assertThat(listener.transitionLatch.await(2, TimeUnit.SECONDS), is(true));
-		assertLcdStatusContains("00:02");
+		assertLcdStatusContains("00:0");
 		assertThat(listener.transitionCount, is(1));
+		String ldcStatus2 = player.getLdcStatus();
+		assertThat(ldcStatus1, not(is(ldcStatus2)));
 
 
 		listener.reset(1, 0, 0, 0);
 		player.pause();
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.stateChangedCount, is(1));
-		assertLcdStatusContains("00:02");
+		String ldcStatus3 = player.getLdcStatus();
+		assertThat(ldcStatus2, is(ldcStatus3));
 
 		listener.reset(1, 0, 0, 1);
 		player.pause();
