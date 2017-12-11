@@ -59,6 +59,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testInitialState() throws InterruptedException {
+		System.out.println("testInitialState");
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.stateChangedCount, is(2));
 		assertThat(machine.getState().getIds(), contains(States.IDLE, States.CLOSED));
@@ -67,6 +68,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testEjectTwice() throws Exception {
+		System.out.println("testEjectTwice");
 		listener.reset(1, 0, 0);
 		player.eject();
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
@@ -81,6 +83,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayWithCdLoaded() throws Exception {
+		System.out.println("testPlayWithCdLoaded");
 		listener.reset(4, 0, 0);
 		player.eject();
 		player.load(library.getCollection().get(0));
@@ -94,6 +97,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayWithCdLoadedDeckOpen() throws Exception {
+		System.out.println("testPlayWithCdLoadedDeckOpen");
 		listener.reset(3, 0, 0);
 		player.eject();
 		player.load(library.getCollection().get(0));
@@ -106,6 +110,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayWithNoCdLoaded() throws Exception {
+		System.out.println("testPlayWithNoCdLoaded");
 		listener.reset(0, 0, 0);
 		player.play();
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
@@ -116,6 +121,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayLcdTimeChanges() throws Exception {
+		System.out.println("testPlayLcdTimeChanges");
 		listener.reset(4, 0, 0);
 		player.eject();
 		player.load(library.getCollection().get(0));
@@ -150,6 +156,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayPause() throws Exception {
+		System.out.println("testPlayPause");
 		listener.reset(4, 0, 0);
 		player.eject();
 		player.load(library.getCollection().get(0));
@@ -196,6 +203,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayStop() throws Exception {
+		System.out.println("testPlayStop");
 		listener.reset(4, 0, 0);
 		player.eject();
 		player.load(library.getCollection().get(0));
@@ -215,6 +223,7 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayDeckOpenNoCd() throws Exception {
+		System.out.println("testPlayDeckOpenNoCd");
 		listener.reset(2, 0, 0);
 		player.eject();
 		player.play();
