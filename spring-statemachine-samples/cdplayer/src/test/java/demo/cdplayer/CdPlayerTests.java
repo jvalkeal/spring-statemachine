@@ -205,9 +205,13 @@ public class CdPlayerTests {
 	public void testPlayStop() throws Exception {
 		System.out.println("testPlayStop");
 		listener.reset(4, 0, 0);
+		System.out.println("testPlayStop EJECT");
 		player.eject();
+		System.out.println("testPlayStop LOAD");
 		player.load(library.getCollection().get(0));
+		System.out.println("testPlayStop EJECT");
 		player.eject();
+		System.out.println("testPlayStop PLAY");
 		player.play();
 
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
