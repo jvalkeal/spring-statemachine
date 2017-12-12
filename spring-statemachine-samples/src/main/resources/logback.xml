@@ -3,7 +3,7 @@
 
 		<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%m%n</pattern>
+			<pattern>%t %m%n</pattern>
 			<charset>utf8</charset>
 		</encoder>
 	</appender>

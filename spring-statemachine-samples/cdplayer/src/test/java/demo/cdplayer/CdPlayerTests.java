@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +48,8 @@ import demo.cdplayer.Application.Events;
 import demo.cdplayer.Application.States;
 
 public class CdPlayerTests {
+
+	private final static Log log = LogFactory.getLog(CdPlayerTests.class);
 
 	private AnnotationConfigApplicationContext context;
 
@@ -203,15 +207,15 @@ public class CdPlayerTests {
 
 	@Test
 	public void testPlayStop() throws Exception {
-		System.out.println("testPlayStop");
+		log.info("testPlayStop");
 		listener.reset(4, 0, 0);
-		System.out.println("testPlayStop EJECT");
+		log.info("testPlayStop EJECT");
 		player.eject();
-		System.out.println("testPlayStop LOAD");
+		log.info("testPlayStop LOAD");
 		player.load(library.getCollection().get(0));
-		System.out.println("testPlayStop EJECT");
+		log.info("testPlayStop EJECT");
 		player.eject();
-		System.out.println("testPlayStop PLAY");
+		log.info("testPlayStop PLAY");
 		player.play();
 
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
