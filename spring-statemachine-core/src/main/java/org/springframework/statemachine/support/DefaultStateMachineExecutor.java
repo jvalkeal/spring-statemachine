@@ -129,6 +129,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	@Override
 	public void queueEvent(Message<E> message) {
 		eventQueue.add(message);
+		log.info("QUEUE MESSAGE " + message.getPayload());
 	}
 
 	@Override
@@ -410,6 +411,11 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			log.debug("Process event queue, size=" + eventQueue.size());
 		}
 		Message<E> queuedEvent = eventQueue.poll();
+		if (queuedEvent != null) {
+			log.info("POLL QUEUE " + queuedEvent.getPayload());
+		} else {
+			log.info("POLL QUEUE null");
+		}
 		State<S,E> currentState = stateMachine.getState();
 		if (queuedEvent != null) {
 			if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
