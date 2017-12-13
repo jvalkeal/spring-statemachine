@@ -345,11 +345,11 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	private final AtomicInteger taskCount = new AtomicInteger();
 
 	private void scheduleEventQueueProcessing() {
-		log.info("TTT 1");
 		TaskExecutor executor = getTaskExecutor();
 		if (executor == null) {
 			return;
 		}
+		log.info("TTT 1 " + executor);
 
 		if (taskCount.incrementAndGet() == 1) {
 			log.info("TTT 2 " + taskCount.get());
@@ -372,19 +372,20 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		@Override
 		public void run() {
 
-			lock.lock();
+//			lock.lock();
 			try {
+				synchronized (relayStateMachine) {
+
 				while(taskCount.get() > 0) {
-					log.info("TTT 3 " + taskCount.get());
+					log.info("TTT 3 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
 					handleQueues();
 					taskCount.decrementAndGet();
-					log.info("TTT 4 " + taskCount.get());
+					log.info("TTT 4 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
 				}
-//				do {
-//					handleQueues();
-//				} while (taskCount.decrementAndGet() >= 0);
+
+				}
 			} finally {
-				lock.unlock();
+//				lock.unlock();
 			}
 		}
 
