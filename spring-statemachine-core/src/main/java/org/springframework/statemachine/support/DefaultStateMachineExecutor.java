@@ -29,6 +29,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -128,6 +129,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	@Override
 	public void queueEvent(Message<E> message) {
 		eventQueue.add(message);
+		log.info("QUEUE MESSAGE " + message.getPayload());
 	}
 
 	@Override
@@ -215,6 +217,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 
 			// special handling of join
 			if (StateMachineUtils.isPseudoState(t.getTarget(), PseudoStateKind.JOIN)) {
+				log.info("CCC 1");
 				if (joinSyncStates.isEmpty()) {
 					List<State<S, E>> joins = ((JoinPseudoState<S, E>)t.getTarget().getPseudoState()).getJoins();
 					joinSyncStates.addAll(joins);
@@ -229,8 +232,10 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 						stateMachineExecutorTransit.transit(tt, stateContext, queuedMessage);
 					}
 					joinSyncTransitions.clear();
+					log.info("CCC 21");
 					break;
 				} else {
+					log.info("CCC 22");
 					continue;
 				}
 			}
@@ -275,7 +280,8 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage);
 	}
 
-	private void scheduleEventQueueProcessing() {
+	private void scheduleEventQueueProcessing2() {
+		log.info("TTT 1");
 		TaskExecutor executor = getTaskExecutor();
 		if (executor == null) {
 			return;
@@ -311,21 +317,91 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 					}
 					taskRef.set(null);
 				} finally {
+					log.info("TTT 5");
 					lock.unlock();
 				}
 
 				// do second attempt which should reduse risk
 				// of threading causing failed run to completion
+				log.info("TTT 6");
 				if (requestTask.getAndSet(false)) {
+					log.info("TTT 7");
 					scheduleEventQueueProcessing();
 				}
 			}
 		};
 
 		if (taskRef.compareAndSet(null, task)) {
+			log.info("TTT 2");
 			executor.execute(task);
+			log.info("TTT 3");
 		} else {
+			log.info("TTT 4");
 			requestTask.set(true);
+		}
+	}
+
+	private final Runnable task = new EventQueueTask();
+	private final AtomicInteger taskCount = new AtomicInteger();
+
+	private void scheduleEventQueueProcessing() {
+		TaskExecutor executor = getTaskExecutor();
+		if (executor == null) {
+			return;
+		}
+		log.info("TTT 1 " + executor);
+
+		if (taskCount.incrementAndGet() == 1) {
+			log.info("TTT 2 " + taskCount.get());
+			executor.execute(task);
+			log.info("TTT 5 " + taskCount.get());
+		}
+//		if (taskRef.compareAndSet(null, task)) {
+//			log.info("TTT 2");
+//			executor.execute(task);
+//			log.info("TTT 3");
+//		}
+//		else {
+//			log.info("TTT 4");
+//			requestTask.set(true);
+//		}
+	}
+
+	private class EventQueueTask implements Runnable {
+
+		@Override
+		public void run() {
+
+			log.info("LLL1 lock " + DefaultStateMachineExecutor.this.hashCode());
+			lock.lock();
+			try {
+				while(taskCount.get() > 0) {
+					log.info("TTT 3 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
+					handleQueues();
+					taskCount.decrementAndGet();
+					log.info("TTT 4 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
+				}
+			} finally {
+				log.info("LLL1 unlock " + DefaultStateMachineExecutor.this.hashCode());
+				lock.unlock();
+			}
+		}
+
+		private void handleQueues() {
+			boolean eventProcessed = false;
+			while (processEventQueue()) {
+				eventProcessed = true;
+				processTriggerQueue();
+				while (processDeferList()) {
+					processTriggerQueue();
+				}
+			}
+			if (!eventProcessed) {
+				processTriggerQueue();
+				while (processDeferList()) {
+					processTriggerQueue();
+				}
+			}
 		}
 	}
 
@@ -334,6 +410,11 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			log.debug("Process event queue, size=" + eventQueue.size());
 		}
 		Message<E> queuedEvent = eventQueue.poll();
+		if (queuedEvent != null) {
+			log.info("POLL QUEUE " + queuedEvent.getPayload());
+		} else {
+			log.info("POLL QUEUE null");
+		}
 		State<S,E> currentState = stateMachine.getState();
 		if (queuedEvent != null) {
 			if ((currentState != null && currentState.shouldDefer(queuedEvent))) {

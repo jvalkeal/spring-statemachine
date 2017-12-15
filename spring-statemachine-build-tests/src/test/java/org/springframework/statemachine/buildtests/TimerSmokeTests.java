@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.buildtests;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.statemachine.StateMachine;
@@ -22,6 +23,7 @@ import org.springframework.statemachine.config.StateMachineBuilder;
 import org.springframework.statemachine.test.StateMachineTestPlan;
 import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
 
+@Ignore
 public class TimerSmokeTests {
 
 	private static ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();

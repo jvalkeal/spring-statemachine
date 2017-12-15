@@ -289,8 +289,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
 					Lock lock = ((AbstractStateMachine<S, E>)submachine).getStateMachineExecutor().getLock();
 					try {
+						log.info("LLL2 lock " + this.hashCode());
 						lock.lock();
 					} finally {
+						log.info("LLL2 unlock " + this.hashCode());
 						lock.unlock();
 					}
 				}
