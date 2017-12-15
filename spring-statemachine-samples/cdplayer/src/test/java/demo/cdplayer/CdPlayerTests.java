@@ -158,7 +158,7 @@ public class CdPlayerTests {
 		assertLcdStatusNotContains("00:02");
 	}
 
-//	@Test
+	@Test
 	public void testPlayPause() throws Exception {
 		System.out.println("testPlayPause");
 		listener.reset(4, 0, 0);
