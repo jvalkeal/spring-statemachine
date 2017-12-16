@@ -14,5 +14,6 @@
 
 		<logger name="demo" level="INFO"/>
 		<logger name="org.springframework.statemachine.support.DefaultStateMachineExecutor" level="INFO"/>
+		<logger name="org.springframework.statemachine.support.AbstractStateMachine" level="INFO"/>
 
 </configuration>

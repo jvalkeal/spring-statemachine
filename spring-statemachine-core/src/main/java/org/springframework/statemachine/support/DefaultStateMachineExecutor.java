@@ -128,8 +128,8 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 
 	@Override
 	public void queueEvent(Message<E> message) {
-		eventQueue.add(message);
 		log.info("QUEUE MESSAGE " + message.getPayload());
+		eventQueue.add(message);
 	}
 
 	@Override
@@ -349,7 +349,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		if (executor == null) {
 			return;
 		}
-		log.info("TTT 1 " + executor);
+		log.info("TTT 1 " + taskCount.get() + " " + executor);
 
 		if (taskCount.incrementAndGet() == 1) {
 			log.info("TTT 2 " + taskCount.get());
@@ -372,8 +372,9 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		@Override
 		public void run() {
 
-			log.info("LLL1 lock " + DefaultStateMachineExecutor.this.hashCode());
+			log.info("LLL1 lock " + DefaultStateMachineExecutor.this.stateMachine.hashCode() + " " + lock.hashCode() + " " + DefaultStateMachineExecutor.this.hashCode());
 			lock.lock();
+			log.info("LLL1 locked " + DefaultStateMachineExecutor.this.stateMachine.hashCode() + " " + lock.hashCode() + " " + DefaultStateMachineExecutor.this.hashCode());
 			try {
 				while(taskCount.get() > 0) {
 					log.info("TTT 3 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
@@ -382,8 +383,9 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 					log.info("TTT 4 " + taskCount.get() + " " + DefaultStateMachineExecutor.this.hashCode() + " " + stateMachine);
 				}
 			} finally {
-				log.info("LLL1 unlock " + DefaultStateMachineExecutor.this.hashCode());
+				log.info("LLL1 unlock " + DefaultStateMachineExecutor.this.hashCode() + " " + lock.hashCode());
 				lock.unlock();
+				log.info("LLL1 unlocked " + DefaultStateMachineExecutor.this.hashCode() + " " + lock.hashCode());
 			}
 		}
 
@@ -391,15 +393,19 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			boolean eventProcessed = false;
 			while (processEventQueue()) {
 				eventProcessed = true;
-				processTriggerQueue();
+				while(processTriggerQueue()){}
+//				processTriggerQueue();
 				while (processDeferList()) {
-					processTriggerQueue();
+					while(processTriggerQueue()){}
+//					processTriggerQueue();
 				}
 			}
 			if (!eventProcessed) {
-				processTriggerQueue();
+				while(processTriggerQueue()){}
+//				processTriggerQueue();
 				while (processDeferList()) {
-					processTriggerQueue();
+					while(processTriggerQueue()){}
+//					processTriggerQueue();
 				}
 			}
 		}
@@ -437,9 +443,9 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		return false;
 	}
 
-	private void processTriggerQueue() {
+	private boolean processTriggerQueue() {
 		if (!isRunning()) {
-			return;
+			return false;
 		}
 		if (!initialHandled.getAndSet(true)) {
 			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
@@ -450,8 +456,9 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			} else {
 				handleInitialTrans(initialTransition, forwardedInitialEvent);
 			}
-			return;
+			return true;
 		}
+		log.info("Process trigger queue, size=" + triggerQueue.size() + " " + this);
 		if (log.isDebugEnabled()) {
 			log.debug("Process trigger queue, size=" + triggerQueue.size() + " " + this);
 		}
@@ -509,6 +516,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 				transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
 			} while (transit);
 		}
+		return queueItem != null;
 	}
 
 	private synchronized boolean processDeferList() {
