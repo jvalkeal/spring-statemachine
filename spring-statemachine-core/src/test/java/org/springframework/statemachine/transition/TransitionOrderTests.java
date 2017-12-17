@@ -23,8 +23,11 @@ import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.statemachine.AbstractStateMachineTests;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineSystemConstants;
@@ -186,6 +189,25 @@ public class TransitionOrderTests extends AbstractStateMachineTests {
 		machine.sendEvent(MessageBuilder.withPayload(TestEvents.E1).build());
 		assertThat(listener.statesEntered,
 				contains(TestStates.S1, TestStates.S10, TestStates.S1011, TestStates.S1));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAnonymousTransitionInConfigUseParent3x() throws InterruptedException {
+		TestListener listener = new TestListener();
+		context.register(Config4.class, StateMachineExecutorConfiguration.class);
+		context.refresh();
+		StateMachine<TestStates,TestEvents> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
+		machine.addStateListener(listener);
+
+		machine.start();
+		Thread.sleep(1000);
+		assertThat(machine.getState().getIds(), contains(TestStates.S1));
+
+		machine.sendEvent(MessageBuilder.withPayload(TestEvents.E1).build());
+		Thread.sleep(1000);
+		assertThat(listener.statesEntered, contains(TestStates.S1, TestStates.S10, TestStates.S1011, TestStates.S1));
 	}
 
 	@Configuration
@@ -548,6 +570,18 @@ public class TransitionOrderTests extends AbstractStateMachineTests {
 					.target(TestStates.S2011);
 		}
 	}
+
+	@Configuration
+	public static class StateMachineExecutorConfiguration {
+
+		@Bean(name = StateMachineSystemConstants.TASK_EXECUTOR_BEAN_NAME)
+		public TaskExecutor stateMachineTaskExecutor() {
+			ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+			executor.setCorePoolSize(4);
+			return executor;
+		}
+	}
+
 
 	static class TestListener extends StateMachineListenerAdapter<TestStates, TestEvents> {
 

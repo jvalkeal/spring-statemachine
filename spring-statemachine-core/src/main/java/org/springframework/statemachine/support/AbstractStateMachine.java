@@ -284,19 +284,32 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 			@Override
 			public void transit(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
+				Lock lock = null;
 				if (currentState != null && currentState.isSubmachineState()) {
 					// this is a naive attempt to check from submachine's executor if it is
 					// currently executing. allows submachine to complete its execution logic
 					// before we, in parent go forward. as executor locks, we simple try to lock it
 					// and release it immediately.
 					StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
-					Lock lock = ((AbstractStateMachine<S, E>)submachine).getStateMachineExecutor().getLock();
+					lock = ((AbstractStateMachine<S, E>)submachine).getStateMachineExecutor().getLock();
 					try {
+						log.info("LLL2 lock " + this.hashCode() + " " + lock.hashCode());
 						lock.lock();
+						log.info("LLL2 locked " + this.hashCode() + " " + lock.hashCode());
 					} finally {
+						log.info("LLL2 unlock " + this.hashCode() + " " + lock.hashCode());
 						lock.unlock();
+						log.info("LLL2 unlocked " + this.hashCode() + " " + lock.hashCode());
 					}
 				}
+
+//				try {
+//					if (lock != null) {
+//						log.info("LLL2 lock " + this.hashCode() + " " + lock.hashCode());
+//						lock.lock();
+//						log.info("LLL2 locked " + this.hashCode() + " " + lock.hashCode());
+//					}
+
 				long now = System.currentTimeMillis();
 				// TODO: fix above stateContext as it's not used
 				notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, message, t, getRelayStateMachine()));
@@ -322,6 +335,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				// TODO: looks like events should be called here and anno processing earlier
 				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
 				notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
+
+
+//				} finally {
+//					if (lock != null) {
+//						log.info("LLL2 unlock " + this.hashCode() + " " + lock.hashCode());
+//						lock.unlock();
+//						log.info("LLL2 unlocked " + this.hashCode() + " " + lock.hashCode());
+//					}
+//				}
 			}
 		});
 		stateMachineExecutor = executor;

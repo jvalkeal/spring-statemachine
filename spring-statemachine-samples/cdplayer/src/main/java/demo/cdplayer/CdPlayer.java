@@ -18,6 +18,8 @@ package demo.cdplayer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.ExtendedState;
@@ -34,6 +36,7 @@ import demo.cdplayer.Application.Variables;
 @WithStateMachine
 public class CdPlayer {
 
+	private final static Log log = LogFactory.getLog(CdPlayer.class);
 	@Autowired
 	private StateMachine<States, Events> stateMachine;
 
@@ -41,7 +44,9 @@ public class CdPlayer {
 	private String trackStatus = "";
 
 	public void load(Cd cd) {
-		stateMachine.sendEvent(MessageBuilder.withPayload(Events.LOAD).setHeader(Variables.CD.toString(), cd).build());
+//		stateMachine.sendEvent(MessageBuilder.withPayload(Events.LOAD).setHeader(Variables.CD.toString(), cd).build());
+		boolean sendEvent = stateMachine.sendEvent(MessageBuilder.withPayload(Events.LOAD).setHeader(Variables.CD.toString(), cd).build());
+		log.info("LOAD " + sendEvent);
 	}
 
 	public void play() {
