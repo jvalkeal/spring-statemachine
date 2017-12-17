@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.support.StateMachineExecutor.StateMachineExecutorTransit;
 import org.springframework.statemachine.transition.InitialTransition;
 import org.springframework.statemachine.transition.Transition;
+import org.springframework.statemachine.transition.TransitionConflightPolicy;
 import org.springframework.statemachine.transition.TransitionKind;
 import org.springframework.statemachine.trigger.DefaultTriggerContext;
 import org.springframework.statemachine.trigger.Trigger;
@@ -90,6 +91,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	private final Message<E> initialEvent;
 
 	private ExtendedState extendedState;
+
+	private TransitionConflightPolicy transitionConflightPolicy;
 
 	private volatile State<S,E> currentState;
 
@@ -269,7 +272,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 
 		DefaultStateMachineExecutor<S, E> executor = new DefaultStateMachineExecutor<S, E>(this, getRelayStateMachine(), transitions,
-				triggerToTransitionMap, triggerlessTransitions, initialTransition, initialEvent);
+				triggerToTransitionMap, triggerlessTransitions, initialTransition, initialEvent, transitionConflightPolicy);
 		if (getBeanFactory() != null) {
 			executor.setBeanFactory(getBeanFactory());
 		}
@@ -553,6 +556,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	@Override
 	public void setForwardedInitialEvent(Message<E> message) {
 		forwardedInitialEvent = message;
+	}
+
+	/**
+	 * Sets the transition conflight policy.
+	 *
+	 * @param transitionConflightPolicy the new transition conflight policy
+	 */
+	public void setTransitionConflightPolicy(TransitionConflightPolicy transitionConflightPolicy) {
+		this.transitionConflightPolicy = transitionConflightPolicy;
 	}
 
 	private boolean sendEventInternal(Message<E> event) {
