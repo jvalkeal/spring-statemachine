@@ -92,7 +92,7 @@ public class ObjectStateMachineFactory<S, E> extends AbstractStateMachineFactory
 		if (machine instanceof BeanNameAware) {
 			((BeanNameAware)machine).setBeanName(beanName);
 		}
-		machine.afterPropertiesSet();
+//		machine.afterPropertiesSet();
 		return machine;
 	}
 

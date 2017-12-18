@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.Message;
@@ -360,6 +361,11 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 				}
 			});
 		}
+
+		for (StateMachine<S, E> m : machineMap.values()) {
+			((LifecycleObjectSupport)m).afterPropertiesSet();
+		}
+
 		return delegateAutoStartup(machine);
 	}
 

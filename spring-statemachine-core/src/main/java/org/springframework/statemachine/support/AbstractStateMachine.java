@@ -21,6 +21,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -278,6 +279,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 		if (getTaskExecutor() != null){
 			executor.setTaskExecutor(getTaskExecutor());
+
+//			if(parentMachine != null) {
+//				executor.setTaskExecutor(new SyncTaskExecutor());
+//			} else {
+//				executor.setTaskExecutor(getTaskExecutor());
+//			}
+
 		}
 		executor.afterPropertiesSet();
 		executor.setStateMachineExecutorTransit(new StateMachineExecutorTransit<S, E>() {
@@ -567,6 +575,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	@Override
 	public void setParentMachine(StateMachine<S, E> parentMachine) {
 		this.parentMachine = parentMachine;
+//		if (parentMachine != null) {
+//			((LifecycleObjectSupport)this.stateMachineExecutor).setTaskExecutor(new SyncTaskExecutor());
+//		}
 	}
 
 	@Override
