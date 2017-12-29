@@ -716,6 +716,9 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 				}
 			} else if (stateData.getPseudoStateKind() == PseudoStateKind.EXIT) {
 				S s = stateData.getState();
+
+
+
 				Collection<ExitData<S, E>> exits = stateMachineTransitions.getExits();
 				for (ExitData<S, E> entry : exits) {
 					if (s.equals(entry.getSource())) {
@@ -857,6 +860,32 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 						}
 					}
 				}
+			}
+		}
+
+		if (stateMachineTransitions.getExits() != null) {
+			Collection<ExitData<S, E>> exits = stateMachineTransitions.getExits();
+			for (ExitData<S, E> entry : exits) {
+				log.info("XXX1 " + entry.getSource());
+				log.info("XXX2 " + entry.getTarget());
+
+				State<S, E> state2 = stateMap.get(entry.getSource());
+				log.info("XXX3 " + state2);
+
+//				if (s.equals(entry.getSource())) {
+//					StateHolder<S, E> holder = new StateHolder<S, E>(stateMap.get(entry.getTarget()));
+//					if (holder.getState() == null) {
+//						holderList.add(new HolderListItem<S, E>(entry.getTarget(), holder));
+//					}
+//					PseudoState<S, E> pseudoState = new ExitPseudoState<S, E>(holder);
+//					state = buildStateInternal(stateData.getState(), stateData.getDeferred(), stateData.getEntryActions(),
+//							stateData.getExitActions(), stateData.getStateActions(), pseudoState, stateMachineModel);
+//					states.add(state);
+//					stateMap.put(stateData.getState(), state);
+//					break;
+//				}
+
+
 			}
 		}
 

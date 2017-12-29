@@ -77,6 +77,23 @@ public class SubmachineRefTests extends AbstractStateMachineTests {
 		assertThat(machine.getState().getIds(), containsInAnyOrder("S2", "S21", "S31"));
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testSubmachineRefWithConnectionPointRef() {
+		context.register(Config5.class, Config6.class);
+		context.refresh();
+		StateMachine<String, String> machine = context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
+		assertThat(machine, notNullValue());
+		machine.start();
+		assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+		machine.sendEvent("E1");
+		assertThat(machine.getState().getIds(), containsInAnyOrder("S2", "S20"));
+		machine.sendEvent("E2");
+		assertThat(machine.getState().getIds(), containsInAnyOrder("S2", "S21"));
+		machine.sendEvent("E3");
+		assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+	}
+
 	@Configuration
 	@EnableStateMachine
 	static class Config1 extends StateMachineConfigurerAdapter<String, String> {
@@ -179,6 +196,59 @@ public class SubmachineRefTests extends AbstractStateMachineTests {
 					.source("S20").target("S21").event("E2").and()
 				.withExternal()
 					.source("S30").target("S31").event("E3");
+		}
+
+	}
+
+	@Configuration
+	@EnableStateMachine
+	static class Config5 extends StateMachineConfigurerAdapter<String, String> {
+
+		@Autowired
+		@Qualifier("subStateMachine")
+		private StateMachine<String, String> subStateMachine;
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("S1")
+					.state("S2", subStateMachine);
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("S1").target("S2").event("E1").and()
+				.withExit()
+					.source("S2EXIT").target("S1");
+//				.withConnectionPoint
+//					.source("S2EXIT").target("S1");
+		}
+
+	}
+
+	@Configuration
+	@EnableStateMachine(name = "subStateMachine")
+	static class Config6 extends StateMachineConfigurerAdapter<String, String> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("S20")
+					.state("S21")
+					.exit("S2EXIT");
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("S20").target("S21").event("E2").and()
+				.withExternal()
+					.source("S21").target("S2EXIT").event("E3");
 		}
 
 	}
