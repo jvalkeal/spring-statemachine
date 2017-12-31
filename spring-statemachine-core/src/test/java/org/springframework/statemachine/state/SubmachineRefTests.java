@@ -223,8 +223,8 @@ public class SubmachineRefTests extends AbstractStateMachineTests {
 					.source("S1").target("S2").event("E1").and()
 				.withExit()
 					.source("S2EXIT").target("S1");
-//				.withConnectionPoint
-//					.source("S2EXIT").target("S1");
+				// we simulate uml connection point ref by trying
+				// to match point from ref machine
 		}
 
 	}

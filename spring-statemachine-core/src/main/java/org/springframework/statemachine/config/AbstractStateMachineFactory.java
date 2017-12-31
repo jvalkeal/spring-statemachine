@@ -77,6 +77,7 @@ import org.springframework.statemachine.state.RegionState;
 import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.state.StateHolder;
 import org.springframework.statemachine.state.StateMachineState;
+import org.springframework.statemachine.support.AbstractStateMachine;
 import org.springframework.statemachine.support.DefaultExtendedState;
 import org.springframework.statemachine.support.LifecycleObjectSupport;
 import org.springframework.statemachine.support.StateMachineInterceptor;
@@ -717,7 +718,7 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 			} else if (stateData.getPseudoStateKind() == PseudoStateKind.EXIT) {
 				S s = stateData.getState();
 
-
+				boolean xxx = false;
 
 				Collection<ExitData<S, E>> exits = stateMachineTransitions.getExits();
 				for (ExitData<S, E> entry : exits) {
@@ -731,9 +732,20 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 								stateData.getExitActions(), stateData.getStateActions(), pseudoState, stateMachineModel);
 						states.add(state);
 						stateMap.put(stateData.getState(), state);
+						xxx = true;
 						break;
 					}
 				}
+
+				if (!xxx) {
+					PseudoState<S, E> pseudoState = new ExitPseudoState<S, E>(new StateHolder<S, E>(null));
+					state = buildStateInternal(stateData.getState(), stateData.getDeferred(), stateData.getEntryActions(),
+							stateData.getExitActions(), stateData.getStateActions(), pseudoState, stateMachineModel);
+					states.add(state);
+					stateMap.put(stateData.getState(), state);
+
+				}
+
 			} else if (stateData.getPseudoStateKind() == PseudoStateKind.FORK) {
 				S s = stateData.getState();
 				List<S> list = stateMachineTransitions.getForks().get(s);
@@ -871,6 +883,20 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 
 				State<S, E> state2 = stateMap.get(entry.getSource());
 				log.info("XXX3 " + state2);
+
+				for (State<S, E> s : states) {
+					if (s.isSubmachineState()) {
+						StateMachine<S, E> submachine = ((AbstractState<S, E>)s).getSubmachine();
+						for (State<S, E> s2 : submachine.getStates()) {
+							if (s2.getId() == entry.getSource()) {
+								if (s2.getPseudoState() instanceof ExitPseudoState) {
+									((ExitPseudoState<S, E>)s2.getPseudoState()).getStateHolder().setState(stateMap.get(entry.getTarget()));
+									log.info("XXX4 " + stateMap.get(entry.getTarget()));
+								}
+							}
+						}
+					}
+				}
 
 //				if (s.equals(entry.getSource())) {
 //					StateHolder<S, E> holder = new StateHolder<S, E>(stateMap.get(entry.getTarget()));
