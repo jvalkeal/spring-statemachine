@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,7 +214,6 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	private boolean handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage, State<S, E> completion) {
 		boolean transit = false;
 		for (Transition<S, E> t : trans) {
-			log.info("TTTTTT1 " + t);
 			if (t == null) {
 				continue;
 			}
@@ -224,20 +223,13 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			}
 			State<S,E> currentState = stateMachine.getState();
 			if (currentState == null) {
-				log.info("TTTTTT3 ");
 				continue;
 			}
 			if (!StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
-				log.info("TTTTTT4 ");
 				continue;
 			}
 
-//			if (completion != null && !source.getId().equals(completion.getId())) {
-//				log.info("TTTTTT5 ");
-//				continue;
-//			}
 			if (transitionConflightPolicy != TransitionConflightPolicy.PARENT && completion != null && !source.getId().equals(completion.getId())) {
-				log.info("TTTTTT5 " + source.getId() + " " + completion.getId());
 				if (source.isOrthogonal()) {
 					continue;
 				}
@@ -246,9 +238,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 					continue;
 
 				}
-//				continue;
 			}
-			log.info("TTTTTT6 ");
 
 			// special handling of join
 			if (StateMachineUtils.isPseudoState(t.getTarget(), PseudoStateKind.JOIN)) {
@@ -260,7 +250,6 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 				boolean removed = joinSyncStates.remove(t.getSource());
 				boolean joincomplete = removed & joinSyncStates.isEmpty();
 				if (joincomplete) {
-					log.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWW1");
 					for (Transition<S, E> tt : joinSyncTransitions) {
 						StateContext<S, E> stateContext = buildStateContext(queuedMessage, tt, relayStateMachine);
 						tt.transit(stateContext);
@@ -459,41 +448,6 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			trans.sort(transitionComparator);
 			handleTriggerTrans(trans, queuedMessage);
 		}
-//		if (stateMachine.getState() != null) {
-//			// loop triggerless transitions here so that
-//			// all "chained" transitions will get queue message
-//			boolean transit = false;
-//			do {
-//				transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
-//			} while (transit);
-//		}
-
-//		if (transitionConflightPolicy == TransitionConflightPolicy.PARENT) {
-//			if (stateMachine.getState() != null) {
-//				// loop triggerless transitions here so that
-//				// all "chained" transitions will get queue message
-//				boolean transit = false;
-//				do {
-//					transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
-//				} while (transit);
-//			}
-//		} else {
-//			List<Transition<S, E>> ttt = new ArrayList<>();
-//			for (Transition<S, E> tt : triggerlessTransitions) {
-//				if (((AbstractTransition<S, E>)tt).getGuard() != null) {
-//					ttt.add(tt);
-//				}
-//			}
-//
-//			if (stateMachine.getState() != null) {
-//				// loop triggerless transitions here so that
-//				// all "chained" transitions will get queue message
-//				boolean transit = false;
-//				do {
-//					transit = handleTriggerTrans(ttt, queuedMessage);
-//				} while (transit);
-//			}
-//		}
 
 		List<Transition<S, E>> ttt = new ArrayList<>();
 		for (Transition<S, E> tt : triggerlessTransitions) {
@@ -516,13 +470,6 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	@Override
 	public void xxx(StateContext<S, E> context, State<S, E> state) {
 		if (stateMachine.getState() != null) {
-
-//			boolean transit = false;
-//			do {
-//				handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
-//			} while (transit);
-
-
 			handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
 		}
 	}

@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,8 +37,6 @@ import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.support.LifecycleObjectSupport;
-import org.springframework.statemachine.support.StateMachineUtils;
-import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.Trigger;
 
 /**
@@ -352,17 +349,17 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 	@Override
 	protected void doStart() {
-//		if (submachine != null) {
-//			submachine.addStateListener(ddd);
-//		}
+		if (submachine != null) {
+			submachine.addStateListener(ddd);
+		}
 		armTriggers();
 	}
 
 	@Override
 	protected void doStop() {
-//		if (submachine != null) {
-//			submachine.removeStateListener(ddd);
-//		}
+		if (submachine != null) {
+			submachine.removeStateListener(ddd);
+		}
 		disarmTriggers();
 	}
 
