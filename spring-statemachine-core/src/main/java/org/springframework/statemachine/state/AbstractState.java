@@ -20,19 +20,26 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.action.ActionListener;
 import org.springframework.statemachine.action.CompositeActionListener;
+import org.springframework.statemachine.listener.StateMachineListener;
+import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.support.LifecycleObjectSupport;
+import org.springframework.statemachine.support.StateMachineUtils;
+import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.Trigger;
 
 /**
@@ -194,8 +201,34 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		return deferred.contains(event.getPayload());
 	}
 
+	private StateMachineListener<S, E> ddd = new StateMachineListenerAdapter<S, E>() {
+
+		@Override
+		public void stateContext(StateContext<S, E> stateContext) {
+			if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+				if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
+					log.debug("XXXXX " + submachine);
+					notifyStateOnComplete(stateContext);
+				}
+			}
+		}
+	};
+
+	private final List<StateMachineListener<S, E>> completionListeners = new ArrayList<>();
+
 	@Override
 	public void exit(StateContext<S, E> context) {
+
+		if (submachine != null) {
+			submachine.removeStateListener(ddd);
+		} else if (!regions.isEmpty()) {
+			for (Region<S, E> region : regions) {
+				for (StateMachineListener<S, E> l : completionListeners) {
+					region.removeStateListener(l);
+				}
+			}
+		}
+
 		cancelStateActions();
 		stateListener.onExit(context);
 		disarmTriggers();
@@ -203,6 +236,34 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 	@Override
 	public void entry(StateContext<S, E> context) {
+
+		if (submachine != null) {
+			submachine.addStateListener(ddd);
+		} else if (!regions.isEmpty()) {
+			for (final Region<S, E> region : regions) {
+				log.debug("RRRRRR1 " + region);
+				final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
+
+					@Override
+					public void stateContext(StateContext<S, E> stateContext) {
+						if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+							if (stateContext.getStateMachine() == region && region.isComplete()) {
+								log.debug("RRRRRR2 " + region);
+								completionListeners.remove(this);
+								region.removeStateListener(this);
+								log.debug("RRRRRR3 " + completionListeners.size());
+								if (completionListeners.isEmpty()) {
+									notifyStateOnComplete(stateContext);
+								}
+							}
+						}
+					}
+				};
+				completionListeners.add(l);
+				region.addStateListener(l);
+			}
+		}
+
 		stateListener.onEntry(context);
 		armTriggers();
 		scheduleStateActions(context);
@@ -288,13 +349,20 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
+
 	@Override
 	protected void doStart() {
+//		if (submachine != null) {
+//			submachine.addStateListener(ddd);
+//		}
 		armTriggers();
 	}
 
 	@Override
 	protected void doStop() {
+//		if (submachine != null) {
+//			submachine.removeStateListener(ddd);
+//		}
 		disarmTriggers();
 	}
 
@@ -373,11 +441,18 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	 * @param context the context
 	 */
 	protected void scheduleStateActions(StateContext<S, E> context) {
+		AtomicInteger completionCount = null;
+		if (isSimple()) {
+			completionCount = new AtomicInteger(stateActions.size());
+		}
 		for (Action<S, E> action : stateActions) {
-			ScheduledFuture<?> future = scheduleAction(action, context);
+			ScheduledFuture<?> future = scheduleAction(action, context, completionCount);
 			if (future != null) {
 				cancellableActions.add(future);
 			}
+		}
+		if (isSimple() && stateActions.size() == 0) {
+			notifyStateOnComplete(context);
 		}
 	}
 
@@ -404,9 +479,10 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	 *
 	 * @param action the action
 	 * @param context the context
+	 * @param completionCount the completion count tracker
 	 * @return the scheduled future
 	 */
-	protected ScheduledFuture<?> scheduleAction(final Action<S, E> action, final StateContext<S, E> context) {
+	protected ScheduledFuture<?> scheduleAction(final Action<S, E> action, final StateContext<S, E> context, final AtomicInteger completionCount) {
 		TaskScheduler taskScheduler = getTaskScheduler();
 		if (taskScheduler == null) {
 			log.error("Unable to schedule action as taskSchedule is not set, action=[" + action + "]");
@@ -417,9 +493,16 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			@Override
 			public void run() {
 				executeAction(action, context);
+				if (completionCount != null && completionCount.decrementAndGet() <= 0) {
+					notifyStateOnComplete(context);
+				}
 			}
 		}, new Date());
 		return future;
+	}
+
+	protected void notifyStateOnComplete(StateContext<S, E> context) {
+		stateListener.onComplete(context);
 	}
 
 	@Override

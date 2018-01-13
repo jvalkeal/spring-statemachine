@@ -46,6 +46,7 @@ import org.springframework.statemachine.StateMachineSystemConstants;
 import org.springframework.statemachine.state.JoinPseudoState;
 import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.transition.AbstractTransition;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionConflightPolicy;
 import org.springframework.statemachine.trigger.DefaultTriggerContext;
@@ -102,7 +103,9 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 
 	private final ReentrantLock lock = new ReentrantLock();
 
-	private final TransitionComparator<S, E> transitionComparator;;
+	private final TransitionComparator<S, E> transitionComparator;
+
+	private final TransitionConflightPolicy transitionConflightPolicy;
 
 	/**
 	 * Instantiates a new default state machine executor.
@@ -127,6 +130,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 		this.transitions = transitions;
 		this.initialTransition = initialTransition;
 		this.initialEvent = initialEvent;
+		this.transitionConflightPolicy = transitionConflightPolicy;
 		this.transitionComparator = new TransitionComparator<S, E>(transitionConflightPolicy);
 		// anonymous transitions are fixed, sort those now
 		this.triggerlessTransitions.sort(transitionComparator);
@@ -204,8 +208,13 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 	private final Set<State<S, E>> joinSyncStates = new HashSet<>();
 
 	private boolean handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage) {
+		return handleTriggerTrans(trans, queuedMessage, null);
+	}
+
+	private boolean handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage, State<S, E> completion) {
 		boolean transit = false;
 		for (Transition<S, E> t : trans) {
+			log.info("TTTTTT1 " + t);
 			if (t == null) {
 				continue;
 			}
@@ -215,11 +224,31 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			}
 			State<S,E> currentState = stateMachine.getState();
 			if (currentState == null) {
+				log.info("TTTTTT3 ");
 				continue;
 			}
 			if (!StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
+				log.info("TTTTTT4 ");
 				continue;
 			}
+
+//			if (completion != null && !source.getId().equals(completion.getId())) {
+//				log.info("TTTTTT5 ");
+//				continue;
+//			}
+			if (transitionConflightPolicy != TransitionConflightPolicy.PARENT && completion != null && !source.getId().equals(completion.getId())) {
+				log.info("TTTTTT5 " + source.getId() + " " + completion.getId());
+				if (source.isOrthogonal()) {
+					continue;
+				}
+				else if (!StateMachineUtils.isSubstate(source, completion)) {
+					log.info("TTTTTT6 " + source.getId() + " " + completion.getId());
+					continue;
+
+				}
+//				continue;
+			}
+			log.info("TTTTTT6 ");
 
 			// special handling of join
 			if (StateMachineUtils.isPseudoState(t.getTarget(), PseudoStateKind.JOIN)) {
@@ -231,6 +260,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 				boolean removed = joinSyncStates.remove(t.getSource());
 				boolean joincomplete = removed & joinSyncStates.isEmpty();
 				if (joincomplete) {
+					log.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWW1");
 					for (Transition<S, E> tt : joinSyncTransitions) {
 						StateContext<S, E> stateContext = buildStateContext(queuedMessage, tt, relayStateMachine);
 						tt.transit(stateContext);
@@ -429,13 +459,71 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 			trans.sort(transitionComparator);
 			handleTriggerTrans(trans, queuedMessage);
 		}
+//		if (stateMachine.getState() != null) {
+//			// loop triggerless transitions here so that
+//			// all "chained" transitions will get queue message
+//			boolean transit = false;
+//			do {
+//				transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
+//			} while (transit);
+//		}
+
+//		if (transitionConflightPolicy == TransitionConflightPolicy.PARENT) {
+//			if (stateMachine.getState() != null) {
+//				// loop triggerless transitions here so that
+//				// all "chained" transitions will get queue message
+//				boolean transit = false;
+//				do {
+//					transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
+//				} while (transit);
+//			}
+//		} else {
+//			List<Transition<S, E>> ttt = new ArrayList<>();
+//			for (Transition<S, E> tt : triggerlessTransitions) {
+//				if (((AbstractTransition<S, E>)tt).getGuard() != null) {
+//					ttt.add(tt);
+//				}
+//			}
+//
+//			if (stateMachine.getState() != null) {
+//				// loop triggerless transitions here so that
+//				// all "chained" transitions will get queue message
+//				boolean transit = false;
+//				do {
+//					transit = handleTriggerTrans(ttt, queuedMessage);
+//				} while (transit);
+//			}
+//		}
+
+		List<Transition<S, E>> ttt = new ArrayList<>();
+		for (Transition<S, E> tt : triggerlessTransitions) {
+			if (((AbstractTransition<S, E>)tt).getGuard() != null) {
+				ttt.add(tt);
+			}
+		}
+
 		if (stateMachine.getState() != null) {
 			// loop triggerless transitions here so that
 			// all "chained" transitions will get queue message
 			boolean transit = false;
 			do {
-				transit = handleTriggerTrans(triggerlessTransitions, queuedMessage);
+				transit = handleTriggerTrans(ttt, queuedMessage);
 			} while (transit);
+		}
+
+	}
+
+	@Override
+	public void xxx(StateContext<S, E> context, State<S, E> state) {
+		if (stateMachine.getState() != null) {
+
+//			boolean transit = false;
+//			do {
+//				handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
+//			} while (transit);
+
+
+			handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
 		}
 	}
 

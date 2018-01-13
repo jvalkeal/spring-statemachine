@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ public class JoinPseudoState<S, E> extends AbstractPseudoState<S, E> {
 				break;
 			}
 		}
+		log.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWW2");
 		return s;
 	}
 
@@ -112,31 +113,56 @@ public class JoinPseudoState<S, E> extends AbstractPseudoState<S, E> {
 			this.track = new ArrayList<State<S,E>>(joins);
 			for (State<S, E> tt : joins) {
 				final State<S, E> t = tt;
-				t.addStateListener(new StateListener<S, E>() {
+				t.addStateListener(new StateListenerAdapter<S, E>() {
 
 					@Override
 					public void onEntry(StateContext<S, E> context) {
-						if (context.getTransition() != null && StateMachineUtils
-								.isPseudoState(context.getTransition().getTarget(), PseudoStateKind.END)) {
-							if (!notified && track.size() > 0) {
-								track.remove(t);
-								if (track.size() == 0) {
-									notified = true;
-									notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
-								}
+//						if (context.getTransition() != null && StateMachineUtils
+//								.isPseudoState(context.getTransition().getTarget(), PseudoStateKind.END)) {
+//							if (!notified && track.size() > 0) {
+//								track.remove(t);
+//								if (track.size() == 0) {
+//									notified = true;
+//									notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+//								}
+//							}
+//						}
+					}
+
+					@Override
+					public void onComplete(StateContext<S, E> context) {
+						if (!notified && track.size() > 0) {
+							log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
+							track.remove(t);
+							if (track.size() == 0) {
+								notified = true;
+								log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
+								notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
 							}
 						}
+//						if (context.getTransition() != null && StateMachineUtils
+//								.isPseudoState(context.getTransition().getTarget(), PseudoStateKind.END)) {
+//							if (!notified && track.size() > 0) {
+//								track.remove(t);
+//								if (track.size() == 0) {
+//									notified = true;
+//									notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+//								}
+//							}
+//						}
 					}
 
 					@Override
 					public void onExit(StateContext<S, E> context) {
-						if (!notified && track.size() > 0) {
-							track.remove(t);
-							if (track.size() == 0) {
-								notified = true;
-								notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
-							}
-						}
+//						if (!notified && track.size() > 0) {
+//							log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE21 " + track.size());
+//							track.remove(t);
+//							if (track.size() == 0) {
+//								notified = true;
+//								log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE22");
+//								notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+//							}
+//						}
 					}
 				});
 			}

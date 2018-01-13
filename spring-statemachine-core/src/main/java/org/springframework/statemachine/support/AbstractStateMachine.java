@@ -49,6 +49,7 @@ import org.springframework.statemachine.state.PseudoStateContext;
 import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.state.PseudoStateListener;
 import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.state.StateListenerAdapter;
 import org.springframework.statemachine.support.StateMachineExecutor.StateMachineExecutorTransit;
 import org.springframework.statemachine.transition.InitialTransition;
 import org.springframework.statemachine.transition.Transition;
@@ -229,6 +230,32 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return sendEvent(MessageBuilder.withPayload(event).build());
 	}
 
+	public void ddd(StateMachine<S, E> stateMachine, StateContext<S, E> stateContext, State<S, E> state) {
+		log.info("DDD1 " + currentState);
+		this.stateMachineExecutor.xxx(stateContext, state);
+		if (currentState != null && currentState.isOrthogonal()) {
+			log.info("DDD2");
+			Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+			for (Region<S, E> region : regions) {
+//				((AbstractStateMachine<S, E>)region).getStateMachineExecutor().xxx(stateContext, state);
+				((AbstractStateMachine<S, E>)region).ddd(this, stateContext, state);
+			}
+		} else if (currentState != null && currentState.isSubmachineState()) {
+			StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+//			((AbstractStateMachine<S, E>)submachine).getStateMachineExecutor().xxx(stateContext, state);
+			((AbstractStateMachine<S, E>)submachine).ddd(this, stateContext, state);
+		}
+
+//		if (!currentState.isOrthogonal()) {
+//			this.stateMachineExecutor.xxx(stateContext);
+//		}
+//		else {
+//			((AbstractStateMachine<S, E>)stateMachine).getStateMachineExecutor().xxx(stateContext);
+//		}
+//		if (stateMachine == this) {
+//		}
+	}
+
 	@Override
 	protected void onInit() throws Exception {
 		super.onInit();
@@ -255,7 +282,23 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 		}
 
-		for (State<S, E> state : states) {
+		for (final State<S, E> state : states) {
+
+			state.addStateListener(new StateListenerAdapter<S, E>() {
+				public void onComplete(StateContext<S, E> context) {
+					log.info("ONCOMPLETE1 " + context);
+					log.info("ONCOMPLETE2 " + state);
+
+//					((AbstractStateMachine<S, E>)getRelayStateMachine()).getStateMachineExecutor().xxx(context, state);
+
+					((AbstractStateMachine<S, E>)getRelayStateMachine()).ddd(AbstractStateMachine.this, context, state);
+
+//					if (!currentState.isOrthogonal()) {
+//						((AbstractStateMachine<S, E>)getRelayStateMachine()).getStateMachineExecutor().xxx(context);
+//					}
+				};
+			});
+
 			if (state.isSubmachineState()) {
 				StateMachine<S, E> submachine = ((AbstractState<S, E>)state).getSubmachine();
 				submachine.addStateListener(new StateMachineListenerRelay());
