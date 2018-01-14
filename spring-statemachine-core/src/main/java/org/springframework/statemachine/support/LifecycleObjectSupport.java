@@ -133,7 +133,14 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 
 	@Override
 	public final void stop() {
-		this.lifecycleLock.lock();
+		if (!this.lifecycleLock.tryLock()) {
+			if (log.isDebugEnabled()) {
+				System.out.println("already stopping " + this);
+				log.debug("already stopping " + this);
+			}
+			return;
+		}
+//		this.lifecycleLock.lock();
 		try {
 			if (this.running) {
 				this.doStop();

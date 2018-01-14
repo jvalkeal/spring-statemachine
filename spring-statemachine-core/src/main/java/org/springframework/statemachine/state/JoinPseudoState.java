@@ -115,15 +115,30 @@ public class JoinPseudoState<S, E> extends AbstractPseudoState<S, E> {
 
 					@Override
 					public void onComplete(StateContext<S, E> context) {
-						if (!notified && track.size() > 0) {
-							log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
+						/*
+						*/
+						boolean xxx = false;
+						synchronized (track) {
+//							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
 							track.remove(t);
 							if (track.size() == 0) {
-								notified = true;
-								log.info("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
-								notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+								xxx = true;
 							}
 						}
+						if (xxx) {
+//							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
+							notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+						}
+
+//						if (!notified && track.size() > 0) {
+//							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
+//							track.remove(t);
+//							if (track.size() == 0) {
+//								notified = true;
+//								System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
+//								notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
+//							}
+//						}
 					}
 				});
 			}

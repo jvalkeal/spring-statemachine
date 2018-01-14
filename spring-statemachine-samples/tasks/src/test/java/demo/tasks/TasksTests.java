@@ -61,7 +61,7 @@ public class TasksTests {
 
 	@Test
 	public void testRunOnce() throws InterruptedException {
-		listener.reset(8, 0, 0);
+		listener.reset(9, 0, 0);
 		tasks.run();
 		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
@@ -71,7 +71,7 @@ public class TasksTests {
 
 	@Test
 	public void testRunTwice() throws InterruptedException {
-		listener.reset(8, 0, 0);
+		listener.reset(9, 0, 0);
 		tasks.run();
 		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
@@ -79,13 +79,24 @@ public class TasksTests {
 		Map<Object, Object> variables = machine.getExtendedState().getVariables();
 		assertThat(variables.size(), is(3));
 
-		listener.reset(8, 0, 0);
+		listener.reset(9, 0, 0);
 		tasks.run();
 		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
 
 		variables = machine.getExtendedState().getVariables();
 		assertThat(variables.size(), is(3));
+	}
+
+	@Test
+	public void testRunSmoke() throws InterruptedException {
+		for (int i = 0; i < 20; i++) {
+			listener.reset(9, 0, 0);
+			tasks.run();
+			assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+			System.out.println("DDD " + machine.getState().getIds());
+			assertThat(machine.getState().getIds(), contains(States.READY));
+		}
 	}
 
 	@Test

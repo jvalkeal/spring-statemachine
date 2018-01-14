@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public class ForkJoinEntryExitTests extends AbstractBuildTests {
 					.step()
 						.sendEvent("E3")
 						.expectStateEntered(2)
-						.expectStateExited(4)
+						.expectStateExited(5)
 						.expectStates("S3").and()
 					.build();
 		plan.test();
@@ -122,7 +122,7 @@ public class ForkJoinEntryExitTests extends AbstractBuildTests {
 					.step()
 						.sendEvent("E3")
 						.expectStateEntered(2)
-						.expectStateExited(4)
+						.expectStateExited(5)
 						.expectStates("S3").and()
 					.build();
 		plan.test();

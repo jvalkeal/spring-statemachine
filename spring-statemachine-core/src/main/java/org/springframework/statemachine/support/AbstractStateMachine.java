@@ -1030,7 +1030,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = state;
 			entryToState(state, message, transition, stateMachine);
-			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, state));
+			if (!StateMachineUtils.isPseudoState(state, PseudoStateKind.JOIN)) {
+				notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, state));
+			}
 			nonDeepStatePresent = true;
 			if (!isRunning() && !isComplete()) {
 				start();
@@ -1042,7 +1044,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = findDeep;
 			entryToState(findDeep, message, transition, stateMachine);
-			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+			if (!StateMachineUtils.isPseudoState(state, PseudoStateKind.JOIN)) {
+				notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+			}
 			if (!isRunning() && !isComplete()) {
 				start();
 			}
