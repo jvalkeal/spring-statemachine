@@ -225,6 +225,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 				}
 			}
 		}
+		completionListeners.clear();
 
 		cancelStateActions();
 		stateListener.onExit(context);

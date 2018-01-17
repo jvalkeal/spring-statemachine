@@ -136,6 +136,7 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		for (Action<S, E> action : getExitActions()) {
 			executeAction(action, context);
 		}
+//		super.exit(context);
 	}
 
 	@Override

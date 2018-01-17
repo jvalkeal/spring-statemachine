@@ -118,15 +118,17 @@ public class JoinPseudoState<S, E> extends AbstractPseudoState<S, E> {
 						/*
 						*/
 						boolean xxx = false;
+						System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE10 " + t.getId());
 						synchronized (track) {
-//							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
+							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE11 " + track.size());
 							track.remove(t);
 							if (track.size() == 0) {
 								xxx = true;
 							}
 						}
-						if (xxx) {
-//							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
+						if (!notified && xxx) {
+							System.out.println("JOIN COMPLETEEEEEEEEEEEEEEEEEEEE12");
+							notified = true;
 							notifyContext(new DefaultPseudoStateContext<S, E>(JoinPseudoState.this, PseudoAction.JOIN_COMPLETED));
 						}
 

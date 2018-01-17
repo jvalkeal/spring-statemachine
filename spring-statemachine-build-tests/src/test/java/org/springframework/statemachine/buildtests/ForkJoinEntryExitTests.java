@@ -92,7 +92,7 @@ public class ForkJoinEntryExitTests extends AbstractBuildTests {
 					.step()
 						.sendEvent("E3")
 						.expectStateEntered(2)
-						.expectStateExited(5)
+						.expectStateExited(4)
 						.expectStates("S3").and()
 					.build();
 		plan.test();
@@ -122,7 +122,7 @@ public class ForkJoinEntryExitTests extends AbstractBuildTests {
 					.step()
 						.sendEvent("E3")
 						.expectStateEntered(2)
-						.expectStateExited(5)
+						.expectStateExited(4)
 						.expectStates("S3").and()
 					.build();
 		plan.test();

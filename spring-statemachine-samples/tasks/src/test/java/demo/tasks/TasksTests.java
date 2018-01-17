@@ -38,6 +38,7 @@ import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
+import org.springframework.util.StringUtils;
 
 import demo.CommonConfiguration;
 import demo.tasks.Application.Events;
@@ -61,9 +62,10 @@ public class TasksTests {
 
 	@Test
 	public void testRunOnce() throws InterruptedException {
-		listener.reset(9, 0, 0);
+		listener.reset(8, 8, 0);
 		tasks.run();
-		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+//		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+		assertThat(listener.stateEnteredLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
 		Map<Object, Object> variables = machine.getExtendedState().getVariables();
 		assertThat(variables.size(), is(3));
@@ -71,17 +73,19 @@ public class TasksTests {
 
 	@Test
 	public void testRunTwice() throws InterruptedException {
-		listener.reset(9, 0, 0);
+		listener.reset(8, 8, 0);
 		tasks.run();
-		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+//		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+		assertThat(listener.stateEnteredLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
 
 		Map<Object, Object> variables = machine.getExtendedState().getVariables();
 		assertThat(variables.size(), is(3));
 
-		listener.reset(9, 0, 0);
+		listener.reset(8, 8, 0);
 		tasks.run();
-		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+//		assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+		assertThat(listener.stateEnteredLatch.await(8, TimeUnit.SECONDS), is(true));
 		assertThat(machine.getState().getIds(), contains(States.READY));
 
 		variables = machine.getExtendedState().getVariables();
@@ -90,12 +94,20 @@ public class TasksTests {
 
 	@Test
 	public void testRunSmoke() throws InterruptedException {
-		for (int i = 0; i < 20; i++) {
-			listener.reset(9, 0, 0);
+		for (int i = 0; i < 100; i++) {
+			System.out.println("SMOKE START");
+			listener.reset(8, 8, 0);
 			tasks.run();
-			assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
-			System.out.println("DDD " + machine.getState().getIds());
+//			assertThat(listener.stateChangedLatch.await(8, TimeUnit.SECONDS), is(true));
+
+//			assertThat(listener.stateEnteredLatch.await(8, TimeUnit.SECONDS), is(true));
+
+			boolean await = listener.stateEnteredLatch.await(8, TimeUnit.SECONDS);
+			String reason = "Machine was " + machine + " " + StringUtils.collectionToCommaDelimitedString(listener.statesEntered);
+			assertThat(reason , await, is(true));
+			System.out.println("DDD1 " + machine.getState().getIds());
 			assertThat(machine.getState().getIds(), contains(States.READY));
+			System.out.println("SMOKE STOP");
 		}
 	}
 
@@ -180,6 +192,7 @@ public class TasksTests {
 
 		@Override
 		public void stateChanged(State<States, Events> from, State<States, Events> to) {
+			System.out.println("DDD2 " + to.getId());
 			synchronized (lock) {
 				stateChangedCount++;
 				stateChangedLatch.countDown();
@@ -188,6 +201,7 @@ public class TasksTests {
 
 		@Override
 		public void stateEntered(State<States, Events> state) {
+			System.out.println("DDD22-2 " + state.getId());
 			synchronized (lock) {
 				statesEntered.add(state);
 				stateEnteredLatch.countDown();

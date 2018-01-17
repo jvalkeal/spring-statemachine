@@ -469,6 +469,7 @@ public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport im
 
 	@Override
 	public void xxx(StateContext<S, E> context, State<S, E> state) {
+		System.out.println("XXXXXXXXXXXXXXXX1");
 		if (stateMachine.getState() != null) {
 			handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
 		}
