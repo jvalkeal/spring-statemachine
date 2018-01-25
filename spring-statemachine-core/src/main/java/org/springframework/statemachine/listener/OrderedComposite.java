@@ -120,4 +120,9 @@ public class OrderedComposite<S> {
 		return result.iterator();
 	}
 
+	@Override
+	public String toString() {
+		return "OrderedComposite " + list.size();
+	}
+
 }

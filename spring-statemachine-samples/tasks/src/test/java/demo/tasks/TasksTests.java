@@ -94,7 +94,7 @@ public class TasksTests {
 
 	@Test
 	public void testRunSmoke() throws InterruptedException {
-		for (int i = 0; i < 200; i++) {
+		for (int i = 0; i < 1000; i++) {
 			System.out.println("SMOKE START " + i);
 			listener.reset(8, 8, 0);
 			tasks.run();
@@ -204,7 +204,7 @@ public class TasksTests {
 
 		@Override
 		public void stateEntered(State<States, Events> state) {
-			System.out.println("DDD22-5 " + state.getId());
+			System.out.println("DDD22-6 " + state.getId());
 			synchronized (lock) {
 				statesEntered.add(state);
 				stateEnteredLatch.countDown();

@@ -64,9 +64,10 @@ public class CompositeStateMachineListener<S, E> extends AbstractCompositeListen
 
 	@Override
 	public void stateEntered(State<S, E> state) {
+		System.out.println("DDD22-5 " + getListeners().toString());
 		for (Iterator<StateMachineListener<S, E>> iterator = getListeners().reverse(); iterator.hasNext();) {
 			StateMachineListener<S, E> listener = iterator.next();
-			System.out.println("DDD22-4 " + listener);
+			System.out.println("DDD22-5 " + listener);
 			try {
 				listener.stateEntered(state);
 			} catch (Throwable e) {
