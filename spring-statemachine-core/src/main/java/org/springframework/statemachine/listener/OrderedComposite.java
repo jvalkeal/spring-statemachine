@@ -66,7 +66,7 @@ public class OrderedComposite<S> {
 	 *
 	 * @param item item
 	 */
-	public void add(S item) {
+	public synchronized void add(S item) {
 		if (item instanceof Ordered) {
 			if (!ordered.contains(item)) {
 				ordered.add(item);
@@ -89,7 +89,7 @@ public class OrderedComposite<S> {
 	 *
 	 * @param item item
 	 */
-	public void remove(S item) {
+	public synchronized void remove(S item) {
 		ordered.remove(item);
 		unordered.remove(item);
 		Collections.sort(ordered, comparator);

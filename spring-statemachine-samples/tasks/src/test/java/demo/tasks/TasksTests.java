@@ -94,7 +94,7 @@ public class TasksTests {
 
 	@Test
 	public void testRunSmoke() throws InterruptedException {
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 200; i++) {
 			System.out.println("SMOKE START " + i);
 			listener.reset(8, 8, 0);
 			tasks.run();
@@ -104,6 +104,9 @@ public class TasksTests {
 
 			boolean await = listener.stateEnteredLatch.await(8, TimeUnit.SECONDS);
 			String reason = "Machine was " + machine + " " + StringUtils.collectionToCommaDelimitedString(listener.statesEntered);
+			if (!await) {
+				System.out.println("foobar");
+			}
 			assertThat(reason , await, is(true));
 			System.out.println("DDD1 " + machine.getState().getIds());
 			assertThat(machine.getState().getIds(), contains(States.READY));
@@ -201,7 +204,7 @@ public class TasksTests {
 
 		@Override
 		public void stateEntered(State<States, Events> state) {
-			System.out.println("DDD22-2 " + state.getId());
+			System.out.println("DDD22-5 " + state.getId());
 			synchronized (lock) {
 				statesEntered.add(state);
 				stateEnteredLatch.countDown();

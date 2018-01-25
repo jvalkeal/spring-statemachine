@@ -153,9 +153,11 @@ public abstract class StateMachineObjectSupport<S, E> extends LifecycleObjectSup
 	}
 
 	protected void notifyStateEntered(StateContext<S, E> stateContext) {
+		System.out.println("DDD22-2 " + stateContext.getTarget());
 		try {
 			stateMachineHandlerCallHelper.callOnStateEntry(getBeanName(), stateContext);
 			stateMachineHandlerCallHelper.callOnStateEntry(stateContext.getStateMachine().getId(), stateContext);
+			System.out.println("DDD22-3 " + stateContext.getTarget());
 			stateListener.stateEntered(stateContext.getTarget());
 			stateListener.stateContext(stateContext);
 			if (contextEventsEnabled) {

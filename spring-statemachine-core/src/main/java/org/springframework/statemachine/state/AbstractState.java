@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -211,7 +212,8 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	};
 
-	private final List<StateMachineListener<S, E>> completionListeners = new ArrayList<>();
+//	private final List<StateMachineListener<S, E>> completionListeners = new ArrayList<>();
+	private final List<StateMachineListener<S, E>> completionListeners = new CopyOnWriteArrayList<>();
 
 	@Override
 	public void exit(StateContext<S, E> context) {

@@ -39,6 +39,18 @@ public class CompositeStateMachineListener<S, E> extends AbstractCompositeListen
 	private final static Log log = LogFactory.getLog(CompositeStateMachineListener.class);
 
 	@Override
+	public void register(StateMachineListener<S, E> listener) {
+		System.out.println("DDD23-1 " + listener);
+		super.register(listener);
+	}
+
+	@Override
+	public void unregister(StateMachineListener<S, E> listener) {
+		System.out.println("DDD23-2 " + listener);
+		super.unregister(listener);
+	}
+
+	@Override
 	public void stateChanged(State<S, E> from, State<S, E> to) {
 		for (Iterator<StateMachineListener<S, E>> iterator = getListeners().reverse(); iterator.hasNext();) {
 			StateMachineListener<S, E> listener = iterator.next();
@@ -54,10 +66,11 @@ public class CompositeStateMachineListener<S, E> extends AbstractCompositeListen
 	public void stateEntered(State<S, E> state) {
 		for (Iterator<StateMachineListener<S, E>> iterator = getListeners().reverse(); iterator.hasNext();) {
 			StateMachineListener<S, E> listener = iterator.next();
+			System.out.println("DDD22-4 " + listener);
 			try {
 				listener.stateEntered(state);
 			} catch (Throwable e) {
-				log.warn("Error during stateEntered", e);
+				log.warn("Error during stateEntered, listener=[" + listener +"] state=[" + state + "]", e);
 			}
 		}
 	}

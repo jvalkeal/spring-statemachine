@@ -1036,7 +1036,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			System.out.println("OOOOOOOOOOOOOOO2-1 ");
 			if (exit) {
 				System.out.println("OOOOOOOOOOOOOOO2-2 ");
-				exitCurrentState(state, message, transition, stateMachine, sources, targets);
+
+				try {
+					exitCurrentState(state, message, transition, stateMachine, sources, targets);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+
+//				exitCurrentState(state, message, transition, stateMachine, sources, targets);
 			}
 			System.out.println("OOOOOOOOOOOOOOO2-3 ");
 			State<S, E> notifyFrom = currentState;
