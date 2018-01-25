@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import org.springframework.statemachine.state.PseudoStateContext;
 import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.state.PseudoStateListener;
 import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.state.StateListenerAdapter;
 import org.springframework.statemachine.support.StateMachineExecutor.StateMachineExecutorTransit;
 import org.springframework.statemachine.transition.InitialTransition;
 import org.springframework.statemachine.transition.Transition;
@@ -229,6 +230,22 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return sendEvent(MessageBuilder.withPayload(event).build());
 	}
 
+	public void ddd(StateMachine<S, E> stateMachine, StateContext<S, E> stateContext, State<S, E> state) {
+		System.out.println("DDDDDDDDDDDDDDDD1");
+		this.stateMachineExecutor.xxx(stateContext, state);
+		if (currentState != null && currentState.isOrthogonal()) {
+			Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+			for (Region<S, E> region : regions) {
+				System.out.println("DDDDDDDDDDDDDDDD2");
+				((AbstractStateMachine<S, E>)region).ddd(this, stateContext, state);
+			}
+		} else if (currentState != null && currentState.isSubmachineState()) {
+			StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+			System.out.println("DDDDDDDDDDDDDDDD3");
+			((AbstractStateMachine<S, E>)submachine).ddd(this, stateContext, state);
+		}
+	}
+
 	@Override
 	protected void onInit() throws Exception {
 		super.onInit();
@@ -255,7 +272,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 		}
 
-		for (State<S, E> state : states) {
+		for (final State<S, E> state : states) {
+
+			state.addStateListener(new StateListenerAdapter<S, E>() {
+				public void onComplete(StateContext<S, E> context) {
+					((AbstractStateMachine<S, E>)getRelayStateMachine()).ddd(AbstractStateMachine.this, context, state);
+				};
+			});
+
 			if (state.isSubmachineState()) {
 				StateMachine<S, E> submachine = ((AbstractState<S, E>)state).getSubmachine();
 				submachine.addStateListener(new StateMachineListenerRelay());
@@ -859,7 +883,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 
 		StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
+//		System.out.println("DDDDDDDDDDDDDDDD4" + state);
 		State<S,E> toState = followLinkedPseudoStates(state, stateContext);
+//		System.out.println("DDDDDDDDDDDDDDDD5" + toState);
 		PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
 		if (kind != null && (kind != PseudoStateKind.INITIAL && kind != PseudoStateKind.JOIN
 				&& kind != PseudoStateKind.FORK && kind != PseudoStateKind.END)) {
@@ -915,7 +941,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 						PseudoState<S, E> pseudoState = context.getPseudoState();
 						State<S, E> toStateOrig = findStateWithPseudoState(pseudoState);
 						StateContext<S, E> stateContext = buildStateContext(Stage.STATE_EXIT, null, null, getRelayStateMachine());
+						System.out.println("DDDDDDDDDDDDDDDD5" + toStateOrig);
 						State<S, E> toState = followLinkedPseudoStates(toStateOrig, stateContext);
+						System.out.println("DDDDDDDDDDDDDDDD6" + toState);
 						// TODO: try to find matching transition based on direct link.
 						// should make this built-in in pseudostates
 						Transition<S, E> transition = findTransition(toStateOrig, toState);
@@ -991,6 +1019,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	private void setCurrentStateInternal(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
 			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
+		System.out.println("OOOOOOOOOOOOOOO1 " + state);
 		State<S, E> findDeep = findDeepParent(state);
 		boolean isTargetSubOf = false;
 		if (transition != null) {
@@ -999,17 +1028,24 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				state = transition.getSource();
 			}
 		}
+		System.out.println("OOOOOOOOOOOOOOO2 " + states.contains(state) + " " + state);
 
 		boolean nonDeepStatePresent = false;
 
 		if (states.contains(state)) {
+			System.out.println("OOOOOOOOOOOOOOO2-1 ");
 			if (exit) {
+				System.out.println("OOOOOOOOOOOOOOO2-2 ");
 				exitCurrentState(state, message, transition, stateMachine, sources, targets);
 			}
+			System.out.println("OOOOOOOOOOOOOOO2-3 ");
 			State<S, E> notifyFrom = currentState;
 			currentState = state;
+			System.out.println("OOOOOOOOOOOOOOO3 " + state);
 			entryToState(state, message, transition, stateMachine);
-			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, state));
+			if (!StateMachineUtils.isPseudoState(state, PseudoStateKind.JOIN)) {
+				notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, state));
+			}
 			nonDeepStatePresent = true;
 			if (!isRunning() && !isComplete()) {
 				start();
@@ -1021,12 +1057,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = findDeep;
 			entryToState(findDeep, message, transition, stateMachine);
-			notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+			if (!StateMachineUtils.isPseudoState(state, PseudoStateKind.JOIN)) {
+				notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+			}
 			if (!isRunning() && !isComplete()) {
 				start();
 			}
 		}
 
+		System.out.println("OOOOOOOOOOOOOOO4 " + currentState);
 		if (currentState != null && !nonDeepStatePresent) {
 			if (findDeep != null) {
 				if (exit) {
@@ -1206,6 +1245,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (state == null) {
 			return;
 		}
+		log.debug("Trying Enter state=[" + state + "]");
 		if (log.isTraceEnabled()) {
 			log.trace("Trying Enter state=[" + state + "]");
 		}
@@ -1248,6 +1288,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		// with linked joins, we need to enter state but should not notify.
 		// state entries are needed to track join logic.
 		if (!StateMachineUtils.isPseudoState(state, PseudoStateKind.JOIN)) {
+			System.out.println("DDD22-1 " + state.getId());
 			notifyStateEntered(buildStateContext(Stage.STATE_ENTRY, message, transition, getRelayStateMachine(), null, state));
 		}
 		if (log.isDebugEnabled()) {

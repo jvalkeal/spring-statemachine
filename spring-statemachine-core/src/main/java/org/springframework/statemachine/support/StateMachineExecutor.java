@@ -21,6 +21,7 @@ import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.access.StateMachineAccess;
+import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.Trigger;
 
@@ -55,6 +56,8 @@ public interface StateMachineExecutor<S, E> {
 	 * @param message the message
 	 */
 	void queueDeferredEvent(Message<E> message);
+
+	void xxx(StateContext<S, E> context, State<S, E> state);
 
 	/**
 	 * Execute {@code StateMachineExecutor} logic.

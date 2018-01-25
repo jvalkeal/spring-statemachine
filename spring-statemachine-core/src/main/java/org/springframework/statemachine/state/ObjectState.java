@@ -153,7 +153,7 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 
 	@Override
 	public void entry(StateContext<S, E> context) {
-		super.entry(context);
+//		super.entry(context);
 		for (Action<S, E> action : getEntryActions()) {
 			try {
 				executeAction(action, context);
@@ -161,6 +161,7 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 				log.error("Action execution resulted error", e);
 			}
 		}
+		super.entry(context);
 	}
 
 	@Override

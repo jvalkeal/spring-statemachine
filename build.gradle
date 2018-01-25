@@ -66,6 +66,9 @@ configure(allprojects) {
 
 	test {
 		exclude '**/*IntegrationTests.*'
+//		testLogging {
+//			events "STARTED"
+//		}
 	}
 }
 
