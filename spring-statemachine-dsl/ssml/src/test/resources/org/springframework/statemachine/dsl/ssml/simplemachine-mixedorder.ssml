@@ -1,0 +1,24 @@
+# simple 3 state flat machine with states and transitions
+# defined in mixed order and no lexical problems.
+
+transition T1 {
+  source S1
+  target S2
+  event E1
+}
+
+state S2 {}
+
+transition T2 {
+  source S2
+  target S3
+  event E2
+}
+
+state S3 {
+  end
+}
+
+state S1 {
+  initial
+}

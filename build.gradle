@@ -13,6 +13,7 @@ buildscript {
 		eclipseEmfEcoreVersion = '2.11.1-v20150805-0538'
 		eclipseUml2UmlVersion = '5.0.0-v20140602-0749'
 		curatorVersion = '2.11.1'
+		antlr4Version = '4.7.1'
 	}
 	repositories {
 		maven { url 'http://repo.springsource.org/libs-release'}
@@ -100,6 +101,8 @@ configure(allprojects) {
 			dependency "org.eclipse.emf:org.eclipse.emf.common:$eclipseEmfCommonVersion"
 			dependency "org.apache.curator:curator-recipes:$curatorVersion"
 			dependency "org.apache.curator:curator-test:$curatorVersion"
+			dependency "org.antlr:antlr4:$antlr4Version"
+			dependency "org.antlr:antlr4-runtime:$antlr4Version"
 		}
 	}
 
@@ -362,6 +365,17 @@ project('spring-statemachine-build-tests') {
 		testCompile "com.h2database:h2"
 		testCompile "org.springframework.boot:spring-boot-starter"
 		testCompile "org.springframework:spring-test"
+		testCompile "org.hamcrest:hamcrest-core"
+		testCompile "org.hamcrest:hamcrest-library"
+		testCompile "junit:junit"
+	}
+}
+
+project('spring-statemachine-dsl-common') {
+	apply plugin: 'antlr'
+
+	dependencies {
+		compile project(":spring-statemachine-core")
 		testCompile "org.hamcrest:hamcrest-core"
 		testCompile "org.hamcrest:hamcrest-library"
 		testCompile "junit:junit"
