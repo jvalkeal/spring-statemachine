@@ -32,6 +32,12 @@ public class DslStateMachineModelFactory implements StateMachineModelFactory<Str
 	private final Resource resource;
 	private final DslParser<StateMachineModel<String, String>> dslParser;
 
+	/**
+	 * Instantiate a dsl state machine factory.
+	 *
+	 * @param resource the resource to parse
+	 * @param dslParser the dsl parser to use
+	 */
 	public DslStateMachineModelFactory(Resource resource, DslParser<StateMachineModel<String, String>> dslParser) {
 		Assert.notNull(resource, "Resource must be set");
 		Assert.notNull(dslParser, "DslParser must be set");

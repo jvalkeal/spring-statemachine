@@ -33,6 +33,12 @@ import org.springframework.statemachine.config.builders.StateMachineModelConfigu
 import org.springframework.statemachine.config.model.StateMachineModelFactory;
 import org.springframework.statemachine.dsl.DslStateMachineModelFactory;
 
+/**
+ * {@link StateMachineModelFactory} tests using {@link SsmlDslParser}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class StateMachineModelFactoryTests {
 
 	protected AnnotationConfigApplicationContext context;

@@ -18,7 +18,7 @@ package org.springframework.statemachine.dsl;
 import org.springframework.core.io.Resource;
 
 /**
- * Interface for a parser able to parse an a content into a dsl result.
+ * Interface for a parser able to parse a content into a {@link DslParserResult}.
  *
  * @author Janne Valkealahti
  *

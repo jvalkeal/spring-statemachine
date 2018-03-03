@@ -17,12 +17,32 @@ package org.springframework.statemachine.dsl;
 
 import java.util.List;
 
+/**
+ *
+ * @author Janne Valkealahti
+ *
+ * @param <T> the type of a model
+ */
 public interface DslParserResult<T> {
-	
+
+	/**
+	 * Get the parsed model.
+	 *
+	 * @return the parsed model
+	 */
 	T getModel();
-	
+
+	/**
+	 * Convenience method checking if parsing resulted any errors.
+	 *
+	 * @return {@code true} if parsing resulted errors
+	 */
 	boolean hasErrors();
-	
+
+	/**
+	 * Gets parsing errors.
+	 *
+	 * @return the parsing errors
+	 */
 	List<DslParserResultError> getErrors();
-	
 }

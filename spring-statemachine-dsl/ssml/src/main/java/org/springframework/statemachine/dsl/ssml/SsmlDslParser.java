@@ -155,8 +155,10 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 				Token idToken = parameterContext.id().ID().getSymbol();
 				if (parameterContext.type().SOURCE() != null) {
 					source = parameterContext.id().getText();
+					if (!stateVisitor.getSeenStates().contains(source)) {
+						errors.add(new SsmlTransitionSourceStateDslParserResultError(idToken));
+					}
 				} else if (parameterContext.type().TARGET() != null) {
-
 					target = parameterContext.id().getText();
 					if (!stateVisitor.getSeenStates().contains(target)) {
 						errors.add(new SsmlTransitionTargetStateDslParserResultError(idToken));
