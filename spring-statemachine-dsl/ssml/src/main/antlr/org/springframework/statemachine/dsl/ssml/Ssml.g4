@@ -12,12 +12,9 @@ transition      :   TRANSITION id? '{' parameters '}' ;
 parameters      :   ( parameter ';'? )* ;
 parameter       :   type id? ;
 type            :   INITIAL | END | SOURCE | TARGET | EVENT ;
-id              :   ID
-                |   STRING
-                |   NUMBER
-                ;
+id              :   ID | STRING | NUMBER ;
 
-// The keywords state and transition are case-independent
+// The keywords are case-independent
 STATE           :   [Ss][Tt][Aa][Tt][Ee] ;
 TRANSITION      :   [Tt][Rr][Aa][Nn][Ss][Ii][Tt][Ii][Oo][Nn] ;
 INITIAL         :   [Ii][Nn][Ii][Tt][Ii][Aa][Ll] ;
