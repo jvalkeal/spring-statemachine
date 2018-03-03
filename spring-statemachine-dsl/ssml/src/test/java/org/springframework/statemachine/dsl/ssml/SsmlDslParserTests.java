@@ -119,4 +119,23 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.getErrors().get(0).getPosition(), is(0));
 	}
 
+	@Test
+	public void testSimpleMachineOneliner() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-oneliner.ssml");
+
+		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+		assertThat(dslParserResult, notNullValue());
+		assertThat(dslParserResult.getModel(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(0));
+		assertThat(dslParserResult.hasErrors(), is(false));
+	}
 }

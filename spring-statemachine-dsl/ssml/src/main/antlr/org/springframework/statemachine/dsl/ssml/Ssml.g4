@@ -6,7 +6,7 @@ package org.springframework.statemachine.dsl.ssml;
 
 machine         :   objectList EOF ;
 objectList      :   ( state | transition )* ;
-state           :   STATE id? '{' parameters '}' ;
+state           :   STATE id '{' parameters '}' ;
 transition      :   TRANSITION id? '{' parameters '}' ;
 
 parameters      :   ( parameter ';'? )* ;
