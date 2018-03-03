@@ -21,10 +21,17 @@ import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.DslParserResult;
 import org.springframework.statemachine.dsl.DslParserResultError;
 
+/**
+ * A generic {@link DslParserResult} acting as a simple pass through for given
+ * {@link StateMachineModel} and {@link DslParserResultError}s.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlDslParserResult implements DslParserResult<StateMachineModel<String, String>> {
 
-	private StateMachineModel<String, String> model;
-	private List<DslParserResultError> errors;
+	private final StateMachineModel<String, String> model;
+	private final List<DslParserResultError> errors;
 
 	public SsmlDslParserResult(StateMachineModel<String, String> model, List<DslParserResultError> errors) {
 		this.model = model;

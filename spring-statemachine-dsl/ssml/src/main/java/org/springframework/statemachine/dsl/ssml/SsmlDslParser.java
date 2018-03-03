@@ -18,22 +18,28 @@ package org.springframework.statemachine.dsl.ssml;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.springframework.core.io.Resource;
-import org.springframework.statemachine.StateMachineException;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.StatesData;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.config.model.TransitionsData;
+import org.springframework.statemachine.dsl.DslException;
 import org.springframework.statemachine.dsl.DslParser;
 import org.springframework.statemachine.dsl.DslParserResult;
 import org.springframework.statemachine.dsl.DslParserResultError;
@@ -57,29 +63,40 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 		try {
 			content = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
 		} catch (IOException e) {
-			throw new StateMachineException(e);
+			throw new DslException(e);
 		}
 		CharStream antlrInputStream = CharStreams.fromString(content);
 		SsmlLexer lexer = new SsmlLexer(antlrInputStream);
 		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+
+		ArrayList<DslParserResultError> errors = new ArrayList<>();
+
 		SsmlParser parser = new SsmlParser(tokenStream);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
+		parser.removeErrorListeners();
+		parser.addErrorListener(new ErrorListener(errors));
+
 		ParseTree tree = parser.machine();
 
-		StateMachineVisitor stateMachineVisitor = new StateMachineVisitor();
+		StateMachineVisitor stateMachineVisitor = new StateMachineVisitor(errors);
 
 		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
 
-		ArrayList<DslParserResultError> errors = new ArrayList<>();
 		return new SsmlDslParserResult(model, errors);
 	}
 
 	private static class StateMachineVisitor extends SsmlBaseVisitor<StateMachineModel<String, String>> {
 
+		private final List<DslParserResultError> errors;
+
+		public StateMachineVisitor(List<DslParserResultError> errors) {
+			this.errors = errors;
+		}
+
 		@Override
 		public StateMachineModel<String, String> visitMachine(MachineContext ctx) {
 			StateVisitor stateVisitor = new StateVisitor();
-			TransitionVisitor transitionVisitor = new TransitionVisitor();
+			TransitionVisitor transitionVisitor = new TransitionVisitor(errors, stateVisitor);
 
 			List<StateData<String, String>> stateDatas = ctx.objectList().state().stream()
 				.map(stateContext -> stateContext.accept(stateVisitor))
@@ -91,14 +108,17 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 
 			return new DefaultStateMachineModel<>(null, new StatesData<>(stateDatas), new TransitionsData<>(transitionDatas));
 		}
-
 	}
 
 	private static class StateVisitor extends SsmlBaseVisitor<StateData<String, String>> {
 
+		private final Set<String> seenStates = new HashSet<>();
+
 		@Override
 		public StateData<String, String> visitState(StateContext ctx) {
-			StateData<String, String> stateData = new StateData<>(ctx.id().getText());
+			String state = ctx.id().getText();
+			seenStates.add(state);
+			StateData<String, String> stateData = new StateData<>(state);
 
 			for (ParameterContext parameterContext : ctx.parameters().parameter()) {
 				if (parameterContext.type().INITIAL() != null) {
@@ -111,9 +131,20 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 			return stateData;
 		}
 
+		public Set<String> getSeenStates() {
+			return seenStates;
+		}
 	}
 
 	private static class TransitionVisitor extends SsmlBaseVisitor<TransitionData<String, String>> {
+
+		private final List<DslParserResultError> errors;
+		private final StateVisitor stateVisitor;
+
+		public TransitionVisitor(List<DslParserResultError> errors, StateVisitor stateVisitor) {
+			this.errors = errors;
+			this.stateVisitor = stateVisitor;
+		}
 
 		@Override
 		public TransitionData<String, String> visitTransition(TransitionContext ctx) {
@@ -121,10 +152,15 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 			String target = null;
 			String event = null;
 			for (ParameterContext parameterContext : ctx.parameters().parameter()) {
+				Token idToken = parameterContext.id().ID().getSymbol();
 				if (parameterContext.type().SOURCE() != null) {
 					source = parameterContext.id().getText();
 				} else if (parameterContext.type().TARGET() != null) {
+
 					target = parameterContext.id().getText();
+					if (!stateVisitor.getSeenStates().contains(target)) {
+						errors.add(new SsmlTransitionTargetStateDslParserResultError(idToken));
+					}
 				} else if (parameterContext.type().EVENT() != null) {
 					event = parameterContext.id().getText();
 				}
@@ -132,6 +168,20 @@ public class SsmlDslParser implements DslParser<StateMachineModel<String, String
 			TransitionData<String, String> transitionData = new TransitionData<String, String>(source, target, event);
 			return transitionData;
 		}
+	}
 
+	private static class ErrorListener extends BaseErrorListener {
+
+		private final List<DslParserResultError> errors;
+
+		public ErrorListener(List<DslParserResultError> errors) {
+			this.errors = errors;
+		}
+
+		@Override
+		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
+				String msg, RecognitionException e) {
+			errors.add(new SsmlGenericDslParserResultError(msg, line, charPositionInLine));
+		}
 	}
 }

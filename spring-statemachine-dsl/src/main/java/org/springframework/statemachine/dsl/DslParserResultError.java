@@ -15,6 +15,33 @@
  */
 package org.springframework.statemachine.dsl;
 
+/**
+ * {@code DslParserResultError} represents errors, warnings and other
+ * ambiguities from a parsing operation.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public interface DslParserResultError {
-	
+
+	/**
+	 * Gets the message related to an error.
+	 *
+	 * @return the message related to an error
+	 */
+	String getMessage();
+
+	/**
+	 * Gets the line in dsl for this error.
+	 *
+	 * @return the line in dsl for this error
+	 */
+	int getLine();
+
+	/**
+	 * Gets the position in line in dsl for this error.
+	 *
+	 * @return the position in line in dsl for this error
+	 */
+	int getPosition();
 }

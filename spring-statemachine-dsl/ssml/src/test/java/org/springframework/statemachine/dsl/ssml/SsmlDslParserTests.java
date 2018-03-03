@@ -72,4 +72,51 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.getErrors().size(), is(0));
 		assertThat(dslParserResult.hasErrors(), is(false));
 	}
+
+	@Test
+	public void testSimpleMachineErrorWrongState() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-error-wrongstate.ssml");
+
+		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+		assertThat(dslParserResult, notNullValue());
+		assertThat(dslParserResult.getModel(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(1));
+		assertThat(dslParserResult.hasErrors(), is(true));
+		assertThat(dslParserResult.getErrors().get(0).getMessage(), is("undefined state 'S4' referenced in transition target"));
+		assertThat(dslParserResult.getErrors().get(0).getLine(), is(22));
+		assertThat(dslParserResult.getErrors().get(0).getPosition(), is(9));
+	}
+
+	@Test
+	public void testSimpleMachineErrorLexical() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-error-lexical.ssml");
+
+		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+		assertThat(dslParserResult, notNullValue());
+		assertThat(dslParserResult.getModel(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(1));
+		assertThat(dslParserResult.hasErrors(), is(true));
+		assertThat(dslParserResult.getErrors().get(0).getMessage(), is("missing '}' at 'state'"));
+		assertThat(dslParserResult.getErrors().get(0).getLine(), is(7));
+		assertThat(dslParserResult.getErrors().get(0).getPosition(), is(0));
+	}
+
 }

@@ -20,6 +20,13 @@ import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.StateMachineModelFactory;
 import org.springframework.util.Assert;
 
+/**
+ * A {@link StateMachineModelFactory} which uses expected contract with
+ * {@link DslParser} to build {@link StateMachineModel}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class DslStateMachineModelFactory implements StateMachineModelFactory<String, String> {
 
 	private final Resource resource;
