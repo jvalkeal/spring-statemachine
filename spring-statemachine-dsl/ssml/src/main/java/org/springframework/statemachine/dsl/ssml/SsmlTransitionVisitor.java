@@ -22,8 +22,8 @@ import org.antlr.v4.runtime.Token;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.dsl.DslParserResultError;
-import org.springframework.statemachine.dsl.ssml.SsmlParser.ParameterContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionParameterContext;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
@@ -56,21 +56,21 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 		S target = null;
 		E event = null;
 		Guard<S, E> guard = null;
-		for (ParameterContext parameterContext : ctx.parameters().parameter()) {
+		for (TransitionParameterContext parameterContext : ctx.transitionParameters().transitionParameter()) {
 			Token idToken = parameterContext.id().ID().getSymbol();
-			if (parameterContext.type().SOURCE() != null) {
+			if (parameterContext.transitionType().SOURCE() != null) {
 				source = (S) parameterContext.id().getText();
 				if (!stateVisitor.getSeenStates().contains(source)) {
 					errors.add(new SsmlTransitionSourceStateDslParserResultError(idToken));
 				}
-			} else if (parameterContext.type().TARGET() != null) {
+			} else if (parameterContext.transitionType().TARGET() != null) {
 				target = (S) parameterContext.id().getText();
 				if (!stateVisitor.getSeenStates().contains(target)) {
 					errors.add(new SsmlTransitionTargetStateDslParserResultError(idToken));
 				}
-			} else if (parameterContext.type().EVENT() != null) {
+			} else if (parameterContext.transitionType().EVENT() != null) {
 				event = (E) parameterContext.id().getText();
-			} else if (parameterContext.type().GUARD() != null) {
+			} else if (parameterContext.transitionType().GUARD() != null) {
 				guard = guards.get(parameterContext.id().getText());
 			}
 		}

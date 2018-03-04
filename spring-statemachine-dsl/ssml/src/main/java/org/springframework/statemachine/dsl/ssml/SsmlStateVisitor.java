@@ -24,8 +24,8 @@ import java.util.Set;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
-import org.springframework.statemachine.dsl.ssml.SsmlParser.ParameterContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.StateParameterContext;
 import org.springframework.statemachine.state.State;
 
 /**
@@ -53,12 +53,12 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 		StateData<S, E> stateData = new StateData<>(state);
 		List<Action<S, E>> exitActions = new ArrayList<>();
 
-		for (ParameterContext parameterContext : ctx.parameters().parameter()) {
-			if (parameterContext.type().INITIAL() != null) {
+		for (StateParameterContext parameterContext : ctx.stateParameters().stateParameter()) {
+			if (parameterContext.stateType().INITIAL() != null) {
 				stateData.setInitial(true);
-			} else if (parameterContext.type().END() != null) {
+			} else if (parameterContext.stateType().END() != null) {
 				stateData.setEnd(true);
-			} else if (parameterContext.type().EXIT() != null) {
+			} else if (parameterContext.stateType().EXIT() != null) {
 				Action<S, E> action = actions.get(parameterContext.id().getText());
 				if (action != null) {
 					exitActions.add(action);

@@ -19,7 +19,7 @@ import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlActionVisitor.SsmlActionResult;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
-import org.springframework.statemachine.dsl.ssml.SsmlParser.ParameterContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionParameterContext;
 
 /**
  * {@code Visitor} visiting {@link Action} definitions.
@@ -40,8 +40,8 @@ class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionRe
 		String action = ctx.id().getText();
 
 		String bean = null;
-		for (ParameterContext parameterContext : ctx.parameters().parameter()) {
-			if (parameterContext.type().BEAN() != null) {
+		for (ActionParameterContext parameterContext : ctx.actionParameters().actionParameter()) {
+			if (parameterContext.actionType().BEAN() != null) {
 				bean = parameterContext.id().getText();
 			}
 		}

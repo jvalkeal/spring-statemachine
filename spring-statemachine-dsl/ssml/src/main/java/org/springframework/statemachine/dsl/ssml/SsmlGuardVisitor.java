@@ -18,7 +18,7 @@ package org.springframework.statemachine.dsl.ssml;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlGuardVisitor.SsmlGuardResult;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
-import org.springframework.statemachine.dsl.ssml.SsmlParser.ParameterContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardParameterContext;
 import org.springframework.statemachine.guard.Guard;
 
 /**
@@ -40,8 +40,8 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 		String guard = ctx.id().getText();
 
 		String bean = null;
-		for (ParameterContext parameterContext : ctx.parameters().parameter()) {
-			if (parameterContext.type().BEAN() != null) {
+		for (GuardParameterContext parameterContext : ctx.guardParameters().guardParameter()) {
+			if (parameterContext.guardType().BEAN() != null) {
 				bean = parameterContext.id().getText();
 			}
 		}
