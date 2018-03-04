@@ -17,6 +17,7 @@ package org.springframework.statemachine.dsl.ssml;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -26,10 +27,13 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
+import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.dsl.DslParserResult;
+import org.springframework.statemachine.guard.Guard;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -43,8 +47,9 @@ public class SsmlDslParserTests {
 	@Test
 	public void testSimpleMachineNormal() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-normal.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
 
-		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
 		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
 
 		assertThat(dslParserResult.getErrors(), notNullValue());
@@ -57,8 +62,9 @@ public class SsmlDslParserTests {
 	@Test
 	public void testSimpleMachineMixedorder() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-mixedorder.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
 
-		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
 		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
 
 		assertThat(dslParserResult.getErrors(), notNullValue());
@@ -71,8 +77,9 @@ public class SsmlDslParserTests {
 	@Test
 	public void testSimpleMachineErrorWrongState() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-error-wrongstate.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
 
-		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
 		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
 
 		assertThat(dslParserResult.getErrors(), notNullValue());
@@ -86,8 +93,9 @@ public class SsmlDslParserTests {
 	@Test
 	public void testSimpleMachineErrorLexical() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-error-lexical.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
 
-		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
 		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
 
 		assertThat(dslParserResult.getErrors(), notNullValue());
@@ -103,8 +111,9 @@ public class SsmlDslParserTests {
 	@Test
 	public void testSimpleMachineOneliner() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-oneliner.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
 
-		SsmlDslParser ssmlDslParser = new SsmlDslParser();
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
 		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
 
 		assertThat(dslParserResult.getErrors(), notNullValue());
@@ -112,6 +121,21 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.hasErrors(), is(false));
 
 		assertSimpleMachineModel(dslParserResult);
+	}
+
+	@Test
+	public void testActionGuardMachineNormal() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/actionguardmachine-normal.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
+
+		SsmlDslParser ssmlDslParser = new SsmlDslParser(resolver);
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(0));
+		assertThat(dslParserResult.hasErrors(), is(false));
+
+		assertActionGuardMachineModel(dslParserResult);
 	}
 
 	private static void assertSimpleMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
@@ -130,7 +154,6 @@ public class SsmlDslParserTests {
 
 		assertThat(stateData.stream().map(sd -> sd.getState()).collect(Collectors.toList()),
 				containsInAnyOrder("S1", "S2", "S3"));
-
 
 		assertThat(transitions.stream().map(t -> t.getSource() + t.getTarget()).collect(Collectors.toList()),
 				containsInAnyOrder("S1S2", "S2S3"));
@@ -158,5 +181,56 @@ public class SsmlDslParserTests {
 				assertThat(t.getEvent(), is("E2"));
 			}
 		});
+	}
+
+	private static void assertActionGuardMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
+		assertThat(dslParserResult, notNullValue());
+		assertThat(dslParserResult.getModel(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
+
+		Collection<StateData<String, String>> stateData = dslParserResult.getModel().getStatesData().getStateData();
+		Collection<TransitionData<String, String>> transitions = dslParserResult.getModel().getTransitionsData()
+				.getTransitions();
+
+		stateData.stream().forEach(sd -> {
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S1")) {
+				assertThat(sd.getExitActions(), notNullValue());
+				assertThat(sd.getExitActions().size(), is(1));
+			}
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S2")) {
+			}
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S3")) {
+			}
+		});
+
+		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+
+		transitions.stream().forEach(t -> {
+			if (ObjectUtils.nullSafeEquals(t.getSource(), "S1")) {
+				assertThat(t.getEvent(), is("E1"));
+				assertThat(t.getGuard(), nullValue());
+			}
+			if (ObjectUtils.nullSafeEquals(t.getSource(), "S2")) {
+				assertThat(t.getEvent(), is("E2"));
+				assertThat(t.getGuard(), notNullValue());
+			}
+		});
+	}
+
+	private static class MockStateMachineComponentResolver implements StateMachineComponentResolver<String, String> {
+
+		@Override
+		public Action<String, String> resolveAction(String id) {
+			return (ctx) -> {};
+		}
+
+		@Override
+		public Guard<String, String> resolveGuard(String id) {
+			return (ctx) -> true;
+		}
 	}
 }

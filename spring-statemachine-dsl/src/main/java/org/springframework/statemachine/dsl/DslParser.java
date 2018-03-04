@@ -16,6 +16,7 @@
 package org.springframework.statemachine.dsl;
 
 import org.springframework.core.io.Resource;
+import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 
 /**
  * Interface for a parser able to parse a content into a {@link DslParserResult}.
@@ -33,4 +34,11 @@ public interface DslParser<T> {
 	 * @return the parsed {@code DslParserResult}
 	 */
 	DslParserResult<T> parse(Resource resource);
+
+	/**
+	 * Sets the {@link StateMachineComponentResolver} for this parser.
+	 *
+	 * @param resolver the state machine component resorver
+	 */
+	void setStateMachineComponentResolver(StateMachineComponentResolver<String, String> resolver);
 }

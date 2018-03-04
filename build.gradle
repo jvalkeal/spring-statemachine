@@ -376,6 +376,7 @@ project('spring-statemachine-dsl-common') {
 
 	dependencies {
 		compile project(":spring-statemachine-core")
+		compile "org.springframework:spring-context"
 		testCompile "org.hamcrest:hamcrest-core"
 		testCompile "org.hamcrest:hamcrest-library"
 		testCompile "junit:junit"

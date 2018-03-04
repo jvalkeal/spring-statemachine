@@ -5,23 +5,32 @@ package org.springframework.statemachine.dsl.ssml;
 }
 
 machine         :   objectList EOF ;
-objectList      :   ( state | transition )* ;
+objectList      :   ( state | transition | action | guard )* ;
 state           :   STATE id '{' parameters '}' ;
 transition      :   TRANSITION id? '{' parameters '}' ;
+action          :   ACTION id '{' parameters '}' ;
+guard           :   GUARD id '{' parameters '}' ;
 
 parameters      :   ( parameter ';'? )* ;
 parameter       :   type id? ;
-type            :   INITIAL | END | SOURCE | TARGET | EVENT ;
+type            :   INITIAL | END | SOURCE | TARGET | EVENT | EXIT | DO | ENTRY | ACTION | GUARD | BEAN ;
 id              :   ID | STRING | NUMBER ;
 
 // The keywords are case-independent
 STATE           :   [Ss][Tt][Aa][Tt][Ee] ;
 TRANSITION      :   [Tt][Rr][Aa][Nn][Ss][Ii][Tt][Ii][Oo][Nn] ;
+ACTION          :   [Aa][Cc][Tt][Ii][Oo][Nn] ;
+GUARD           :   [Gg][Uu][Aa][Rr][Dd] ;
 INITIAL         :   [Ii][Nn][Ii][Tt][Ii][Aa][Ll] ;
 END             :   [Ee][Nn][Dd] ;
 SOURCE          :   [Ss][Oo][Uu][Rr][Cc][Ee] ;
 TARGET          :   [Tt][Aa][Rr][Gg][Ee][Tt] ;
 EVENT           :   [Ee][Vv][Ee][Nn][Tt] ;
+
+ENTRY           :   [Ee][Nn][Tt][Rr][Yy] ;
+EXIT            :   [Ee][Xx][Ii][Tt] ;
+DO              :   [Dd][Oo] ;
+BEAN            :   [Bb][Ee][Aa][Nn] ;
 
 // a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? )
 NUMBER          :   '-'? ('.' DIGIT+ | DIGIT+ ('.' DIGIT*)? ) ;
