@@ -1,13 +1,13 @@
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.antlr.assist;
 
 import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.atn.Transition;
 
-public class TransitionWrapper {
+public class TransitionHolder {
     private final ATNState source;
     private final Transition transition;
 
-    public TransitionWrapper(ATNState source, Transition transition) {
+    public TransitionHolder(ATNState source, Transition transition) {
         super();
         this.source = source;
         this.transition = transition;
@@ -30,7 +30,7 @@ public class TransitionWrapper {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        TransitionWrapper other = (TransitionWrapper) obj;
+        TransitionHolder other = (TransitionHolder) obj;
         if (source == null) {
             if (other.source != null)
                 return false;
@@ -48,6 +48,4 @@ public class TransitionWrapper {
     public String toString() {
         return transition.getClass().getSimpleName() + " from " + source + " to " + transition.target;
     }
-
-
 }

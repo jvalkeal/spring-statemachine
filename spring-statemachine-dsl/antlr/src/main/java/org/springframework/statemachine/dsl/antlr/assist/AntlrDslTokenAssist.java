@@ -1,11 +1,10 @@
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.antlr.assist;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.atn.ATNState;
@@ -18,27 +17,26 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Given an ATN state and the lexer ATN, suggests auto-completion texts.
  */
-class TokenSuggester {
-	private static final Log logger = LogFactory.getLog(TokenSuggester.class);
+class AntlrDslTokenAssist {
 
+	private static final Log log = LogFactory.getLog(AntlrDslTokenAssist.class);
     private final Lexer lexer;
     private final CasePreference casePreference;
-
     private final Set<String> suggestions = new TreeSet<String>();
     private final List<Integer> visitedLexerStates = new ArrayList<>();
     private String origPartialToken;
 
-    public TokenSuggester(Lexer lexer) {
+    public AntlrDslTokenAssist(Lexer lexer) {
         this(lexer, CasePreference.BOTH);
     }
 
-    public TokenSuggester(Lexer lexer, CasePreference casePreference) {
+    public AntlrDslTokenAssist(Lexer lexer, CasePreference casePreference) {
         this.lexer = lexer;
         this.casePreference = casePreference;
     }
 
     public Collection<String> suggest(Collection<Integer> nextParserTransitionLabels, String remainingText) {
-        logTokensUsedForSuggestion(nextParserTransitionLabels);
+//        logTokensUsedForSuggestion(nextParserTransitionLabels);
         this.origPartialToken = remainingText;
         for (int nextParserTransitionLabel : nextParserTransitionLabels) {
             int nextTokenRuleNumber = nextParserTransitionLabel - 1; // Count from 0 not from 1
@@ -48,20 +46,20 @@ class TokenSuggester {
         return suggestions;
     }
 
-    private void logTokensUsedForSuggestion(Collection<Integer> ruleIndices) {
-        if (!logger.isDebugEnabled()) {
-            return;
-        }
+//    private void logTokensUsedForSuggestion(Collection<Integer> ruleIndices) {
+//        if (!log.isDebugEnabled()) {
+//            return;
+//        }
 //        String ruleNames = ruleIndices.stream().map(r -> lexer.getRuleNames()[r]).collect(Collectors.joining(" "));
-//        logger.debug("Suggesting tokens for lexer rules: " + ruleNames);
-    }
+//        log.debug("Suggesting tokens for lexer rules: " + ruleNames);
+//    }
 
     private ATNState findLexerStateByRuleNumber(int ruleNumber) {
         return lexer.getATN().ruleToStartState[ruleNumber];
     }
 
     private void suggest(String tokenSoFar, ATNState lexerState, String remainingText) {
-        logger.debug(
+        log.debug(
                 "SUGGEST: tokenSoFar=" + tokenSoFar + " remainingText=" + remainingText + " lexerState=" + toString(lexerState));
         if (visitedLexerStates.contains(lexerState.stateNumber)) {
             return; // avoid infinite loop and stack overflow
@@ -94,10 +92,10 @@ class TokenSuggester {
         } else if (trans instanceof AtomTransition) {
             String newTokenChar = getAddedTextFor((AtomTransition) trans);
             if (remainingText.isEmpty() || remainingText.startsWith(newTokenChar)) {
-                logger.debug("LEXER TOKEN: " + newTokenChar + " remaining=" + remainingText);
+                log.debug("LEXER TOKEN: " + newTokenChar + " remaining=" + remainingText);
                 suggestViaNonEpsilonLexerTransition(tokenSoFar, remainingText, newTokenChar, trans.target);
             } else {
-                logger.debug("NONMATCHING LEXER TOKEN: " + newTokenChar + " remaining=" + remainingText);
+                log.debug("NONMATCHING LEXER TOKEN: " + newTokenChar + " remaining=" + remainingText);
             }
         } else if (trans instanceof SetTransition) {
             List<Integer> symbols = ((SetTransition) trans).label().toList();

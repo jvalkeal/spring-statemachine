@@ -1,6 +1,16 @@
 description = "Spring State Machine Dsl Common"
 
+project('spring-statemachine-dsl-antlr') {
+	description = "Spring State Machine Dsl ANTLR"
+
+	dependencies {
+		compile project(":spring-statemachine-dsl-common")
+		compile "org.antlr:antlr4-runtime"
+	}
+}
+
 project('spring-statemachine-dsl-ssml') {
+	description = "Spring State Machine Dsl SSML"
 	apply plugin: 'antlr'
 
 	generateGrammarSource {
@@ -9,8 +19,7 @@ project('spring-statemachine-dsl-ssml') {
 
 	dependencies {
 		antlr "org.antlr:antlr4"
-		compile project(":spring-statemachine-dsl-common")
-		compile "org.antlr:antlr4-runtime"
+		compile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-antlr")
 		testCompile "org.springframework:spring-context"
 		testCompile "org.springframework:spring-test"
 		testCompile "org.hamcrest:hamcrest-core"

@@ -1,4 +1,4 @@
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.antlr.assist;
 
 public enum CasePreference {
 	/**

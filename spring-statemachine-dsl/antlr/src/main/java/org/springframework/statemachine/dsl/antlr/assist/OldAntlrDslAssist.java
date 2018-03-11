@@ -1,4 +1,4 @@
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.antlr.assist;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -28,18 +28,23 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.statemachine.dsl.DslAssist;
+import org.springframework.statemachine.dsl.antlr.AntlrFactory;
 import org.springframework.util.StringUtils;
 
 /**
+ * Generic {@code ANTLR} implementation of a {@link DslAssist} which solely
+ * works on a {@code LEXER} and a {@code PARSER} level without knowing anything
+ * about {@code DSL} level details about its {@code GRAMMAR}.
+ *
  * Suggests completions for given text, using a given ANTLR4 grammar.
  */
-public class AutoSuggester {
-	private static final Log logger = LogFactory.getLog(AutoSuggester.class);
+public class OldAntlrDslAssist /*extends AbstractAntlrDslAssist*/ {
 
-    private final LexerAndParserFactory lexerAndParserFactory;
+	private static final Log log = LogFactory.getLog(OldAntlrDslAssist.class);
+	private final AntlrFactory antlrFactory;
     private final String input;
     private final Set<String> collectedSuggestions = new HashSet<>();
-
     private List<? extends Token> inputTokens;
     private String untokenizedText = "";
     private ATN parserAtn;
@@ -47,16 +52,17 @@ public class AutoSuggester {
     private String indent = "";
     private CasePreference casePreference = CasePreference.BOTH;
 
-    public AutoSuggester(LexerAndParserFactory lexerAndParserFactory, String input) {
-        this.lexerAndParserFactory = lexerAndParserFactory;
-        this.input = input;
+    public OldAntlrDslAssist(AntlrFactory antlrFactory, String input) {
+    	this.antlrFactory = antlrFactory;
+    	this.input = input;
     }
 
     public void setCasePreference(CasePreference casePreference) {
         this.casePreference = casePreference;
     }
 
-    public Collection<String> suggestCompletions() {
+//    @Override
+	public Collection<String> assistCompletions() {
         tokenizeInput();
         storeParserAtnAndRuleNames();
         runParserAtnAndCollectSuggestions();
@@ -67,10 +73,10 @@ public class AutoSuggester {
         Lexer lexer = createLexerWithUntokenizedTextDetection(); // side effect: also fills this.untokenizedText
         List<? extends Token> allTokens = lexer.getAllTokens();
         this.inputTokens = filterOutNonDefaultChannels(allTokens);
-        if (logger.isDebugEnabled()) {
-            logger.debug("TOKENS FOUND IN FIRST PASS:");
+        if (log.isDebugEnabled()) {
+            log.debug("TOKENS FOUND IN FIRST PASS:");
             for (Token token : inputTokens) {
-                logger.debug(token.toString());
+                log.debug(token.toString());
             }
         }
     }
@@ -80,16 +86,16 @@ public class AutoSuggester {
     }
 
     private void storeParserAtnAndRuleNames() {
-        Parser parserForAtnOnly = lexerAndParserFactory.createParser(null);
+        Parser parserForAtnOnly = antlrFactory.createParser(null);
 //        logger.debug("Parser rule names: " + StringUtils.join(parserForAtnOnly.getRuleNames(), ", "));
-        logger.debug("Parser rule names: " + StringUtils.arrayToCommaDelimitedString(parserForAtnOnly.getRuleNames()));
+        log.debug("Parser rule names: " + StringUtils.arrayToCommaDelimitedString(parserForAtnOnly.getRuleNames()));
         parserAtn = parserForAtnOnly.getATN();
         parserRuleNames = parserForAtnOnly.getRuleNames();
     }
 
     private void runParserAtnAndCollectSuggestions() {
         ATNState initialState = parserAtn.states.get(0);
-        logger.debug("Parser initial state: " + initialState);
+        log.debug("Parser initial state: " + initialState);
         parseAndCollectTokenSuggestions(initialState, 0);
     }
 
@@ -100,8 +106,8 @@ public class AutoSuggester {
     private void parseAndCollectTokenSuggestions(ATNState parserState, int tokenListIndex) {
         indent = indent + "  ";
         try {
-            logger.debug(indent + "State: " + toString(parserState) );
-            logger.debug(indent + "State available transitions: " + transitionsStr(parserState));
+            log.debug(indent + "State: " + toString(parserState) );
+            log.debug(indent + "State available transitions: " + transitionsStr(parserState));
 
             if (!haveMoreTokens(tokenListIndex)) { // stop condition for recursion
                 suggestNextTokensForParserState(parserState);
@@ -135,10 +141,10 @@ public class AutoSuggester {
         int nextTokenType = inputTokens.get(tokenListIndex).getType();
         boolean nextTokenMatchesTransition = (trans.label == nextTokenType);
         if (nextTokenMatchesTransition) {
-            logger.debug(indent + "Token " + nextToken + " following transition: " + toString(trans));
+            log.debug(indent + "Token " + nextToken + " following transition: " + toString(trans));
             parseAndCollectTokenSuggestions(trans.target, tokenListIndex + 1);
         } else {
-            logger.debug(indent + "Token " + nextToken + " NOT following transition: " + toString(trans));
+            log.debug(indent + "Token " + nextToken + " NOT following transition: " + toString(trans));
         }
     }
 
@@ -148,10 +154,10 @@ public class AutoSuggester {
         for (int transitionTokenType : trans.label().toList()) {
             boolean nextTokenMatchesTransition = (transitionTokenType == nextTokenType);
             if (nextTokenMatchesTransition) {
-                logger.debug(indent + "Token " + nextToken + " following transition: " + toString(trans) + " to " + transitionTokenType);
+                log.debug(indent + "Token " + nextToken + " following transition: " + toString(trans) + " to " + transitionTokenType);
                 parseAndCollectTokenSuggestions(trans.target, tokenListIndex + 1);
             } else {
-                logger.debug(indent + "Token " + nextToken + " NOT following transition: " + toString(trans) + " to " + transitionTokenType);
+                log.debug(indent + "Token " + nextToken + " NOT following transition: " + toString(trans) + " to " + transitionTokenType);
             }
         }
     }
@@ -159,17 +165,17 @@ public class AutoSuggester {
     private void suggestNextTokensForParserState(ATNState parserState) {
         Set<Integer> transitionLabels = new HashSet<>();
         fillParserTransitionLabels(parserState, transitionLabels, new HashSet<>());
-        TokenSuggester tokenSuggester = new TokenSuggester(createLexer(), this.casePreference);
+        AntlrDslTokenAssist tokenSuggester = new AntlrDslTokenAssist(createLexer(), this.casePreference);
         Collection<String> suggestions = tokenSuggester.suggest(transitionLabels, this.untokenizedText);
         parseSuggestionsAndAddValidOnes(parserState, suggestions);
-        logger.debug(indent + "WILL SUGGEST TOKENS FOR STATE: " + parserState);
+        log.debug(indent + "WILL SUGGEST TOKENS FOR STATE: " + parserState);
     }
 
-    private void fillParserTransitionLabels(ATNState parserState, Collection<Integer> result, Set<TransitionWrapper> visitedTransitions) {
+    private void fillParserTransitionLabels(ATNState parserState, Collection<Integer> result, Set<TransitionHolder> visitedTransitions) {
         for (Transition trans : parserState.getTransitions()) {
-            TransitionWrapper transWrapper = new TransitionWrapper(parserState, trans);
+            TransitionHolder transWrapper = new TransitionHolder(parserState, trans);
             if (visitedTransitions.contains(transWrapper)) {
-                logger.debug(indent + "Not following visited " + transWrapper);
+                log.debug(indent + "Not following visited " + transWrapper);
                 continue;
             }
             if (trans.isEpsilon()) {
@@ -196,12 +202,12 @@ public class AutoSuggester {
 
     private void parseSuggestionsAndAddValidOnes(ATNState parserState, Collection<String> suggestions) {
         for (String suggestion : suggestions) {
-            logger.debug("CHECKING suggestion: " + suggestion);
+            log.debug("CHECKING suggestion: " + suggestion);
             Token addedToken = getAddedToken(suggestion);
-            if (isParseableWithAddedToken(parserState, addedToken, new HashSet<TransitionWrapper>())) {
+            if (isParseableWithAddedToken(parserState, addedToken, new HashSet<TransitionHolder>())) {
                 collectedSuggestions.add(suggestion);
             } else {
-                logger.debug("DROPPING non-parseable suggestion: " + suggestion);
+                log.debug("DROPPING non-parseable suggestion: " + suggestion);
             }
         }
     }
@@ -214,18 +220,18 @@ public class AutoSuggester {
         if (completedTextTokens.size() <= inputTokens.size()) {
             return null; // Completion didn't yield whole token, could be just a token fragment
         }
-        logger.debug("TOKENS IN COMPLETED TEXT: " + completedTextTokens);
+        log.debug("TOKENS IN COMPLETED TEXT: " + completedTextTokens);
         Token newToken = completedTextTokens.get(completedTextTokens.size() - 1);
         return newToken;
     }
 
-    private boolean isParseableWithAddedToken(ATNState parserState, Token newToken, Set<TransitionWrapper> visitedTransitions) {
+    private boolean isParseableWithAddedToken(ATNState parserState, Token newToken, Set<TransitionHolder> visitedTransitions) {
         if (newToken == null) {
             return false;
         }
         for (Transition parserTransition : parserState.getTransitions()) {
             if (parserTransition.isEpsilon()) { // Recurse through any epsilon transitionsStr
-                TransitionWrapper transWrapper = new TransitionWrapper(parserState, parserTransition);
+                TransitionHolder transWrapper = new TransitionHolder(parserState, parserTransition);
                 if (visitedTransitions.contains(transWrapper)) {
                     continue;
                 }
@@ -305,6 +311,6 @@ public class AutoSuggester {
     }
 
     private Lexer createLexer(String lexerInput) {
-        return this.lexerAndParserFactory.createLexer(toCharStream(lexerInput));
+        return this.antlrFactory.createLexer(toCharStream(lexerInput));
     }
 }
