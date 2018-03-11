@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.statemachine.dsl.antlr.assist;
 
 import java.util.ArrayList;
@@ -21,19 +36,14 @@ class AntlrDslTokenAssist {
 
 	private static final Log log = LogFactory.getLog(AntlrDslTokenAssist.class);
     private final Lexer lexer;
-    private final CasePreference casePreference;
     private final Set<String> suggestions = new TreeSet<String>();
     private final List<Integer> visitedLexerStates = new ArrayList<>();
     private String origPartialToken;
 
     public AntlrDslTokenAssist(Lexer lexer) {
-        this(lexer, CasePreference.BOTH);
+        this.lexer = lexer;
     }
 
-    public AntlrDslTokenAssist(Lexer lexer, CasePreference casePreference) {
-        this.lexer = lexer;
-        this.casePreference = casePreference;
-    }
 
     public Collection<String> suggest(Collection<Integer> nextParserTransitionLabels, String remainingText) {
 //        logTokensUsedForSuggestion(nextParserTransitionLabels);
@@ -131,19 +141,6 @@ class AntlrDslTokenAssist {
     }
 
     private boolean shouldIgnoreThisCase(char transChar, List<Integer> allTransChars) {
-        if (this.casePreference == null) {
-            return false;
-        }
-        switch(this.casePreference) {
-        case BOTH:
-            return false;
-        case LOWER:
-            return Character.isUpperCase(transChar) && allTransChars.contains((int)Character.toLowerCase(transChar));
-        case UPPER:
-            return Character.isLowerCase(transChar) && allTransChars.contains((int)Character.toUpperCase(transChar));
-        default:
-            return false;
-        }
+    	return Character.isUpperCase(transChar) && allTransChars.contains((int)Character.toLowerCase(transChar));
     }
-
 }

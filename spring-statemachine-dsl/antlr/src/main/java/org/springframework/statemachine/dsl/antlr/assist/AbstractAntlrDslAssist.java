@@ -15,8 +15,21 @@
  */
 package org.springframework.statemachine.dsl.antlr.assist;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.Token;
 import org.springframework.statemachine.dsl.DslAssist;
+import org.springframework.statemachine.dsl.DslException;
+import org.springframework.statemachine.dsl.antlr.AntlrFactory;
 import org.springframework.statemachine.dsl.assist.AbstractDslAssist;
+import org.springframework.util.Assert;
 
 /**
  * Base abstract implementation of a {@link DslAssist} providing common shared
@@ -27,4 +40,40 @@ import org.springframework.statemachine.dsl.assist.AbstractDslAssist;
  */
 public abstract class AbstractAntlrDslAssist extends AbstractDslAssist {
 
+	private final AntlrFactory antlrFactory;
+
+    /**
+     * Instantiate a new Abstract Antlr Dsl Assist.
+     *
+     * @param antlrFactory the Antlr Factory
+     */
+    public AbstractAntlrDslAssist(AntlrFactory antlrFactory) {
+		super();
+		Assert.notNull(antlrFactory, "antlrFactory must be set");
+		this.antlrFactory = antlrFactory;
+	}
+
+    protected AntlrFactory getAntlrFactory() {
+		return antlrFactory;
+	}
+
+    protected Lexer createLexer(String content) {
+        return this.antlrFactory.createLexer(stringToCharStream(content));
+    }
+
+    protected Parser createParser() {
+    	return this.antlrFactory.createParser(null);
+    }
+
+	protected static List<? extends Token> filterTokensByChannel(List<? extends Token> tokens, int channel) {
+        return tokens.stream().filter(t -> t.getChannel() == channel).collect(Collectors.toList());
+    }
+
+	private static CharStream stringToCharStream(String content) {
+        try {
+            return CharStreams.fromReader(new StringReader(content));
+        } catch (IOException e) {
+            throw new DslException( e);
+        }
+    }
 }
