@@ -38,10 +38,14 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.statemachine.dsl.DslAssist;
 import org.springframework.statemachine.dsl.antlr.AntlrFactory;
 import org.springframework.util.StringUtils;
 
 /**
+ * A {@link DslAssist} implementation which can be used as is to provide assist
+ * solely based on {@code ANTLR} grammar. Further customisations can be provided
+ * by subclass implementations.
  *
  * @author Janne Valkealahti
  *
