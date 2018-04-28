@@ -1,0 +1,43 @@
+# simple 3 state flat machine with states and transitions
+# defined in order and no lexical problems.
+
+state S1 {
+  initial
+  exit A1
+}
+
+state S2 {
+  do A1
+}
+
+state S3 {
+  entry A1
+  entry A2
+  end
+}
+
+transition T1 {
+  source S1
+  target S2
+  event E1
+  action A1
+}
+
+transition T2 {
+  source S2
+  target S3
+  event E2
+  guard G1
+}
+
+action A1 {
+  bean a1ActionBean
+}
+
+action A2 {
+  bean a2ActionBean
+}
+
+guard G1 {
+  bean g1GuardBean
+}
