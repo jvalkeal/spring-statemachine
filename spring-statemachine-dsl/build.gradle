@@ -1,0 +1,22 @@
+description = "Spring State Machine Dsl Common"
+
+project('spring-statemachine-dsl-ssml') {
+	description = "Spring State Machine Dsl SSML"
+	apply plugin: 'antlr'
+
+	generateGrammarSource {
+		arguments += ["-visitor", "-long-messages"]
+	}
+
+	dependencies {
+		antlr "org.antlr:antlr4"
+		compile project(":spring-statemachine-dsl-common")
+		compile "org.springframework.dsl:spring-dsl-antlr"
+		testCompile "org.springframework:spring-context"
+		testCompile "org.springframework:spring-test"
+		testCompile "org.hamcrest:hamcrest-core"
+		testCompile "org.hamcrest:hamcrest-library"
+		testCompile "junit:junit"
+		testRuntime "org.apache.logging.log4j:log4j-core"
+	}
+}
