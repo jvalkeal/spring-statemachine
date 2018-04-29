@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dsl.lsp.service.Completioner;
 import org.springframework.dsl.lsp.service.Hoverer;
 import org.springframework.dsl.reconcile.Linter;
+import org.springframework.statemachine.dsl.ssml.SsmlAntlrFactory;
 
 /**
  * Configuration for a {@code simple} sample language supporting
@@ -44,7 +45,11 @@ public class SsmlLanguageConfiguration {
 
 	@Bean
 	public Linter ssmlLinter() {
-//		return new SsmlLinter();
-		return null;
+		return new SsmlLinter(ssmlAntlrFactory());
+	}
+
+	@Bean
+	public SsmlAntlrFactory ssmlAntlrFactory() {
+		return new SsmlAntlrFactory();
 	}
 }

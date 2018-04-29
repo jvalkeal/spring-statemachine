@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.statemachine.dsl.DslParserResult;
+import org.springframework.dsl.DslParserResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
@@ -143,16 +143,16 @@ public class SsmlDslParserTests {
 
 	private static void assertSimpleMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
 		assertThat(dslParserResult, notNullValue());
-		assertThat(dslParserResult.getModel(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
-		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
-		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
-		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+		assertThat(dslParserResult.getResult(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getResult().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions().size(), is(2));
 
-		Collection<StateData<String, String>> stateData = dslParserResult.getModel().getStatesData().getStateData();
-		Collection<TransitionData<String, String>> transitions = dslParserResult.getModel().getTransitionsData()
+		Collection<StateData<String, String>> stateData = dslParserResult.getResult().getStatesData().getStateData();
+		Collection<TransitionData<String, String>> transitions = dslParserResult.getResult().getTransitionsData()
 				.getTransitions();
 
 		assertThat(stateData.stream().map(sd -> sd.getState()).collect(Collectors.toList()),
@@ -188,13 +188,13 @@ public class SsmlDslParserTests {
 
 	private static void assertActionGuardMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
 		assertThat(dslParserResult, notNullValue());
-		assertThat(dslParserResult.getModel(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData().getStateData(), notNullValue());
-		assertThat(dslParserResult.getModel().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getResult(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData().size(), is(3));
 
-		Collection<StateData<String, String>> stateData = dslParserResult.getModel().getStatesData().getStateData();
-		Collection<TransitionData<String, String>> transitions = dslParserResult.getModel().getTransitionsData()
+		Collection<StateData<String, String>> stateData = dslParserResult.getResult().getStatesData().getStateData();
+		Collection<TransitionData<String, String>> transitions = dslParserResult.getResult().getTransitionsData()
 				.getTransitions();
 
 		stateData.stream().forEach(sd -> {
@@ -208,9 +208,9 @@ public class SsmlDslParserTests {
 			}
 		});
 
-		assertThat(dslParserResult.getModel().getTransitionsData(), notNullValue());
-		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions(), notNullValue());
-		assertThat(dslParserResult.getModel().getTransitionsData().getTransitions().size(), is(2));
+		assertThat(dslParserResult.getResult().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions().size(), is(2));
 
 		transitions.stream().forEach(t -> {
 			if (ObjectUtils.nullSafeEquals(t.getSource(), "S1")) {
