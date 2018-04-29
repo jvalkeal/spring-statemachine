@@ -40,7 +40,7 @@ public class SsmlLanguageConfiguration {
 
 	@Bean
 	public Completioner ssmlCompletioner() {
-		return new SsmlCompletioner();
+		return new SsmlCompletioner(ssmlAntlrFactory());
 	}
 
 	@Bean
