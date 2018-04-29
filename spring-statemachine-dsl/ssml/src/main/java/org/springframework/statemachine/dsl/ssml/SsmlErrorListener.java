@@ -17,6 +17,7 @@ package org.springframework.statemachine.dsl.ssml;
 
 import java.util.List;
 
+import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;

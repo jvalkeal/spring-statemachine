@@ -38,8 +38,10 @@ public class DslStateMachineModelFactory extends AbstractStateMachineModelFactor
 	 * Instantiate a dsl state machine factory.
 	 *
 	 * @param resource the resource to parse
+	 * @param dslParser the statemachine dsl parser
 	 */
-	public DslStateMachineModelFactory(Resource resource, StateMachineDslParser<String, String, StateMachineModel<String, String>> dslParser) {
+	public DslStateMachineModelFactory(Resource resource,
+			StateMachineDslParser<String, String, StateMachineModel<String, String>> dslParser) {
 		Assert.notNull(resource, "Resource must be set");
 		this.resource = resource;
 		this.dslParser = dslParser;

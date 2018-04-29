@@ -15,24 +15,38 @@
  */
 package org.springframework.statemachine.dsl.ssmlserver;
 
-import org.springframework.dsl.document.Document;
+import java.util.Collection;
+
+import org.springframework.dsl.antlr.AbstractAntlrCompletioner;
+import org.springframework.dsl.antlr.AntlrFactory;
 import org.springframework.dsl.lsp.domain.CompletionItem;
-import org.springframework.dsl.lsp.domain.Position;
 import org.springframework.dsl.lsp.service.Completioner;
+import org.springframework.statemachine.dsl.ssml.SsmlLexer;
+import org.springframework.statemachine.dsl.ssml.SsmlParser;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
- * A {@link Completioner} implementation for a {@code simple} sample language.
+ * A {@link Completioner} implementation for a {@code SSML} language.
  *
  * @author Janne Valkealahti
  * @see EnableSsmlLanguage
  *
  */
-public class SsmlCompletioner implements Completioner {
+public class SsmlCompletioner extends AbstractAntlrCompletioner<SsmlLexer, SsmlParser> {
+
+	public SsmlCompletioner(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
+		super(antlrFactory);
+	}
 
 	@Override
-	public Flux<CompletionItem> complete(Document document, Position position) {
-		return Flux.empty();
+	protected Flux<CompletionItem> completeInternal(String content) {
+		return Flux.fromIterable(assistCompletions(content))
+			.flatMap(c -> {
+				CompletionItem item = new CompletionItem();
+				item.setLabel(c);
+				return Mono.just(item);
+			});
 	}
 }

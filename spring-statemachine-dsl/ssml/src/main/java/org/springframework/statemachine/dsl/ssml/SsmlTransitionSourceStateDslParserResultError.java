@@ -23,7 +23,7 @@ import org.springframework.dsl.reconcile.ProblemType;
 import org.springframework.dsl.reconcile.ReconcileProblem;
 
 /**
- * A {@link DslParserResultError} related to missing transition source reference.
+ * A {@link ReconcileProblem} related to missing transition source reference.
  *
  * @author Janne Valkealahti
  *

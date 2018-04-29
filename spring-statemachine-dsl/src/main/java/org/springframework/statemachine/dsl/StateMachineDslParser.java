@@ -16,6 +16,7 @@
 package org.springframework.statemachine.dsl;
 
 import org.springframework.dsl.DslParser;
+import org.springframework.dsl.DslParserResult;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 
 /**

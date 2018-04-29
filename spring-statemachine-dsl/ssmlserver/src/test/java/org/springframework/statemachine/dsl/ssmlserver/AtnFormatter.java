@@ -1,4 +1,4 @@
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.ssmlserver;
 
 import java.util.Set;
 import java.util.TreeSet;
