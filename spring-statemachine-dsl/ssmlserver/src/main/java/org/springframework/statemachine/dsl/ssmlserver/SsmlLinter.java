@@ -29,11 +29,10 @@ import org.springframework.dsl.reconcile.Linter;
 import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
-import org.springframework.statemachine.dsl.ssml.SsmlDslParserResult;
+import org.springframework.statemachine.dsl.ssml.SsmlErrorListener;
 import org.springframework.statemachine.dsl.ssml.SsmlLexer;
 import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlStateMachineVisitor;
-import org.springframework.statemachine.dsl.ssml.SsmlErrorListener;
 
 import reactor.core.publisher.Flux;
 
@@ -43,11 +42,11 @@ import reactor.core.publisher.Flux;
  * @author Janne Valkealahti
  *
  */
-public class SsmlLinter extends AbstractAntlrLinter {
+public class SsmlLinter extends AbstractAntlrLinter<SsmlLexer, SsmlParser> {
 
 	private StateMachineComponentResolver<String, String> resolver;
 
-	public SsmlLinter(AntlrFactory antlrFactory) {
+	public SsmlLinter(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
 		super(antlrFactory);
 	}
 
@@ -57,10 +56,14 @@ public class SsmlLinter extends AbstractAntlrLinter {
 		String content = document.get();
 
 		CharStream antlrInputStream = CharStreams.fromString(content);
-		SsmlLexer lexer = new SsmlLexer(antlrInputStream);
+
+		SsmlLexer lexer = getAntlrFactory().createLexer(antlrInputStream);
+
 		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
 
-		SsmlParser parser = new SsmlParser(tokenStream);
+		SsmlParser parser = getAntlrFactory().createParser(tokenStream);
+
+
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 		parser.removeErrorListeners();
 
@@ -69,8 +72,7 @@ public class SsmlLinter extends AbstractAntlrLinter {
 		ParseTree tree = parser.machine();
 		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
 		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
-//		return new SsmlDslParserResult(model, errors);
 
-		return null;
+		return Flux.fromIterable(errors);
 	}
 }

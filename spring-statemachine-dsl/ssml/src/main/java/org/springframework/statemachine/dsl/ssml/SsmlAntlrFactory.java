@@ -16,8 +16,6 @@
 package org.springframework.statemachine.dsl.ssml;
 
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 import org.springframework.dsl.antlr.AntlrFactory;
 
@@ -27,15 +25,15 @@ import org.springframework.dsl.antlr.AntlrFactory;
  * @author Janne Valkealahti
  *
  */
-public class SsmlAntlrFactory implements AntlrFactory {
+public class SsmlAntlrFactory implements AntlrFactory<SsmlLexer, SsmlParser> {
 
 	@Override
-	public Lexer createLexer(CharStream input) {
+	public SsmlLexer createLexer(CharStream input) {
 		return new SsmlLexer(input);
 	}
 
 	@Override
-	public Parser createParser(TokenStream tokenStream) {
+	public SsmlParser createParser(TokenStream tokenStream) {
 		return new SsmlParser(tokenStream);
 	}
 }

@@ -17,9 +17,9 @@ package org.springframework.statemachine.dsl.ssml;
 
 import java.util.List;
 
+import org.springframework.dsl.DslParserResult;
 import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineModel;
-import org.springframework.statemachine.dsl.DslParserResult;
 
 /**
  * A generic {@link DslParserResult} acting as a simple pass through for given
@@ -39,7 +39,7 @@ public class SsmlDslParserResult implements DslParserResult<StateMachineModel<St
 	}
 
 	@Override
-	public StateMachineModel<String, String> getModel() {
+	public StateMachineModel<String, String> getResult() {
 		return model;
 	}
 

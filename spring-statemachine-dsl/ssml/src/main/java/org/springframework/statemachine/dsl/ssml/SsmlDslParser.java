@@ -26,11 +26,11 @@ import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.springframework.core.io.Resource;
 import org.springframework.dsl.DslException;
+import org.springframework.dsl.DslParserResult;
 import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
-import org.springframework.statemachine.dsl.DslParser;
-import org.springframework.statemachine.dsl.DslParserResult;
+import org.springframework.statemachine.dsl.StateMachineDslParser;
 import org.springframework.util.FileCopyUtils;
 
 /**
@@ -39,7 +39,7 @@ import org.springframework.util.FileCopyUtils;
  * @author Janne Valkealahti
  *
  */
-public class SsmlDslParser implements DslParser<StateMachineModel<String, String>> {
+public class SsmlDslParser implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
 
 	private StateMachineComponentResolver<String, String> resolver;
 

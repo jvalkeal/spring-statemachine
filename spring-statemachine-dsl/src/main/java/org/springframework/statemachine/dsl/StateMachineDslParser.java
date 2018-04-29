@@ -15,36 +15,25 @@
  */
 package org.springframework.statemachine.dsl;
 
-import java.util.List;
-
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.dsl.DslParser;
+import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 
 /**
- * The Interface DslParserResult.
+ * Extension of a {@link DslParser} providing {@link StateMachineComponentResolver}.
  *
  * @author Janne Valkealahti
- * @param <T> the type of a model
+ *
+ * @param <S> the type of state
+ * @param <E> the type of event
+ * @param <T> the type of {@link DslParserResult} value
+ *
  */
-public interface DslParserResult<T> {
+public interface StateMachineDslParser<S, E, T> extends DslParser<T> {
 
 	/**
-	 * Get the parsed model.
+	 * Sets the state machine component resolver.
 	 *
-	 * @return the parsed model
+	 * @param resolver the resolver
 	 */
-	T getModel();
-
-	/**
-	 * Convenience method checking if parsing resulted any errors.
-	 *
-	 * @return {@code true} if parsing resulted errors
-	 */
-	boolean hasErrors();
-
-	/**
-	 * Gets parsing errors.
-	 *
-	 * @return the parsing errors
-	 */
-	List<ReconcileProblem> getErrors();
+	void setStateMachineComponentResolver(StateMachineComponentResolver<S, E> resolver);
 }
