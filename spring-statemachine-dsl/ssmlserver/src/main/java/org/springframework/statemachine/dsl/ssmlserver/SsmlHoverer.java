@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssmlserver;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.TokenStream;
-import org.springframework.dsl.antlr.AntlrFactory;
+import org.springframework.dsl.document.Document;
+import org.springframework.dsl.lsp.domain.Hover;
+import org.springframework.dsl.lsp.domain.Position;
+import org.springframework.dsl.lsp.service.Hoverer;
+
+import reactor.core.publisher.Mono;
 
 /**
- * {@code SSML} related implementation of a {@link AntlrFactory}.
+ * A {@link Hoverer} implementation for a {@code simple} sample language.
  *
  * @author Janne Valkealahti
+ * @see EnableSsmlLanguage
  *
  */
-public class SsmlAntlrFactory implements AntlrFactory {
+public class SsmlHoverer implements Hoverer {
 
 	@Override
-	public Lexer createLexer(CharStream input) {
-		return new SsmlLexer(input);
-	}
-
-	@Override
-	public Parser createParser(TokenStream tokenStream) {
-		return new SsmlParser(tokenStream);
+	public Mono<Hover> hover(Document document, Position position) {
+		return Mono.empty();
 	}
 }

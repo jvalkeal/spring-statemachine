@@ -37,6 +37,7 @@ include 'spring-statemachine-data:mongodb'
 
 include 'spring-statemachine-dsl'
 include 'spring-statemachine-dsl:ssml'
+include 'spring-statemachine-dsl:ssmlserver'
 
 rootProject.children.find {
 	if (it.name == 'spring-statemachine-recipes') {

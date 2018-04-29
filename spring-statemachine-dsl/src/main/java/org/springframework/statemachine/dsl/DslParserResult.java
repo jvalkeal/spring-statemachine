@@ -13,29 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.TokenStream;
-import org.springframework.dsl.antlr.AntlrFactory;
+import java.util.List;
+
+import org.springframework.dsl.reconcile.ReconcileProblem;
 
 /**
- * {@code SSML} related implementation of a {@link AntlrFactory}.
+ * The Interface DslParserResult.
  *
  * @author Janne Valkealahti
- *
+ * @param <T> the type of a model
  */
-public class SsmlAntlrFactory implements AntlrFactory {
+public interface DslParserResult<T> {
 
-	@Override
-	public Lexer createLexer(CharStream input) {
-		return new SsmlLexer(input);
-	}
+	/**
+	 * Get the parsed model.
+	 *
+	 * @return the parsed model
+	 */
+	T getModel();
 
-	@Override
-	public Parser createParser(TokenStream tokenStream) {
-		return new SsmlParser(tokenStream);
-	}
+	/**
+	 * Convenience method checking if parsing resulted any errors.
+	 *
+	 * @return {@code true} if parsing resulted errors
+	 */
+	boolean hasErrors();
+
+	/**
+	 * Gets parsing errors.
+	 *
+	 * @return the parsing errors
+	 */
+	List<ReconcileProblem> getErrors();
 }

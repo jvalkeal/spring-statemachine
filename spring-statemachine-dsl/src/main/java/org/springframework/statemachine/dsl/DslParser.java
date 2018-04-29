@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.TokenStream;
-import org.springframework.dsl.antlr.AntlrFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 
 /**
- * {@code SSML} related implementation of a {@link AntlrFactory}.
+ * Interface for a parser able to parse a content into a {@link DslParserResult}.
  *
  * @author Janne Valkealahti
  *
+ * @param <T> the type of {@link DslParserResult} value
  */
-public class SsmlAntlrFactory implements AntlrFactory {
+public interface DslParser<T> {
 
-	@Override
-	public Lexer createLexer(CharStream input) {
-		return new SsmlLexer(input);
-	}
+	/**
+	 * Parse given {@link Resource} into a {@link DslParserResult}.
+	 *
+	 * @param resource the parse source
+	 * @return the parsed {@code DslParserResult}
+	 */
+	DslParserResult<T> parse(Resource resource);
 
-	@Override
-	public Parser createParser(TokenStream tokenStream) {
-		return new SsmlParser(tokenStream);
-	}
+	void setStateMachineComponentResolver(StateMachineComponentResolver<String, String> resolver);
+
 }

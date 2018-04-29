@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.dsl.DslParserResult;
+import org.springframework.statemachine.dsl.DslParserResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
@@ -43,6 +43,7 @@ import org.springframework.util.ObjectUtils;
  *
  */
 public class SsmlDslParserTests {
+
 
 	@Test
 	public void testSimpleMachineNormal() throws Exception {
@@ -86,8 +87,9 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.getErrors().size(), is(1));
 		assertThat(dslParserResult.hasErrors(), is(true));
 		assertThat(dslParserResult.getErrors().get(0).getMessage(), is("undefined state 'S4' referenced in transition target"));
-		assertThat(dslParserResult.getErrors().get(0).getLine(), is(22));
-		assertThat(dslParserResult.getErrors().get(0).getPosition(), is(9));
+
+		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getLine(), is(22));
+		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getCharacter(), is(9));
 	}
 
 	@Test
@@ -102,8 +104,9 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.getErrors().size(), is(1));
 		assertThat(dslParserResult.hasErrors(), is(true));
 		assertThat(dslParserResult.getErrors().get(0).getMessage(), is("missing '}' at 'state'"));
-		assertThat(dslParserResult.getErrors().get(0).getLine(), is(7));
-		assertThat(dslParserResult.getErrors().get(0).getPosition(), is(0));
+
+		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getLine(), is(7));
+		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getCharacter(), is(0));
 
 		assertSimpleMachineModel(dslParserResult);
 	}
@@ -233,4 +236,5 @@ public class SsmlDslParserTests {
 			return (ctx) -> true;
 		}
 	}
+
 }

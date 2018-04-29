@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.dsl.DslParserResultError;
+import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
 import org.springframework.statemachine.config.model.StateData;
@@ -39,12 +39,12 @@ import org.springframework.statemachine.guard.Guard;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-class SsmlStateMachineVisitor<S, E> extends SsmlBaseVisitor<StateMachineModel<S, E>> {
+public class SsmlStateMachineVisitor<S, E> extends SsmlBaseVisitor<StateMachineModel<S, E>> {
 
-	private final List<DslParserResultError> errors;
+	private final List<ReconcileProblem> errors;
 	private final StateMachineComponentResolver<S, E> resolver;
 
-	SsmlStateMachineVisitor(List<DslParserResultError> errors, StateMachineComponentResolver<S, E> resolver) {
+	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
 		this.errors = errors;
 		this.resolver = resolver;
 	}
