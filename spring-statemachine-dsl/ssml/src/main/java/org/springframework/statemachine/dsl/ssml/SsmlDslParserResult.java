@@ -17,13 +17,13 @@ package org.springframework.statemachine.dsl.ssml;
 
 import java.util.List;
 
-import org.springframework.dsl.DslParserResult;
-import org.springframework.dsl.DslParserResultError;
+import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineModel;
+import org.springframework.statemachine.dsl.DslParserResult;
 
 /**
  * A generic {@link DslParserResult} acting as a simple pass through for given
- * {@link StateMachineModel} and {@link DslParserResultError}s.
+ * {@link StateMachineModel} and {@link ReconcileProblem}s.
  *
  * @author Janne Valkealahti
  *
@@ -31,9 +31,9 @@ import org.springframework.statemachine.config.model.StateMachineModel;
 public class SsmlDslParserResult implements DslParserResult<StateMachineModel<String, String>> {
 
 	private final StateMachineModel<String, String> model;
-	private final List<DslParserResultError> errors;
+	private final List<ReconcileProblem> errors;
 
-	public SsmlDslParserResult(StateMachineModel<String, String> model, List<DslParserResultError> errors) {
+	public SsmlDslParserResult(StateMachineModel<String, String> model, List<ReconcileProblem> errors) {
 		this.model = model;
 		this.errors = errors;
 	}
@@ -49,7 +49,7 @@ public class SsmlDslParserResult implements DslParserResult<StateMachineModel<St
 	}
 
 	@Override
-	public List<DslParserResultError> getErrors() {
+	public List<ReconcileProblem> getErrors() {
 		return errors;
 	}
 }

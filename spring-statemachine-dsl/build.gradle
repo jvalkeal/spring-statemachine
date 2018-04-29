@@ -20,3 +20,17 @@ project('spring-statemachine-dsl-ssml') {
 		testRuntime "org.apache.logging.log4j:log4j-core"
 	}
 }
+
+project('spring-statemachine-dsl-ssmlserver') {
+	description = "Spring State Machine Dsl SSML Language Server"
+
+	dependencies {
+		compile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-ssml")
+		testCompile "org.springframework:spring-context"
+		testCompile "org.springframework:spring-test"
+		testCompile "org.hamcrest:hamcrest-core"
+		testCompile "org.hamcrest:hamcrest-library"
+		testCompile "junit:junit"
+		testRuntime "org.apache.logging.log4j:log4j-core"
+	}
+}

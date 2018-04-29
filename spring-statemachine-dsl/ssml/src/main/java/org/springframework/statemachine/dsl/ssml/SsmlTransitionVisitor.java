@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.Token;
-import org.springframework.dsl.DslParserResultError;
+import org.springframework.dsl.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
@@ -38,12 +38,12 @@ import org.springframework.statemachine.transition.TransitionKind;
  */
 class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, TransitionData<S, E>> {
 
-	private final List<DslParserResultError> errors;
+	private final List<ReconcileProblem> errors;
 	private final SsmlStateVisitor<S, E> stateVisitor;
 	private final Map<String, Guard<S, E>> guards;
 
 	SsmlTransitionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			List<DslParserResultError> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards) {
+			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards) {
 		super(stateMachineComponentResolver);
 		this.errors = errors;
 		this.stateVisitor = stateVisitor;

@@ -16,7 +16,11 @@
 package org.springframework.statemachine.dsl.ssml;
 
 import org.antlr.v4.runtime.Token;
-import org.springframework.dsl.DslParserResultError;
+import org.springframework.dsl.lsp.domain.Position;
+import org.springframework.dsl.lsp.domain.Range;
+import org.springframework.dsl.reconcile.ProblemSeverity;
+import org.springframework.dsl.reconcile.ProblemType;
+import org.springframework.dsl.reconcile.ReconcileProblem;
 
 /**
  * A {@code DslParserResultError} related to missing transition target reference.
@@ -24,7 +28,7 @@ import org.springframework.dsl.DslParserResultError;
  * @author Janne Valkealahti
  *
  */
-public class SsmlTransitionTargetStateDslParserResultError implements DslParserResultError {
+public class SsmlTransitionTargetStateDslParserResultError implements ReconcileProblem {
 
 	private final Token token;
 
@@ -33,17 +37,37 @@ public class SsmlTransitionTargetStateDslParserResultError implements DslParserR
 	}
 
 	@Override
-	public int getLine() {
-		return token.getLine();
-	}
-
-	@Override
-	public int getPosition() {
-		return token.getCharPositionInLine();
+	public ProblemType getType() {
+		return PROBLEM;
 	}
 
 	@Override
 	public String getMessage() {
 		return "undefined state '" + token.getText() + "' referenced in transition target";
 	}
+
+	@Override
+	public Range getRange() {
+		Position start = new Position(token.getLine(), token.getCharPositionInLine());
+		Position end = new Position(token.getLine(), token.getCharPositionInLine());
+		return new Range(start, end);
+	}
+
+	@Override
+	public String getCode() {
+		return "xxx";
+	}
+
+	private static ProblemType PROBLEM = new ProblemType() {
+
+		@Override
+		public ProblemSeverity getDefaultSeverity() {
+			return ProblemSeverity.ERROR;
+		}
+
+		@Override
+		public String getCode() {
+			return "code";
+		}
+	};
 }

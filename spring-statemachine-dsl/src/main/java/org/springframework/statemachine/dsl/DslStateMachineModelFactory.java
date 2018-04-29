@@ -16,7 +16,7 @@
 package org.springframework.statemachine.dsl;
 
 import org.springframework.core.io.Resource;
-import org.springframework.dsl.DslParser;
+import org.springframework.statemachine.dsl.DslParser;
 import org.springframework.statemachine.config.model.AbstractStateMachineModelFactory;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.StateMachineModelFactory;
@@ -44,13 +44,12 @@ public class DslStateMachineModelFactory extends AbstractStateMachineModelFactor
 		Assert.notNull(resource, "Resource must be set");
 		this.resource = resource;
 		this.dslParser = dslParser;
-//		this.dslParser.setStateMachineComponentResolver(this);
+		this.dslParser.setStateMachineComponentResolver(this);
 	}
 
 	@Override
 	public StateMachineModel<String, String> build() {
-//		return dslParser.parse(resource).getModel();
-		return null;
+		return dslParser.parse(resource).getModel();
 	}
 
 	@Override

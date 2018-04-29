@@ -20,7 +20,12 @@ import java.util.List;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.springframework.dsl.DslParserResultError;
+import org.springframework.dsl.lsp.domain.Position;
+import org.springframework.dsl.lsp.domain.Range;
+import org.springframework.dsl.lsp.server.result.method.annotation.DefaultReconcileProblem;
+import org.springframework.dsl.reconcile.ProblemSeverity;
+import org.springframework.dsl.reconcile.ProblemType;
+import org.springframework.dsl.reconcile.ReconcileProblem;
 
 /**
  * {@link ANTLRErrorListener} implementing {@code ssml} related error and warning handling.
@@ -28,17 +33,33 @@ import org.springframework.dsl.DslParserResultError;
  * @author Janne Valkealahti
  *
  */
-class SsmlErrorListener extends BaseErrorListener {
+public class SsmlErrorListener extends BaseErrorListener {
 
-	private final List<DslParserResultError> errors;
+	private final List<ReconcileProblem> errors;
 
-	public SsmlErrorListener(List<DslParserResultError> errors) {
+	public SsmlErrorListener(List<ReconcileProblem> errors) {
 		this.errors = errors;
 	}
 
 	@Override
 	public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
 			String msg, RecognitionException e) {
-		errors.add(new SsmlGenericDslParserResultError(msg, line, charPositionInLine));
+		Position start = new Position(line, charPositionInLine);
+		Position end = new Position(line, charPositionInLine);
+		errors.add(new DefaultReconcileProblem(PROBLEM, msg, new Range(start, end), "xxx"));
 	}
+
+	private static ProblemType PROBLEM = new ProblemType() {
+
+		@Override
+		public ProblemSeverity getDefaultSeverity() {
+			return ProblemSeverity.ERROR;
+		}
+
+		@Override
+		public String getCode() {
+			return "code";
+		}
+	};
+
 }

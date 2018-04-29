@@ -13,24 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml.assist;
+package org.springframework.statemachine.dsl.ssmlserver;
 
-import org.springframework.dsl.antlr.assist.AntlrDslAssist;
-//import org.springframework.statemachine.dsl.antlr.assist.AntlrDslAssist;
-import org.springframework.statemachine.dsl.ssml.SsmlAntlrFactory;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.context.annotation.Import;
+import org.springframework.dsl.lsp.server.config.EnableLanguageServer;
 
 /**
- * {@code SSML} related {@code DslAssist} implementation.
+ * Meta annotation for enabling all supported services for a {@code SSML}
+ * language.
  *
  * @author Janne Valkealahti
  *
  */
-public class SsmlAntlrDslAssist extends AntlrDslAssist {
-
-    /**
-     * Instantiate a new Ssml Antlr Dsl Assist.
-     */
-	public SsmlAntlrDslAssist() {
-		super(new SsmlAntlrFactory());
-	}
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Documented
+@Import(SsmlLanguageConfiguration.class)
+@EnableLanguageServer
+public @interface EnableSsmlLanguage {
 }
