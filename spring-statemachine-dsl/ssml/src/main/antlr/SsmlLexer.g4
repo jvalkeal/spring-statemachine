@@ -1,6 +1,7 @@
 lexer grammar SsmlLexer;
 
 // The keywords are case-independent
+STATEMACHINE         :   [Ss][Tt][Aa][Tt][Ee][Mm][Aa][Cc][Hh][Ii][Nn][Ee] ;
 STATE                :   [Ss][Tt][Aa][Tt][Ee] ;
 TRANSITION           :   [Tt][Rr][Aa][Nn][Ss][Ii][Tt][Ii][Oo][Nn] ;
 ACTION               :   [Aa][Cc][Tt][Ii][Oo][Nn] ;

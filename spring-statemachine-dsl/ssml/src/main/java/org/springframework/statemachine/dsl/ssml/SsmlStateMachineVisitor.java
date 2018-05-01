@@ -52,12 +52,12 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<StateMa
 	@Override
 	public StateMachineModel<S, E> visitDefinitions(DefinitionsContext ctx) {
 		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver);
-		Map<String, Action<S, E>> actions = ctx.objectList().action().stream()
+		Map<String, Action<S, E>> actions = ctx.machineObjectList().action().stream()
 				.map(actionContext -> actionContext.accept(actionVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.action));
 
 		SsmlGuardVisitor<S, E> guardVisitor = new SsmlGuardVisitor<>(resolver);
-		Map<String, Guard<S, E>> guards = ctx.objectList().guard().stream()
+		Map<String, Guard<S, E>> guards = ctx.machineObjectList().guard().stream()
 				.map(guardContext -> guardContext.accept(guardVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.guard));
 
@@ -65,11 +65,11 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<StateMa
 		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor, guards);
 
 
-		List<StateData<S, E>> stateDatas = ctx.objectList().state().stream()
+		List<StateData<S, E>> stateDatas = ctx.machineObjectList().state().stream()
 			.map(stateContext -> stateContext.accept(stateVisitor))
 			.collect(Collectors.toList());
 
-		List<TransitionData<S, E>> transitionDatas = ctx.objectList().transition().stream()
+		List<TransitionData<S, E>> transitionDatas = ctx.machineObjectList().transition().stream()
 				.map(stateContext -> stateContext.accept(transitionVisitor))
 				.collect(Collectors.toList());
 
