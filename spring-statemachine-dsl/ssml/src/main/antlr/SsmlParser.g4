@@ -4,9 +4,10 @@ options {
   tokenVocab=SsmlLexer;
 }
 
-definitions          :   objectList EOF ;
-objectList           :   ( state | transition | action | guard )* ;
+definitions          :   machineObjectList EOF ;
+machineObjectList    :   ( state | transition | action | guard )* ;
 
+statemachine         :   STATEMACHINE id LBRACE machineObjectList RBRACE ;
 state                :   STATE id LBRACE stateParameters RBRACE ;
 transition           :   TRANSITION id? LBRACE transitionParameters RBRACE ;
 action               :   ACTION id LBRACE actionParameters RBRACE ;
