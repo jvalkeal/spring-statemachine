@@ -39,7 +39,7 @@ import org.springframework.statemachine.guard.Guard;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public class SsmlStateMachineVisitor<S, E> extends SsmlBaseVisitor<StateMachineModel<S, E>> {
+public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<StateMachineModel<S, E>> {
 
 	private final List<ReconcileProblem> errors;
 	private final StateMachineComponentResolver<S, E> resolver;

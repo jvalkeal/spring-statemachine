@@ -1,37 +1,4 @@
-grammar Ssml;
-
-@header {
-package org.springframework.statemachine.dsl.ssml;
-}
-
-machine              :   objectList EOF ;
-objectList           :   ( state | transition | action | guard )* ;
-state                :   STATE id '{' stateParameters '}' ;
-transition           :   TRANSITION id? '{' transitionParameters '}' ;
-action               :   ACTION id '{' actionParameters '}' ;
-guard                :   GUARD id '{' guardParameters '}' ;
-
-// state structure
-stateParameters      :   ( stateParameter ';'? )* ;
-stateParameter       :   stateType id? ;
-stateType            :   INITIAL | END | EXIT | DO | ENTRY ;
-
-// transition structure
-transitionParameters :   ( transitionParameter ';'? )* ;
-transitionParameter  :   transitionType id? ;
-transitionType       :   SOURCE | TARGET | EVENT | ACTION | GUARD ;
-
-// action structure
-actionParameters     :   ( actionParameter ';'? )* ;
-actionParameter      :   actionType id? ;
-actionType           :   BEAN ;
-
-// guard structure
-guardParameters      :   ( guardParameter ';'? )* ;
-guardParameter       :   guardType id? ;
-guardType            :   BEAN ;
-
-id                   :   ID | STRING | NUMBER ;
+lexer grammar SsmlLexer;
 
 // The keywords are case-independent
 STATE                :   [Ss][Tt][Aa][Tt][Ee] ;
@@ -48,6 +15,11 @@ ENTRY                :   [Ee][Nn][Tt][Rr][Yy] ;
 EXIT                 :   [Ee][Xx][Ii][Tt] ;
 DO                   :   [Dd][Oo] ;
 BEAN                 :   [Bb][Ee][Aa][Nn] ;
+
+LBRACE               : '{' ;
+RBRACE               : '}' ;
+SEMI                 : ';' ;
+COMMA                : ',' ;
 
 // a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? )
 NUMBER               :   '-'? ('.' DIGIT+ | DIGIT+ ('.' DIGIT*)? ) ;

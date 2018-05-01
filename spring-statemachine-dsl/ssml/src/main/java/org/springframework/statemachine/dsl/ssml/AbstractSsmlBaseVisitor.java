@@ -28,7 +28,7 @@ import org.springframework.util.Assert;
  * @param <E> the type of event
  * @param <T> the type of visitor
  */
-abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlBaseVisitor<T> {
+abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T> {
 
 	private final StateMachineComponentResolver<S, E> stateMachineComponentResolver;
 
