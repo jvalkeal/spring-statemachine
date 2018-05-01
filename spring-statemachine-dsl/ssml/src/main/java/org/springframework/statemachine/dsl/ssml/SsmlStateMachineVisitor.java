@@ -28,7 +28,7 @@ import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.StatesData;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.config.model.TransitionsData;
-import org.springframework.statemachine.dsl.ssml.SsmlParser.MachineContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.DefinitionsContext;
 import org.springframework.statemachine.guard.Guard;
 
 /**
@@ -50,7 +50,7 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<StateMa
 	}
 
 	@Override
-	public StateMachineModel<S, E> visitMachine(MachineContext ctx) {
+	public StateMachineModel<S, E> visitDefinitions(DefinitionsContext ctx) {
 		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver);
 		Map<String, Action<S, E>> actions = ctx.objectList().action().stream()
 				.map(actionContext -> actionContext.accept(actionVisitor))

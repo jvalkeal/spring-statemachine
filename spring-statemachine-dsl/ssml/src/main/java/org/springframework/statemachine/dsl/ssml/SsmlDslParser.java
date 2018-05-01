@@ -69,7 +69,7 @@ public class SsmlDslParser implements StateMachineDslParser<String, String, Stat
 		parser.removeErrorListeners();
 		parser.addErrorListener(new SsmlErrorListener(errors));
 
-		ParseTree tree = parser.machine();
+		ParseTree tree = parser.definitions();
 
 		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
 
