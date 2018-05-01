@@ -5,7 +5,21 @@ project('spring-statemachine-dsl-ssml') {
 	apply plugin: 'antlr'
 
 	generateGrammarSource {
-		arguments += ["-visitor", "-long-messages"]
+		arguments += ["-visitor", "-long-messages", "-package", "org.springframework.statemachine.dsl.ssml"]
+		doLast {
+			def parserFilePattern = 'Ssml*'
+			def outputPath = generateGrammarSource.outputDirectory.canonicalPath
+			def parserPackagePath = "${outputPath}/org/springframework/statemachine/dsl/ssml"
+			file(parserPackagePath).mkdirs()
+			copy {
+				from outputPath
+				into parserPackagePath
+				include parserFilePattern
+			}
+			delete fileTree(outputPath) {
+				include parserFilePattern
+			}
+		}
 	}
 
 	dependencies {
