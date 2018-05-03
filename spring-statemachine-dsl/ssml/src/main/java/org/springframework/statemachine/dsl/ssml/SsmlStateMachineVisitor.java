@@ -51,6 +51,8 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<StateMa
 
 	@Override
 	public StateMachineModel<S, E> visitDefinitions(DefinitionsContext ctx) {
+		// TODO: visit machine as well as everything else outside of machine
+		//       is kinda anonymous
 		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver);
 		Map<String, Action<S, E>> actions = ctx.machineObjectList().action().stream()
 				.map(actionContext -> actionContext.accept(actionVisitor))
