@@ -69,7 +69,7 @@ public class SsmlLinter extends AbstractAntlrLinter<SsmlLexer, SsmlParser> {
 
 		ArrayList<ReconcileProblem> errors = new ArrayList<>();
 		parser.addErrorListener(new SsmlErrorListener(errors));
-		ParseTree tree = parser.machine();
+		ParseTree tree = parser.definitions();
 		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
 		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
 
