@@ -17,6 +17,8 @@ package org.springframework.statemachine.dsl.ssmlserver;
 
 import java.util.Collection;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.springframework.dsl.antlr.AbstractAntlrCompletioner;
 import org.springframework.dsl.antlr.AntlrFactory;
 import org.springframework.dsl.lsp.domain.CompletionItem;
@@ -38,6 +40,14 @@ public class SsmlCompletioner extends AbstractAntlrCompletioner<SsmlLexer, SsmlP
 
 	public SsmlCompletioner(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
 		super(antlrFactory);
+	}
+
+	@Override
+	protected SsmlParser getParser(String input) {
+		SsmlLexer lexer = getAntlrFactory().createLexer(CharStreams.fromString(input));
+		SsmlParser parser = getAntlrFactory().createParser(new CommonTokenStream(lexer));
+		parser.definitions();
+		return parser;
 	}
 
 	@Override
