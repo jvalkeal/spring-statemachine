@@ -53,7 +53,7 @@ public class SsmlLinter extends AbstractAntlrLinter<SsmlLexer, SsmlParser> {
 	@Override
 	public Flux<ReconcileProblem> lintInternal(Document document) {
 
-		String content = document.get();
+		String content = document.content();
 
 		CharStream antlrInputStream = CharStreams.fromString(content);
 
