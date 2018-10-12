@@ -25,7 +25,6 @@ project('spring-statemachine-dsl-ssml') {
 	dependencies {
 		antlr "org.antlr:antlr4"
 		compile project(":spring-statemachine-dsl-common")
-		compile "org.springframework.dsl:spring-dsl-server"
 		compile "org.springframework.dsl:spring-dsl-antlr"
 		testCompile "org.springframework:spring-context"
 		testCompile "org.springframework:spring-test"

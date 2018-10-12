@@ -2,7 +2,7 @@ buildscript {
 	ext {
 		log4jVersion = '1.2.17'
 		springBootVersion = '2.0.3.RELEASE'
-		springDslVersion = '1.0.0.BUILD-SNAPSHOT'
+		springDslVersion = '0.0.1.BUILD-SNAPSHOT'
 		eclipsePersistenceVersion = '2.1.1'
 		kryoVersion = '3.0.3'
 		springCloudClusterVersion = '1.0.2.RELEASE'
@@ -83,6 +83,7 @@ configure(allprojects) {
 		maven { url "http://repo.springsource.org/libs-snapshot" }
 		maven { url "http://repo.springsource.org/libs-release" }
 		maven { url "http://repo.springsource.org/libs-milestone" }
+		maven { url "http://repo.springsource.org/test-libs-snapshot-local" }
 		mavenLocal()
 	}
 

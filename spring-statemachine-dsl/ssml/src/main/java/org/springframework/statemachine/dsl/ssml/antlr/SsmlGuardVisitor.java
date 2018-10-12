@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
-import org.springframework.statemachine.dsl.ssml.SsmlGuardVisitor.SsmlGuardResult;
+import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardParameterContext;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlGuardVisitor.SsmlGuardResult;
 import org.springframework.statemachine.guard.Guard;
 
 /**

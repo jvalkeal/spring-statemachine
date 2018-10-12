@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.support;
 
 import java.util.List;
 
 import org.springframework.dsl.DslParserResult;
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineModel;
 
 /**

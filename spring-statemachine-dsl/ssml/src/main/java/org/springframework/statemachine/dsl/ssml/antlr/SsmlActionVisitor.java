@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
-import org.springframework.statemachine.dsl.ssml.SsmlActionVisitor.SsmlActionResult;
+import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionParameterContext;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlActionVisitor.SsmlActionResult;
 
 /**
  * {@code Visitor} visiting {@link Action} definitions.

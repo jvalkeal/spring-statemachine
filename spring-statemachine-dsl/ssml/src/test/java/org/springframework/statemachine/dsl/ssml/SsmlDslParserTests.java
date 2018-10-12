@@ -33,6 +33,7 @@ import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.config.model.TransitionData;
+import org.springframework.statemachine.dsl.ssml.support.SsmlDslParser;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.util.ObjectUtils;
 

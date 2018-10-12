@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssmlserver;
+package org.springframework.statemachine.dsl.ssml.support;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.antlr.v4.runtime.CharStream;
@@ -22,57 +24,66 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.springframework.dsl.antlr.AbstractAntlrLinter;
-import org.springframework.dsl.antlr.AntlrFactory;
-import org.springframework.dsl.document.Document;
-import org.springframework.dsl.reconcile.Linter;
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.core.io.Resource;
+import org.springframework.dsl.DslException;
+import org.springframework.dsl.DslParserResult;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
-import org.springframework.statemachine.dsl.ssml.SsmlErrorListener;
+import org.springframework.statemachine.dsl.StateMachineDslParser;
 import org.springframework.statemachine.dsl.ssml.SsmlLexer;
 import org.springframework.statemachine.dsl.ssml.SsmlParser;
-import org.springframework.statemachine.dsl.ssml.SsmlStateMachineVisitor;
-
-import reactor.core.publisher.Flux;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlErrorListener;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlStateMachineVisitor;
+import org.springframework.util.FileCopyUtils;
 
 /**
- * A {@link Linter} for a {@code ssml} language.
+ * {@code DslParser} implementation parsing {@code SSML} content.
  *
  * @author Janne Valkealahti
  *
  */
-public class SsmlLinter extends AbstractAntlrLinter<SsmlLexer, SsmlParser> {
+public class SsmlDslParser implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
 
 	private StateMachineComponentResolver<String, String> resolver;
 
-	public SsmlLinter(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
-		super(antlrFactory);
+	public SsmlDslParser() {
+	}
+
+	public SsmlDslParser(StateMachineComponentResolver<String, String> resolver) {
+		this.resolver = resolver;
 	}
 
 	@Override
-	public Flux<ReconcileProblem> lintInternal(Document document) {
-
-		String content = document.content();
-
+	public DslParserResult<StateMachineModel<String, String>> parse(Resource resource) {
+		String content = null;
+		try {
+			content = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
+		} catch (IOException e) {
+			throw new DslException(e);
+		}
 		CharStream antlrInputStream = CharStreams.fromString(content);
-
-		SsmlLexer lexer = getAntlrFactory().createLexer(antlrInputStream);
-
+		SsmlLexer lexer = new SsmlLexer(antlrInputStream);
 		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
 
-		SsmlParser parser = getAntlrFactory().createParser(tokenStream);
+		ArrayList<ReconcileProblem> errors = new ArrayList<>();
 
-
+		SsmlParser parser = new SsmlParser(tokenStream);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 		parser.removeErrorListeners();
-
-		ArrayList<ReconcileProblem> errors = new ArrayList<>();
 		parser.addErrorListener(new SsmlErrorListener(errors));
+
 		ParseTree tree = parser.definitions();
+
 		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
+
 		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
 
-		return Flux.fromIterable(errors);
+		return new SsmlDslParserResult(model, errors);
+	}
+
+	@Override
+	public void setStateMachineComponentResolver(StateMachineComponentResolver<String, String> resolver) {
+		this.resolver = resolver;
 	}
 }

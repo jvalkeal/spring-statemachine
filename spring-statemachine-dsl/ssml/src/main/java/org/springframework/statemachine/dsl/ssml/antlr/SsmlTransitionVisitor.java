@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.antlr;
 
 import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.Token;
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
+import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionParameterContext;
+import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionSourceStateDslParserResultError;
+import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionTargetStateDslParserResultError;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;

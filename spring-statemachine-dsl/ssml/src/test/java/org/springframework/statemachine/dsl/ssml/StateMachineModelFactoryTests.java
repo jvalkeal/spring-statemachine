@@ -32,6 +32,7 @@ import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineModelConfigurer;
 import org.springframework.statemachine.config.model.StateMachineModelFactory;
 import org.springframework.statemachine.dsl.DslStateMachineModelFactory;
+import org.springframework.statemachine.dsl.ssml.support.SsmlDslParser;
 
 /**
  * {@link StateMachineModelFactory} tests using {@link SsmlDslParser}.

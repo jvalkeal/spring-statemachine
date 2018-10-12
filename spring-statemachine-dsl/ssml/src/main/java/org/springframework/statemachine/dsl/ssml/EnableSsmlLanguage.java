@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssmlserver;
+package org.springframework.statemachine.dsl.ssml;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.context.annotation.Import;
-import org.springframework.dsl.lsp.server.config.EnableLanguageServer;
+import org.springframework.statemachine.dsl.ssml.support.SsmlLanguageConfiguration;
 
 /**
  * Meta annotation for enabling all supported services for a {@code SSML}
@@ -35,6 +35,5 @@ import org.springframework.dsl.lsp.server.config.EnableLanguageServer;
 @Target(ElementType.TYPE)
 @Documented
 @Import(SsmlLanguageConfiguration.class)
-@EnableLanguageServer
 public @interface EnableSsmlLanguage {
 }

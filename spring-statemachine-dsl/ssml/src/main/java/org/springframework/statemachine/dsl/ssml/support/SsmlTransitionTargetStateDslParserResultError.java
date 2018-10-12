@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.support;
 
 import org.antlr.v4.runtime.Token;
-import org.springframework.dsl.lsp.domain.Position;
-import org.springframework.dsl.lsp.domain.Range;
-import org.springframework.dsl.reconcile.ProblemSeverity;
-import org.springframework.dsl.reconcile.ProblemType;
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.dsl.domain.Position;
+import org.springframework.dsl.domain.Range;
+import org.springframework.dsl.service.reconcile.ProblemSeverity;
+import org.springframework.dsl.service.reconcile.ProblemType;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
 
 /**
- * A {@link ReconcileProblem} related to missing transition source reference.
+ * A {@code DslParserResultError} related to missing transition target reference.
  *
  * @author Janne Valkealahti
  *
  */
-public class SsmlTransitionSourceStateDslParserResultError implements ReconcileProblem {
+public class SsmlTransitionTargetStateDslParserResultError implements ReconcileProblem {
 
 	private final Token token;
 
-	public SsmlTransitionSourceStateDslParserResultError(Token token) {
+	public SsmlTransitionTargetStateDslParserResultError(Token token) {
 		this.token = token;
 	}
 
@@ -43,7 +43,7 @@ public class SsmlTransitionSourceStateDslParserResultError implements ReconcileP
 
 	@Override
 	public String getMessage() {
-		return "undefined state '" + token.getText() + "' referenced in transition source";
+		return "undefined state '" + token.getText() + "' referenced in transition target";
 	}
 
 	@Override
@@ -53,15 +53,10 @@ public class SsmlTransitionSourceStateDslParserResultError implements ReconcileP
 		return new Range(start, end);
 	}
 
-	@Override
-	public String getCode() {
-		return "xxx";
-	}
-
 	private static ProblemType PROBLEM = new ProblemType() {
 
 		@Override
-		public ProblemSeverity getDefaultSeverity() {
+		public ProblemSeverity getSeverity() {
 			return ProblemSeverity.ERROR;
 		}
 

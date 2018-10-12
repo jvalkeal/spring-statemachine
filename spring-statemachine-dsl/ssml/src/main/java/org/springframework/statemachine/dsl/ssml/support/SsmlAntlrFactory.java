@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.support;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.TokenStream;
 import org.springframework.dsl.antlr.AntlrFactory;
+import org.springframework.statemachine.dsl.ssml.SsmlLexer;
+import org.springframework.statemachine.dsl.ssml.SsmlParser;
 
 /**
  * {@code SSML} related implementation of a {@link AntlrFactory}.

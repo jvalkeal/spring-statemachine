@@ -15,60 +15,48 @@
  */
 package org.springframework.statemachine.dsl.ssmlserver;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.junit.Test;
-import org.springframework.dsl.document.LanguageId;
-import org.springframework.dsl.document.TextDocument;
-import org.springframework.dsl.lsp.domain.CompletionItem;
-import org.springframework.statemachine.dsl.ssml.SsmlAntlrFactory;
-import org.springframework.util.StringUtils;
 
 public class SsmlCompletionerTests {
 
-	@Test
-	public void testStateBlockKeywords1() {
-		String input = "statemachine M1 { state S1 {";
-
-		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-
-		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-
-		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
-	}
-
-	@Test
-	public void testStateBlockKeywords2() {
-		String input = "state S1 {";
-
-		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-
-		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-
-		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
-	}
-
 //	@Test
-	public void testStateBlockKeywords3() {
-		String input = "state S1{initial}state S2{}state S3{end}transition T1{source ";
-
-		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-
-		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-
-		System.out.println("XXX: " + StringUtils.collectionToCommaDelimitedString(labels));
-
-		assertThat(labels, containsInAnyOrder("S1", "S2", "S3"));
-	}
+//	public void testStateBlockKeywords1() {
+//		String input = "statemachine M1 { state S1 {";
+//
+//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
+//
+//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
+//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
+//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+//
+//		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
+//	}
+//
+//	@Test
+//	public void testStateBlockKeywords2() {
+//		String input = "state S1 {";
+//
+//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
+//
+//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
+//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
+//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+//
+//		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
+//	}
+//
+////	@Test
+//	public void testStateBlockKeywords3() {
+//		String input = "state S1{initial}state S2{}state S3{end}transition T1{source ";
+//
+//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
+//
+//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
+//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
+//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+//
+//		System.out.println("XXX: " + StringUtils.collectionToCommaDelimitedString(labels));
+//
+//		assertThat(labels, containsInAnyOrder("S1", "S2", "S3"));
+//	}
 
 }

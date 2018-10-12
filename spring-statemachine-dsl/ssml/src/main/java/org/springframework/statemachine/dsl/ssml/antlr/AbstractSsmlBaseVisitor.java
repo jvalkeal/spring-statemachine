@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
+import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
 import org.springframework.util.Assert;
 
 /**

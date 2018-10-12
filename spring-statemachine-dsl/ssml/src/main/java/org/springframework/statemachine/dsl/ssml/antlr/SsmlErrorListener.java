@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssml;
+package org.springframework.statemachine.dsl.ssml.antlr;
 
 import java.util.List;
 
@@ -21,12 +21,12 @@ import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.springframework.dsl.lsp.domain.Position;
-import org.springframework.dsl.lsp.domain.Range;
-import org.springframework.dsl.lsp.server.result.method.annotation.DefaultReconcileProblem;
-import org.springframework.dsl.reconcile.ProblemSeverity;
-import org.springframework.dsl.reconcile.ProblemType;
-import org.springframework.dsl.reconcile.ReconcileProblem;
+import org.springframework.dsl.domain.Position;
+import org.springframework.dsl.domain.Range;
+import org.springframework.dsl.service.reconcile.DefaultReconcileProblem;
+import org.springframework.dsl.service.reconcile.ProblemSeverity;
+import org.springframework.dsl.service.reconcile.ProblemType;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
 
 /**
  * {@link ANTLRErrorListener} implementing {@code ssml} related error and warning handling.
@@ -47,13 +47,13 @@ public class SsmlErrorListener extends BaseErrorListener {
 			String msg, RecognitionException e) {
 		Position start = new Position(line, charPositionInLine);
 		Position end = new Position(line, charPositionInLine);
-		errors.add(new DefaultReconcileProblem(PROBLEM, msg, new Range(start, end), "xxx"));
+		errors.add(new DefaultReconcileProblem(PROBLEM, msg, new Range(start, end)));
 	}
 
 	private static ProblemType PROBLEM = new ProblemType() {
 
 		@Override
-		public ProblemSeverity getDefaultSeverity() {
+		public ProblemSeverity getSeverity() {
 			return ProblemSeverity.ERROR;
 		}
 
