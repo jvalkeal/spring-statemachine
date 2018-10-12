@@ -24,7 +24,6 @@ import java.util.Set;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
-import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateParameterContext;
 import org.springframework.statemachine.state.State;

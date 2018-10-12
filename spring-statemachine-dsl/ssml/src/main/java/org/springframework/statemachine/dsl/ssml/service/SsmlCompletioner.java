@@ -24,7 +24,6 @@ import org.springframework.dsl.antlr.support.AbstractAntlrCompletioner;
 import org.springframework.dsl.document.Document;
 import org.springframework.dsl.service.Completioner;
 import org.springframework.statemachine.config.model.StateMachineModel;
-import org.springframework.statemachine.dsl.ssml.EnableSsmlLanguage;
 import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
 
 import reactor.core.publisher.Mono;
@@ -33,35 +32,18 @@ import reactor.core.publisher.Mono;
  * A {@link Completioner} implementation for a {@code SSML} language.
  *
  * @author Janne Valkealahti
- * @see EnableSsmlLanguage
  *
  */
 public class SsmlCompletioner extends AbstractAntlrCompletioner<StateMachineModel<String, String>> {
 
+	/**
+	 * Instantiates a new ssml completioner.
+	 *
+	 * @param antlrParseService the antlr parse service
+	 * @param antlrParseResultFunction the antlr parse result function
+	 */
 	public SsmlCompletioner(AntlrParseService<StateMachineModel<String, String>> antlrParseService,
-			Function<Document, Mono<? extends AntlrParseResult<StateMachineModel<String, String>>>> antlrParseResultSupplier) {
-		super(Arrays.asList(SsmlLanguage.LANGUAGE_ID), antlrParseService, antlrParseResultSupplier);
+			Function<Document, Mono<? extends AntlrParseResult<StateMachineModel<String, String>>>> antlrParseResultFunction) {
+		super(Arrays.asList(SsmlLanguage.LANGUAGE_ID), antlrParseService, antlrParseResultFunction);
 	}
-
-//	public SsmlCompletioner(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
-//		super(antlrFactory);
-//	}
-//
-//	@Override
-//	protected SsmlParser getParser(String input) {
-//		SsmlLexer lexer = getAntlrFactory().createLexer(CharStreams.fromString(input));
-//		SsmlParser parser = getAntlrFactory().createParser(new CommonTokenStream(lexer));
-//		parser.definitions();
-//		return parser;
-//	}
-//
-//	@Override
-//	protected Flux<CompletionItem> completeInternal(String content) {
-//		return Flux.fromIterable(assistCompletions(content))
-//			.flatMap(c -> {
-//				CompletionItem item = new CompletionItem();
-//				item.setLabel(c);
-//				return Mono.just(item);
-//			});
-//	}
 }

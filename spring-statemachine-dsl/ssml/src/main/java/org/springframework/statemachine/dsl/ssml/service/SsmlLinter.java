@@ -35,40 +35,14 @@ import reactor.core.publisher.Mono;
  */
 public class SsmlLinter extends AbstractAntlrLinter<StateMachineModel<String, String>> {
 
+	/**
+	 * Instantiates a new ssml linter.
+	 *
+	 * @param antlrParseService the antlr parse service
+	 * @param antlrParseResultFunction the antlr parse result function
+	 */
 	public SsmlLinter(AntlrParseService<StateMachineModel<String, String>> antlrParseService,
-			Function<Document, Mono<? extends AntlrParseResult<StateMachineModel<String, String>>>> antlrParseResultSupplier) {
-		super(SsmlLanguage.LANGUAGE_ID, antlrParseService, antlrParseResultSupplier);
+			Function<Document, Mono<? extends AntlrParseResult<StateMachineModel<String, String>>>> antlrParseResultFunction) {
+		super(SsmlLanguage.LANGUAGE_ID, antlrParseService, antlrParseResultFunction);
 	}
-
-//	private StateMachineComponentResolver<String, String> resolver;
-//
-//	public SsmlLinter(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
-//		super(antlrFactory);
-//	}
-
-//	@Override
-//	public Flux<ReconcileProblem> lintInternal(Document document) {
-//
-//		String content = document.content();
-//
-//		CharStream antlrInputStream = CharStreams.fromString(content);
-//
-//		SsmlLexer lexer = getAntlrFactory().createLexer(antlrInputStream);
-//
-//		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-//
-//		SsmlParser parser = getAntlrFactory().createParser(tokenStream);
-//
-//
-//		parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
-//		parser.removeErrorListeners();
-//
-//		ArrayList<ReconcileProblem> errors = new ArrayList<>();
-//		parser.addErrorListener(new SsmlErrorListener(errors));
-//		ParseTree tree = parser.definitions();
-//		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
-//		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
-//
-//		return Flux.fromIterable(errors);
-//	}
 }

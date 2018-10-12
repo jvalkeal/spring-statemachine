@@ -16,7 +16,6 @@
 package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
-import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardParameterContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlGuardVisitor.SsmlGuardResult;

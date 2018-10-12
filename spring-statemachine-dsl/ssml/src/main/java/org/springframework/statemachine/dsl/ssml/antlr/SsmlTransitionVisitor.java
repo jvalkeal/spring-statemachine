@@ -22,7 +22,6 @@ import org.antlr.v4.runtime.Token;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
-import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionParameterContext;
 import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionSourceStateDslParserResultError;

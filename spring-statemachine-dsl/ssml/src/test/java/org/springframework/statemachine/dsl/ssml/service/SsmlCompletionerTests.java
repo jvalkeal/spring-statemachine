@@ -13,24 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.statemachine.dsl.ssmlserver;
+package org.springframework.statemachine.dsl.ssml.service;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.junit.Test;
+import org.springframework.dsl.antlr.support.DefaultAntlrParseService;
+import org.springframework.dsl.document.TextDocument;
+import org.springframework.dsl.domain.CompletionItem;
+import org.springframework.dsl.domain.Position;
+import org.springframework.statemachine.config.model.StateMachineModel;
+import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
+import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFunction;
+
+/**
+ * Tests for {@link SsmlCompletioner}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlCompletionerTests {
 
-//	@Test
-//	public void testStateBlockKeywords1() {
-//		String input = "statemachine M1 { state S1 {";
-//
-//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-//
-//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-//
-//		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
-//	}
-//
+	@Test
+	public void testStateBlockKeywords1() {
+		String input = "statemachine M1 { state S1 {";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlCompletioner completioner = new SsmlCompletioner(antlrParseService, antlrParseResultFunction);
+		List<CompletionItem> items = completioner.complete(document, Position.from(0, 28)).toStream().collect(Collectors.toList());
+		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+
+		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
+	}
+
 //	@Test
 //	public void testStateBlockKeywords2() {
 //		String input = "state S1 {";

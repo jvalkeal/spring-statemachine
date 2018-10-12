@@ -15,17 +15,123 @@
  */
 package org.springframework.statemachine.dsl.ssml.support;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.Vocabulary;
+import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.springframework.dsl.antlr.AntlrCompletionEngine;
+import org.springframework.dsl.antlr.AntlrCompletionResult;
 import org.springframework.dsl.antlr.AntlrFactory;
+import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.antlr.support.AbstractAntlrParseResultFunction;
+import org.springframework.dsl.antlr.support.DefaultAntlrCompletionEngine;
+import org.springframework.dsl.document.Document;
+import org.springframework.dsl.domain.CompletionItem;
+import org.springframework.dsl.domain.Position;
+import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.statemachine.action.Action;
+import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.ssml.SsmlLexer;
 import org.springframework.statemachine.dsl.ssml.SsmlParser;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlErrorListener;
+import org.springframework.statemachine.dsl.ssml.antlr.SsmlStateMachineVisitor;
+import org.springframework.statemachine.guard.Guard;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * {@link Function} implementation for parsing results.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlAntlrParseResultFunction
 		extends AbstractAntlrParseResultFunction<StateMachineModel<String, String>, SsmlLexer, SsmlParser> {
 
+	private StateMachineComponentResolver<String, String> resolver;
+
 	public SsmlAntlrParseResultFunction(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
 		super(antlrFactory);
+		this.resolver = new StateMachineComponentResolver<String, String>() {
+
+			@Override
+			public Action<String, String> resolveAction(String id) {
+				return (ctx) -> {};
+			}
+
+			@Override
+			public Guard<String, String> resolveGuard(String id) {
+				return (ctx) -> false;
+			}
+		};
+	}
+
+	@Override
+	public Mono<? extends AntlrParseResult<StateMachineModel<String, String>>> apply(Document document) {
+
+        return Mono.just(new AntlrParseResult<StateMachineModel<String, String>>() {
+
+        	private Mono<SsmlDslParserResult> shared = parseResult(document, resolver).cache();
+
+        	@Override
+        	public Mono<StateMachineModel<String, String>> getResult() {
+        		return shared.map(r -> r.getResult());
+        	}
+
+        	@Override
+        	public Flux<ReconcileProblem> getReconcileProblems() {
+        		return shared.map(r -> r.getErrors()).flatMapIterable(l -> l);
+        	}
+
+        	@Override
+        	public Flux<CompletionItem> getCompletionItems(Position position) {
+        		SsmlParser parser = getParser(CharStreams.fromString(document.content()));
+
+		        AntlrCompletionEngine completionEngine = new DefaultAntlrCompletionEngine(parser, null, null);
+				AntlrCompletionResult completionResult = completionEngine.collectResults(position,
+						parser.definitions());
+
+				Flux<String> ddd1 = Flux.defer(() -> {
+					ArrayList<String> completions = new ArrayList<String>();
+					for (Entry<Integer, List<Integer>> e : completionResult.getTokens().entrySet()) {
+						if (e.getKey() > 0) {
+							Vocabulary vocabulary = parser.getVocabulary();
+							String displayName = vocabulary.getDisplayName(e.getKey());
+							completions.add(displayName);
+						}
+					}
+					return Flux.fromIterable(completions);
+				});
+
+				return Flux.concat(ddd1)
+						.flatMap(c -> {
+							CompletionItem item = new CompletionItem();
+							item.setLabel(c);
+							return Mono.just(item);
+						});
+        	}
+
+		});
+	}
+
+	private Mono<SsmlDslParserResult> parseResult(Document document, StateMachineComponentResolver<String, String> resolver) {
+		return Mono.defer(() -> {
+			ArrayList<ReconcileProblem> errors = new ArrayList<>();
+			SsmlParser parser = getParser(CharStreams.fromString(document.content()));
+			parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
+			parser.removeErrorListeners();
+			parser.addErrorListener(new SsmlErrorListener(errors));
+			ParseTree tree = parser.definitions();
+			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
+			StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
+			return Mono.just(new SsmlDslParserResult(model, errors));
+		});
 	}
 
 }

@@ -40,6 +40,7 @@ project('spring-statemachine-dsl-ssmlserver') {
 
 	dependencies {
 		compile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-ssml")
+		compile "org.springframework.boot:spring-boot-starter"
 		testCompile "org.springframework:spring-context"
 		testCompile "org.springframework:spring-test"
 		testCompile "org.hamcrest:hamcrest-core"

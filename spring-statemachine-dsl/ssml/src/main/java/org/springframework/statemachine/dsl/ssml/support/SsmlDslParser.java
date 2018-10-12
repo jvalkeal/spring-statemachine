@@ -19,18 +19,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.springframework.core.io.Resource;
 import org.springframework.dsl.DslException;
+import org.springframework.dsl.DslParser;
 import org.springframework.dsl.DslParserResult;
+import org.springframework.dsl.antlr.support.AntlrObjectSupport;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.StateMachineDslParser;
+import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
 import org.springframework.statemachine.dsl.ssml.SsmlLexer;
 import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlErrorListener;
@@ -38,19 +39,21 @@ import org.springframework.statemachine.dsl.ssml.antlr.SsmlStateMachineVisitor;
 import org.springframework.util.FileCopyUtils;
 
 /**
- * {@code DslParser} implementation parsing {@code SSML} content.
+ * {@link DslParser} implementation parsing {@code SSML} language.
  *
  * @author Janne Valkealahti
  *
  */
-public class SsmlDslParser implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
+public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser> implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
 
 	private StateMachineComponentResolver<String, String> resolver;
 
 	public SsmlDslParser() {
+		super(SsmlLanguage.ANTRL_FACTORY);
 	}
 
 	public SsmlDslParser(StateMachineComponentResolver<String, String> resolver) {
+		super(SsmlLanguage.ANTRL_FACTORY);
 		this.resolver = resolver;
 	}
 
@@ -62,13 +65,9 @@ public class SsmlDslParser implements StateMachineDslParser<String, String, Stat
 		} catch (IOException e) {
 			throw new DslException(e);
 		}
-		CharStream antlrInputStream = CharStreams.fromString(content);
-		SsmlLexer lexer = new SsmlLexer(antlrInputStream);
-		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-
 		ArrayList<ReconcileProblem> errors = new ArrayList<>();
+		SsmlParser parser = getParser(CharStreams.fromString(content));
 
-		SsmlParser parser = new SsmlParser(tokenStream);
 		parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 		parser.removeErrorListeners();
 		parser.addErrorListener(new SsmlErrorListener(errors));

@@ -21,15 +21,21 @@ import org.springframework.dsl.antlr.AntlrFactory;
 import org.springframework.dsl.model.LanguageId;
 
 /**
- * Various constants for {@code ssml} language.
+ * Various constants for {@code SSML} language.
  *
  * @author Janne Valkealahti
  *
  */
 public class SsmlLanguage {
 
+	/**
+	 * {@link LanguageId} for {@code SSML} language.
+	 */
 	public static LanguageId LANGUAGE_ID = LanguageId.languageId("ssml", "Spring Statemachine Markup Language");
 
+	/**
+	 * {@link AntlrFactory} for {@code SSML} language.
+	 */
 	public static AntlrFactory<SsmlLexer, SsmlParser> ANTRL_FACTORY = new AntlrFactory<SsmlLexer, SsmlParser>() {
 
 		@Override
