@@ -31,8 +31,12 @@ import org.springframework.dsl.antlr.support.AbstractAntlrParseResultFunction;
 import org.springframework.dsl.antlr.support.DefaultAntlrCompletionEngine;
 import org.springframework.dsl.document.Document;
 import org.springframework.dsl.domain.CompletionItem;
+import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.domain.Position;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
+import org.springframework.dsl.symboltable.SymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.StateMachineModel;
@@ -54,22 +58,15 @@ import reactor.core.publisher.Mono;
 public class SsmlAntlrParseResultFunction
 		extends AbstractAntlrParseResultFunction<StateMachineModel<String, String>, SsmlLexer, SsmlParser> {
 
-	private StateMachineComponentResolver<String, String> resolver;
+	private final StateMachineComponentResolver<String, String> resolver = new InternalStateMachineComponentResolver();
 
+	/**
+	 * Instantiates a new ssml antlr parse result function.
+	 *
+	 * @param antlrFactory the antlr factory
+	 */
 	public SsmlAntlrParseResultFunction(AntlrFactory<SsmlLexer, SsmlParser> antlrFactory) {
 		super(antlrFactory);
-		this.resolver = new StateMachineComponentResolver<String, String>() {
-
-			@Override
-			public Action<String, String> resolveAction(String id) {
-				return (ctx) -> {};
-			}
-
-			@Override
-			public Guard<String, String> resolveGuard(String id) {
-				return (ctx) -> false;
-			}
-		};
 	}
 
 	@Override
@@ -91,13 +88,11 @@ public class SsmlAntlrParseResultFunction
 
         	@Override
         	public Flux<CompletionItem> getCompletionItems(Position position) {
-        		SsmlParser parser = getParser(CharStreams.fromString(document.content()));
-
-		        AntlrCompletionEngine completionEngine = new DefaultAntlrCompletionEngine(parser, null, null);
-				AntlrCompletionResult completionResult = completionEngine.collectResults(position,
-						parser.definitions());
-
-				Flux<String> ddd1 = Flux.defer(() -> {
+				Flux<String> items = Flux.defer(() -> {
+	        		SsmlParser parser = getParser(CharStreams.fromString(document.content()));
+			        AntlrCompletionEngine completionEngine = new DefaultAntlrCompletionEngine(parser, null, null);
+					AntlrCompletionResult completionResult = completionEngine.collectResults(position,
+							parser.definitions());
 					ArrayList<String> completions = new ArrayList<String>();
 					for (Entry<Integer, List<Integer>> e : completionResult.getTokens().entrySet()) {
 						if (e.getKey() > 0) {
@@ -108,15 +103,20 @@ public class SsmlAntlrParseResultFunction
 					}
 					return Flux.fromIterable(completions);
 				});
-
-				return Flux.concat(ddd1)
+				return Flux.concat(items)
 						.flatMap(c -> {
-							CompletionItem item = new CompletionItem();
-							item.setLabel(c);
-							return Mono.just(item);
+							return Mono.just(CompletionItem.completionItem().label(c).build());
 						});
         	}
 
+			@Override
+			public Flux<DocumentSymbol> getDocumentSymbols() {
+				return Flux.defer(() -> {
+					DefaultSymbolTable symbolTable = new DefaultSymbolTable();
+					return Flux.fromIterable(symbolTable.getAllSymbols())
+							.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
+				});
+			}
 		});
 	}
 
@@ -134,4 +134,20 @@ public class SsmlAntlrParseResultFunction
 		});
 	}
 
+	/**
+	 * Resolver which never fails as needed for parsing to work without having real
+	 * actions and guards available.
+	 */
+	private static class InternalStateMachineComponentResolver implements StateMachineComponentResolver<String, String> {
+
+		@Override
+		public Action<String, String> resolveAction(String id) {
+			return (ctx) -> {};
+		}
+
+		@Override
+		public Guard<String, String> resolveGuard(String id) {
+			return (ctx) -> false;
+		}
+	}
 }

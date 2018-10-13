@@ -23,6 +23,7 @@ import org.springframework.dsl.antlr.support.DefaultAntlrParseService;
 import org.springframework.dsl.service.Completioner;
 import org.springframework.dsl.service.Hoverer;
 import org.springframework.dsl.service.reconcile.Linter;
+import org.springframework.dsl.service.symbol.Symbolizer;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.ssml.EnableSsmlLanguage;
 import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
@@ -31,10 +32,11 @@ import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.service.SsmlCompletioner;
 import org.springframework.statemachine.dsl.ssml.service.SsmlHoverer;
 import org.springframework.statemachine.dsl.ssml.service.SsmlLinter;
+import org.springframework.statemachine.dsl.ssml.service.SsmlSymbolizer;
 
 /**
  * Configuration for a {@code simple} sample language supporting
- * {@link Hoverer}, {@link Completioner} and {@link Linter}.
+ * {@link Hoverer}, {@link Completioner}, {@link Symbolizer} and {@link Linter}.
  *
  * @author Janne Valkealahti
  * @see EnableSsmlLanguage
@@ -56,6 +58,11 @@ public class SsmlLanguageConfiguration {
 	@Bean
 	public Linter ssmlLinter() {
 		return new SsmlLinter(ssmlAntlrParseService(), ssmlAntlrParseResultFunction());
+	}
+
+	@Bean
+	public Symbolizer ssmlSymbolizer() {
+		return new SsmlSymbolizer(ssmlAntlrParseService(), ssmlAntlrParseResultFunction());
 	}
 
 	@Bean

@@ -36,11 +36,12 @@ project('spring-statemachine-dsl-ssml') {
 }
 
 project('spring-statemachine-dsl-ssmlserver') {
+	apply plugin: 'org.springframework.boot'
 	description = "Spring State Machine Dsl SSML Language Server"
 
 	dependencies {
 		compile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-ssml")
-		compile "org.springframework.boot:spring-boot-starter"
+		compile "org.springframework.dsl:spring-dsl-starter-lspserver"
 		testCompile "org.springframework:spring-context"
 		testCompile "org.springframework:spring-test"
 		testCompile "org.hamcrest:hamcrest-core"

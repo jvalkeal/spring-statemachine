@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.dsl.ssmlserver;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.statemachine.dsl.ssml.EnableSsmlLanguage;
 
@@ -27,4 +28,8 @@ import org.springframework.statemachine.dsl.ssml.EnableSsmlLanguage;
 @EnableSsmlLanguage
 @SpringBootApplication
 public class Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
 }
