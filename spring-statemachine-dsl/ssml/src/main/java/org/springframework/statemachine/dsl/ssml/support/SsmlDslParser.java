@@ -36,6 +36,7 @@ import org.springframework.statemachine.dsl.ssml.SsmlLexer;
 import org.springframework.statemachine.dsl.ssml.SsmlParser;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlErrorListener;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlStateMachineVisitor;
+import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
 /**
@@ -44,16 +45,26 @@ import org.springframework.util.FileCopyUtils;
  * @author Janne Valkealahti
  *
  */
-public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser> implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
+public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser>
+		implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
 
 	private StateMachineComponentResolver<String, String> resolver;
 
+	/**
+	 * Instantiates a new ssml dsl parser.
+	 */
 	public SsmlDslParser() {
 		super(SsmlLanguage.ANTRL_FACTORY);
 	}
 
+	/**
+	 * Instantiates a new ssml dsl parser.
+	 *
+	 * @param resolver the resolver
+	 */
 	public SsmlDslParser(StateMachineComponentResolver<String, String> resolver) {
 		super(SsmlLanguage.ANTRL_FACTORY);
+		Assert.notNull(resolver, "StateMachineComponentResolver must be set");
 		this.resolver = resolver;
 	}
 

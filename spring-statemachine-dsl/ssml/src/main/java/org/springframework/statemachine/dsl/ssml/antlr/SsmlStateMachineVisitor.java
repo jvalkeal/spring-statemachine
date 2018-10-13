@@ -19,14 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.springframework.dsl.antlr.AntlrParseResult;
+import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
-import org.springframework.dsl.symboltable.ClassSymbol;
 import org.springframework.dsl.symboltable.DefaultSymbolTable;
-import org.springframework.dsl.symboltable.Scope;
 import org.springframework.dsl.symboltable.SymbolTable;
-import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
 import org.springframework.statemachine.config.model.StateData;
@@ -38,8 +35,8 @@ import org.springframework.statemachine.config.model.TransitionsData;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.DefinitionsContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
 import org.springframework.statemachine.guard.Guard;
-import org.springframework.util.ClassUtils;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -55,6 +52,12 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 	private final List<ReconcileProblem> errors;
 	private final StateMachineComponentResolver<S, E> resolver;
 
+	/**
+	 * Instantiates a new ssml state machine visitor.
+	 *
+	 * @param errors the errors
+	 * @param resolver the resolver
+	 */
 	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
 		this.errors = errors;
 		this.resolver = resolver;
@@ -62,12 +65,7 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 
 	@Override
 	public AntlrParseResult<StateMachineModel<S, E>> visitDefinitions(DefinitionsContext ctx) {
-
-//		ParseTreeProperty<Scope> scopes = new ParseTreeProperty<Scope>();
-//		Scope currentScope;
-
 		DefaultSymbolTable symbolTable = new DefaultSymbolTable();
-//		ClassSymbol classSymbol = new ClassSymbol(ClassUtils.getQualifiedName(StateMachine.class));
 
 		// TODO: visit machine as well as everything else outside of machine
 		//       is kinda anonymous
@@ -95,7 +93,9 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 		DefaultStateMachineModel<S, E> stateMachineModel = new DefaultStateMachineModel<S, E>(null,
 				new StatesData<>(stateDatas), new TransitionsData<>(transitionDatas));
 
-		return new AntlrParseResult<StateMachineModel<S,E>>() {
+		// TODO: don't like below as it doesn't feel 'reactive', though
+		//       as of now we know that callers will defer, etc.
+		return new AntlrParseResult<StateMachineModel<S, E>>() {
 
 			@Override
 			public Mono<StateMachineModel<S,E>> getResult() {
@@ -106,6 +106,18 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 			public Mono<SymbolTable> getSymbolTable() {
 				return Mono.just(symbolTable);
 			};
+
+			@Override
+			public Flux<ReconcileProblem> getReconcileProblems() {
+				return Flux.fromIterable(errors);
+			}
+
+			@Override
+			public Flux<DocumentSymbol> getDocumentSymbols() {
+				return getSymbolTable()
+					.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
+					.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
+			}
 		};
 	}
 }

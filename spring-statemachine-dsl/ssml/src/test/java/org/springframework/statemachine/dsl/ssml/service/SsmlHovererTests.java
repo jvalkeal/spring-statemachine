@@ -15,6 +15,40 @@
  */
 package org.springframework.statemachine.dsl.ssml.service;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
+import org.springframework.dsl.antlr.support.DefaultAntlrParseService;
+import org.springframework.dsl.document.TextDocument;
+import org.springframework.dsl.domain.Hover;
+import org.springframework.dsl.domain.Position;
+import org.springframework.statemachine.config.model.StateMachineModel;
+import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
+import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFunction;
+
+/**
+ * Tests for {@link SsmlHoverer}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlHovererTests {
+
+//	@Test
+	public void test1() {
+		String input = "state S1 {}";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlHoverer hoverer = new SsmlHoverer(antlrParseService, antlrParseResultFunction);
+		Hover hover = hoverer.hover(document, Position.from(0, 7)).block();
+		assertThat(hover, notNullValue());
+		assertThat(hover.getContents().getValue(), containsString("XXX"));
+	}
 
 }

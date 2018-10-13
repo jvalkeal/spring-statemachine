@@ -54,32 +54,36 @@ public class SsmlCompletionerTests {
 		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
 	}
 
+	@Test
+	public void testStateBlockKeywords2() {
+		String input = "state S1 {";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlCompletioner completioner = new SsmlCompletioner(antlrParseService, antlrParseResultFunction);
+		List<CompletionItem> items = completioner.complete(document, Position.from(0, 10)).toStream().collect(Collectors.toList());
+		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+
+		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
+	}
+
 //	@Test
-//	public void testStateBlockKeywords2() {
-//		String input = "state S1 {";
-//
-//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-//
-//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-//
-//		assertThat(labels, containsInAnyOrder("ENTRY", "EXIT", "INITIAL", "END", "DO"));
-//	}
-//
-////	@Test
-//	public void testStateBlockKeywords3() {
-//		String input = "state S1{initial}state S2{}state S3{end}transition T1{source ";
-//
-//		TextDocument document = new TextDocument("", LanguageId.PLAINTEXT, 0, input);
-//
-//		SsmlCompletioner completioner = new SsmlCompletioner(new SsmlAntlrFactory());
-//		List<CompletionItem> items = completioner.complete(document, null).toStream().collect(Collectors.toList());
-//		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
-//
-//		System.out.println("XXX: " + StringUtils.collectionToCommaDelimitedString(labels));
-//
-//		assertThat(labels, containsInAnyOrder("S1", "S2", "S3"));
-//	}
+	public void testStateBlockKeywords3() {
+		String input = "state S1{initial}state S2{}state S3{end}transition T1{source ";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlCompletioner completioner = new SsmlCompletioner(antlrParseService, antlrParseResultFunction);
+		List<CompletionItem> items = completioner.complete(document, Position.from(0, 61)).toStream().collect(Collectors.toList());
+		List<String> labels = items.stream().map(item -> item.getLabel()).collect(Collectors.toList());
+
+		assertThat(labels, containsInAnyOrder("S1", "S2", "S3"));
+	}
 
 }

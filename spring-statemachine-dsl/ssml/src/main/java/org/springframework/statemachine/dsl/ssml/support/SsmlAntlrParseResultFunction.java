@@ -35,8 +35,6 @@ import org.springframework.dsl.domain.CompletionItem;
 import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.domain.Position;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
-import org.springframework.dsl.symboltable.ClassSymbol;
-import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.dsl.symboltable.SymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
@@ -72,56 +70,73 @@ public class SsmlAntlrParseResultFunction
 
 	@Override
 	public Mono<? extends AntlrParseResult<StateMachineModel<String, String>>> apply(Document document) {
+		return Mono.defer(() -> {
+			// need to shim everything else than completion items as it takes position, thus
+			// we need to handle it in this level. further stuff is just delegated to a shared
+			// and cached parsing result.
 
-        return Mono.just(new AntlrParseResult<StateMachineModel<String, String>>() {
+			// TODO: for above comment, need to think if getCompletionItems(Position position) in
+			//       AntlrParseResult is realistically useless as when original parsing happens
+			//       positional info is not available, thus one might think that function should
+			//       not be in that interface. you see issues with it as shown below.
+			Mono<AntlrParseResult<StateMachineModel<String, String>>> shared = parse(document, resolver).cache();
+			return Mono.just(new AntlrParseResult<StateMachineModel<String, String>>() {
 
-        	private Mono<SsmlDslParserResult> shared = parseResult(document, resolver).cache();
+				@Override
+				public Mono<StateMachineModel<String, String>> getResult() {
+					return shared.flatMap(r -> Mono.from(r.getResult()));
+				};
 
-        	@Override
-        	public Mono<StateMachineModel<String, String>> getResult() {
-        		return shared.map(r -> r.getResult());
-        	}
+				@Override
+				public Mono<SymbolTable> getSymbolTable() {
+					return shared.flatMap(r -> Mono.from(r.getSymbolTable()));
+				};
 
-        	@Override
-        	public Flux<ReconcileProblem> getReconcileProblems() {
-        		return shared.map(r -> r.getErrors()).flatMapIterable(l -> l);
-        	}
+				@Override
+				public Flux<ReconcileProblem> getReconcileProblems() {
+					return shared.flatMapMany(r -> Flux.from(r.getReconcileProblems()));
+				}
 
-        	@Override
-        	public Flux<CompletionItem> getCompletionItems(Position position) {
-				Flux<String> items = Flux.defer(() -> {
-	        		SsmlParser parser = getParser(CharStreams.fromString(document.content()));
-			        AntlrCompletionEngine completionEngine = new DefaultAntlrCompletionEngine(parser, null, null);
-					AntlrCompletionResult completionResult = completionEngine.collectResults(position,
-							parser.definitions());
-					ArrayList<String> completions = new ArrayList<String>();
-					for (Entry<Integer, List<Integer>> e : completionResult.getTokens().entrySet()) {
-						if (e.getKey() > 0) {
-							Vocabulary vocabulary = parser.getVocabulary();
-							String displayName = vocabulary.getDisplayName(e.getKey());
-							completions.add(displayName);
+	        	@Override
+	        	public Flux<CompletionItem> getCompletionItems(Position position) {
+					Flux<String> items = Flux.defer(() -> {
+		        		SsmlParser parser = getParser(CharStreams.fromString(document.content()));
+				        AntlrCompletionEngine completionEngine = new DefaultAntlrCompletionEngine(parser, null, null);
+						AntlrCompletionResult completionResult = completionEngine.collectResults(position,
+								parser.definitions());
+						ArrayList<String> completions = new ArrayList<String>();
+						for (Entry<Integer, List<Integer>> e : completionResult.getTokens().entrySet()) {
+							if (e.getKey() > 0) {
+								Vocabulary vocabulary = parser.getVocabulary();
+								String displayName = vocabulary.getDisplayName(e.getKey());
+								completions.add(displayName);
+							}
 						}
-					}
-					return Flux.fromIterable(completions);
-				});
-				return Flux.concat(items)
-						.flatMap(c -> {
-							return Mono.just(CompletionItem.completionItem().label(c).build());
-						});
-        	}
+						return Flux.fromIterable(completions);
+					});
+					return Flux.concat(items)
+							.flatMap(c -> {
+								return Mono.just(CompletionItem.completionItem().label(c).build());
+							});
+	        	}
 
-			@Override
-			public Flux<DocumentSymbol> getDocumentSymbols() {
-				return Flux.defer(() -> {
-					return parseSymbolTable(document, resolver)
-						.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
-						.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
-				});
-			}
+	        	@Override
+				public Flux<DocumentSymbol> getDocumentSymbols() {
+	        		return shared.flatMapMany(r -> Flux.from(r.getDocumentSymbols()));
+	        	}
+			});
 		});
 	}
 
-	private Mono<SymbolTable> parseSymbolTable(Document document, StateMachineComponentResolver<String, String> resolver) {
+	/**
+	 * Parse a document and return a mono for parsing result.
+	 *
+	 * @param document the document
+	 * @param resolver the resolver
+	 * @return the mono of antlr parse result of a state machine model
+	 */
+	private Mono<AntlrParseResult<StateMachineModel<String, String>>> parse(Document document,
+			StateMachineComponentResolver<String, String> resolver) {
 		return Mono.defer(() -> {
 			ArrayList<ReconcileProblem> errors = new ArrayList<>();
 			SsmlParser parser = getParser(CharStreams.fromString(document.content()));
@@ -129,22 +144,9 @@ public class SsmlAntlrParseResultFunction
 			parser.removeErrorListeners();
 			parser.addErrorListener(new SsmlErrorListener(errors));
 			ParseTree tree = parser.definitions();
-			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
-			return stateMachineVisitor.visit(tree).getSymbolTable();
-		});
-	}
-
-	private Mono<SsmlDslParserResult> parseResult(Document document, StateMachineComponentResolver<String, String> resolver) {
-		return Mono.defer(() -> {
-			ArrayList<ReconcileProblem> errors = new ArrayList<>();
-			SsmlParser parser = getParser(CharStreams.fromString(document.content()));
-			parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
-			parser.removeErrorListeners();
-			parser.addErrorListener(new SsmlErrorListener(errors));
-			ParseTree tree = parser.definitions();
-			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
-			StateMachineModel<String, String> model = stateMachineVisitor.visit(tree).getResult().block();
-			return Mono.just(new SsmlDslParserResult(model, errors));
+			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors,
+					resolver);
+			return Mono.just(stateMachineVisitor.visit(tree));
 		});
 	}
 

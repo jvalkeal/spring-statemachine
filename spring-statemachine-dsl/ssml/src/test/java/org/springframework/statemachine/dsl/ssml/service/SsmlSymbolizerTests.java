@@ -30,6 +30,12 @@ import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
 import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFunction;
 
+/**
+ * Tests for {@link SsmlSymbolizer}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlSymbolizerTests {
 
 	@Test
