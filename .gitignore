@@ -17,3 +17,4 @@ metastore_db
 target
 classes
 .sts4-cache
+.attach_pid*
