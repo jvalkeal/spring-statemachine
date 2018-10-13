@@ -76,7 +76,7 @@ public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser> imp
 
 		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
 
-		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
+		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree).getResult().block();
 
 		return new SsmlDslParserResult(model, errors);
 	}

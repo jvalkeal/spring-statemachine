@@ -33,7 +33,7 @@ import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFun
 public class SsmlSymbolizerTests {
 
 	@Test
-	public void test() {
+	public void test1() {
 		String input = "";
 
 		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
@@ -46,8 +46,22 @@ public class SsmlSymbolizerTests {
 		List<String> labels = symbols.stream().map(symbol -> symbol.getName()).collect(Collectors.toList());
 
 		assertThat(labels.size(), is(0));
-//		assertThat(labels, containsInAnyOrder("org.springframework.statemachine.state.State",
-//				"org.springframework.statemachine.transition.Transition"));
 	}
 
+	@Test
+	public void test2() {
+		String input = "state S1 {}";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlSymbolizer symbolizer = new SsmlSymbolizer(antlrParseService, antlrParseResultFunction);
+		List<DocumentSymbol> symbols = symbolizer.symbolize(document).toStream().collect(Collectors.toList());
+		List<String> labels = symbols.stream().map(symbol -> symbol.getName()).collect(Collectors.toList());
+
+		assertThat(labels.size(), is(1));
+		assertThat(labels, containsInAnyOrder("S1"));
+	}
 }

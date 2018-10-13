@@ -112,11 +112,24 @@ public class SsmlAntlrParseResultFunction
 			@Override
 			public Flux<DocumentSymbol> getDocumentSymbols() {
 				return Flux.defer(() -> {
-					DefaultSymbolTable symbolTable = new DefaultSymbolTable();
-					return Flux.fromIterable(symbolTable.getAllSymbols())
-							.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
+					return parseSymbolTable(document, resolver)
+						.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
+						.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
 				});
 			}
+		});
+	}
+
+	private Mono<SymbolTable> parseSymbolTable(Document document, StateMachineComponentResolver<String, String> resolver) {
+		return Mono.defer(() -> {
+			ArrayList<ReconcileProblem> errors = new ArrayList<>();
+			SsmlParser parser = getParser(CharStreams.fromString(document.content()));
+			parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
+			parser.removeErrorListeners();
+			parser.addErrorListener(new SsmlErrorListener(errors));
+			ParseTree tree = parser.definitions();
+			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
+			return stateMachineVisitor.visit(tree).getSymbolTable();
 		});
 	}
 
@@ -129,7 +142,7 @@ public class SsmlAntlrParseResultFunction
 			parser.addErrorListener(new SsmlErrorListener(errors));
 			ParseTree tree = parser.definitions();
 			SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
-			StateMachineModel<String, String> model = stateMachineVisitor.visit(tree);
+			StateMachineModel<String, String> model = stateMachineVisitor.visit(tree).getResult().block();
 			return Mono.just(new SsmlDslParserResult(model, errors));
 		});
 	}

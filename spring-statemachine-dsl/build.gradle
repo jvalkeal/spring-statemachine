@@ -26,6 +26,7 @@ project('spring-statemachine-dsl-ssml') {
 		antlr "org.antlr:antlr4"
 		compile project(":spring-statemachine-dsl-common")
 		compile "org.springframework.dsl:spring-dsl-antlr"
+		compile "org.springframework.dsl:spring-dsl-symboltable"
 		testCompile "org.springframework:spring-context"
 		testCompile "org.springframework:spring-test"
 		testCompile "org.hamcrest:hamcrest-core"

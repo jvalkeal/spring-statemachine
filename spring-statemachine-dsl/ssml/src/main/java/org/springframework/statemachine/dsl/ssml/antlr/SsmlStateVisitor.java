@@ -21,12 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateParameterContext;
 import org.springframework.statemachine.state.State;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@code Visitor} visiting {@link State} definitions.
@@ -40,14 +43,20 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 
 	private final Set<S> seenStates = new HashSet<>();
 	private final Map<String, Action<S, E>> actions;
+	private final DefaultSymbolTable symbolTable;
 
-	SsmlStateVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver, Map<String, Action<S, E>> actions) {
+	SsmlStateVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
+			Map<String, Action<S, E>> actions, DefaultSymbolTable symbolTable) {
 		super(stateMachineComponentResolver);
 		this.actions = actions;
+		this.symbolTable = symbolTable;
 	}
 
 	@Override
 	public StateData<S, E> visitState(StateContext ctx) {
+		ClassSymbol classSymbol = new ClassSymbol(ctx.id().getText());
+		classSymbol.setSuperClass(ClassUtils.getQualifiedName(State.class));
+		symbolTable.defineGlobal(classSymbol);
 		S state = (S) ctx.id().getText();
 		seenStates.add(state);
 		StateData<S, E> stateData = new StateData<>(state);
