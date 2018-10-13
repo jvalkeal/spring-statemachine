@@ -18,10 +18,11 @@ package org.springframework.statemachine.dsl.ssml.antlr;
 import java.util.List;
 import java.util.Map;
 
-import org.antlr.v4.runtime.Token;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.SourceIdContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.TargetIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionParameterContext;
 import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionSourceStateDslParserResultError;
@@ -59,20 +60,25 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 		E event = null;
 		Guard<S, E> guard = null;
 		for (TransitionParameterContext parameterContext : ctx.transitionParameters().transitionParameter()) {
-			Token idToken = parameterContext.id().ID().getSymbol();
-			if (parameterContext.transitionType().SOURCE() != null) {
-				source = (S) parameterContext.id().getText();
+			SourceIdContext sourceId = parameterContext.transitionType().sourceId();
+			TargetIdContext targetId = parameterContext.transitionType().targetId();
+
+			if (sourceId  != null) {
+				source = (S) sourceId.getText();
 				if (!stateVisitor.getSeenStates().contains(source)) {
-					errors.add(new SsmlTransitionSourceStateDslParserResultError(idToken));
+					errors.add(new SsmlTransitionSourceStateDslParserResultError(sourceId.ID().getSymbol()));
 				}
-			} else if (parameterContext.transitionType().TARGET() != null) {
-				target = (S) parameterContext.id().getText();
+			}
+			if (targetId  != null) {
+				target = (S) targetId.getText();
 				if (!stateVisitor.getSeenStates().contains(target)) {
-					errors.add(new SsmlTransitionTargetStateDslParserResultError(idToken));
+					errors.add(new SsmlTransitionTargetStateDslParserResultError(targetId.ID().getSymbol()));
 				}
-			} else if (parameterContext.transitionType().EVENT() != null) {
+			}
+			if (parameterContext.transitionType().EVENT() != null) {
 				event = (E) parameterContext.id().getText();
-			} else if (parameterContext.transitionType().GUARD() != null) {
+			}
+			if (parameterContext.transitionType().GUARD() != null) {
 				guard = guards.get(parameterContext.id().getText());
 			}
 		}

@@ -48,4 +48,4 @@ LINE_COMMENT         :   '//' .*? '\r'? '\n' -> skip ;
 // # 34 to indicate line 34 ) and discarded
 PREPROC              :   '#' .*? '\n' -> skip ;
 
-WS                   :   [ \t\n\r]+ -> skip ;
+WS                   :   [ \t\n\r]+ -> channel(HIDDEN) ;

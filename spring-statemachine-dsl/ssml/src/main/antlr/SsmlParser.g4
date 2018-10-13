@@ -21,7 +21,7 @@ stateType            :   INITIAL | END | EXIT | DO | ENTRY ;
 // transition structure
 transitionParameters :   ( transitionParameter SEMI? )* ;
 transitionParameter  :   transitionType id? ;
-transitionType       :   SOURCE | TARGET | EVENT | ACTION | GUARD ;
+transitionType       :   SOURCE sourceId | TARGET targetId | EVENT | ACTION | GUARD ;
 
 // action structure
 actionParameters     :   ( actionParameter SEMI? )* ;
@@ -33,4 +33,6 @@ guardParameters      :   ( guardParameter SEMI? )* ;
 guardParameter       :   guardType id? ;
 guardType            :   BEAN ;
 
-id                   :   ID | STRING | NUMBER ;
+sourceId             :   ID ;
+targetId             :   ID ;
+id                   :   ID ;
