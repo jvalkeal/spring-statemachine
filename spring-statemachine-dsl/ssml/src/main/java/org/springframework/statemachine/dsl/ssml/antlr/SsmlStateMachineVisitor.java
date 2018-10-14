@@ -116,7 +116,10 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 			public Flux<DocumentSymbol> getDocumentSymbols() {
 				return getSymbolTable()
 					.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
-					.map(s -> DocumentSymbol.documentSymbol().name(s.getName()).build());
+					.map(s -> DocumentSymbol.documentSymbol()
+							.name(s.getName())
+							.range(s.getRange())
+							.build());
 			}
 		};
 	}

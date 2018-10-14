@@ -33,8 +33,10 @@ import org.springframework.dsl.antlr.support.DefaultAntlrCompletionEngine;
 import org.springframework.dsl.document.Document;
 import org.springframework.dsl.domain.CompletionItem;
 import org.springframework.dsl.domain.DocumentSymbol;
+import org.springframework.dsl.domain.Hover;
 import org.springframework.dsl.domain.Position;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.dsl.support.DslUtils;
 import org.springframework.dsl.symboltable.SymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
@@ -124,6 +126,14 @@ public class SsmlAntlrParseResultFunction
 				public Flux<DocumentSymbol> getDocumentSymbols() {
 	        		return shared.flatMapMany(r -> Flux.from(r.getDocumentSymbols()));
 	        	}
+
+				@Override
+				public Mono<Hover> getHover(Position position) {
+					return getDocumentSymbols()
+						.filter(s -> DslUtils.isPositionInRange(position, s.getRange()))
+						.map(s -> Hover.hover().contents().value(s.getName()).and().build())
+						.next();
+				}
 			});
 		});
 	}

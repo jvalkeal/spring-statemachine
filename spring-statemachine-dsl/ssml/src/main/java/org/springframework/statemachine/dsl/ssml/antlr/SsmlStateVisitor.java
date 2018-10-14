@@ -21,11 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.symboltable.ClassSymbol;
 import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateParameterContext;
 import org.springframework.statemachine.state.State;
@@ -57,6 +59,13 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 		ClassSymbol classSymbol = new ClassSymbol(ctx.id().getText());
 		classSymbol.setSuperClass(ClassUtils.getQualifiedName(State.class));
 		symbolTable.defineGlobal(classSymbol);
+		IdContext id = ctx.id();
+
+		int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+
+		classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
+				id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+
 		S state = (S) ctx.id().getText();
 		seenStates.add(state);
 		StateData<S, E> stateData = new StateData<>(state);

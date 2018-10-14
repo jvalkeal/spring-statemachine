@@ -19,10 +19,8 @@ import java.util.function.Function;
 
 import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.antlr.AntlrParseService;
-import org.springframework.dsl.antlr.support.AbstractAntlrDslService;
+import org.springframework.dsl.antlr.support.AbstractAntlrHoverer;
 import org.springframework.dsl.document.Document;
-import org.springframework.dsl.domain.Hover;
-import org.springframework.dsl.domain.Position;
 import org.springframework.dsl.service.Hoverer;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.ssml.EnableSsmlLanguage;
@@ -37,15 +35,16 @@ import reactor.core.publisher.Mono;
  * @see EnableSsmlLanguage
  *
  */
-public class SsmlHoverer extends AbstractAntlrDslService<StateMachineModel<String, String>> implements Hoverer {
+public class SsmlHoverer extends AbstractAntlrHoverer<StateMachineModel<String, String>> implements Hoverer {
 
+	/**
+	 * Instantiates a new ssml hoverer.
+	 *
+	 * @param antlrParseService the antlr parse service
+	 * @param antlrParseResultFunction the antlr parse result function
+	 */
 	public SsmlHoverer(AntlrParseService<StateMachineModel<String, String>> antlrParseService,
 			Function<Document, Mono<? extends AntlrParseResult<StateMachineModel<String, String>>>> antlrParseResultFunction) {
 		super(SsmlLanguage.LANGUAGE_ID, antlrParseService, antlrParseResultFunction);
-	}
-
-	@Override
-	public Mono<Hover> hover(Document document, Position position) {
-		return Mono.empty();
 	}
 }

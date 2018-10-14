@@ -36,7 +36,7 @@ import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFun
  */
 public class SsmlHovererTests {
 
-//	@Test
+	@Test
 	public void test1() {
 		String input = "state S1 {}";
 
@@ -46,9 +46,30 @@ public class SsmlHovererTests {
 		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
 
 		SsmlHoverer hoverer = new SsmlHoverer(antlrParseService, antlrParseResultFunction);
-		Hover hover = hoverer.hover(document, Position.from(0, 7)).block();
+		Hover hover = hoverer.hover(document, Position.from(0, 6)).block();
 		assertThat(hover, notNullValue());
-		assertThat(hover.getContents().getValue(), containsString("XXX"));
+		assertThat(hover.getContents().getValue(), containsString("S1"));
+		hover = hoverer.hover(document, Position.from(0, 7)).block();
+		assertThat(hover, notNullValue());
+		assertThat(hover.getContents().getValue(), containsString("S1"));
+	}
+
+	@Test
+	public void test2() {
+		String input = "state S1 {}\nstate S2 {}";
+
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlHoverer hoverer = new SsmlHoverer(antlrParseService, antlrParseResultFunction);
+		Hover hover = hoverer.hover(document, Position.from(1, 6)).block();
+		assertThat(hover, notNullValue());
+		assertThat(hover.getContents().getValue(), containsString("S2"));
+		hover = hoverer.hover(document, Position.from(1, 7)).block();
+		assertThat(hover, notNullValue());
+		assertThat(hover.getContents().getValue(), containsString("S2"));
 	}
 
 }
