@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.domain.DocumentSymbol;
+import org.springframework.dsl.domain.SymbolKind;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.dsl.symboltable.SymbolTable;
@@ -118,6 +119,7 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 					.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
 					.map(s -> DocumentSymbol.documentSymbol()
 							.name(s.getName())
+							.kind(SymbolKind.String)
 							.range(s.getRange())
 							.build());
 			}

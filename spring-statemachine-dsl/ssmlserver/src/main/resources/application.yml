@@ -9,4 +9,3 @@ spring:
     lsp:
       server:
         mode: PROCESS
-        force-jvm-exit-on-shutdown: false
