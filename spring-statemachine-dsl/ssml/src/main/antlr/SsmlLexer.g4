@@ -17,10 +17,10 @@ EXIT                 :   [Ee][Xx][Ii][Tt] ;
 DO                   :   [Dd][Oo] ;
 BEAN                 :   [Bb][Ee][Aa][Nn] ;
 
-LBRACE               : '{' ;
-RBRACE               : '}' ;
-SEMI                 : ';' ;
-COMMA                : ',' ;
+LBRACE               :   '{' ;
+RBRACE               :   '}' ;
+SEMI                 :   ';' ;
+COMMA                :   ',' ;
 
 // a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? )
 NUMBER               :   '-'? ('.' DIGIT+ | DIGIT+ ('.' DIGIT*)? ) ;
@@ -41,11 +41,7 @@ LETTER               :   [a-zA-Z\u0080-\u00FF_] ;
 fragment
 TAG                  :   '<' .*? '>' ;
 
-COMMENT              :   '/*' .*? '*/'       -> skip ;
-LINE_COMMENT         :   '//' .*? '\r'? '\n' -> skip ;
-
-// a '#' character is considered a line output from a C preprocessor (e.g.,
-// # 34 to indicate line 34 ) and discarded
-PREPROC              :   '#' .*? '\n' -> skip ;
-
-WS                   :   [ \t\n\r]+ -> channel(HIDDEN) ;
+COMMENT              :   '/*' .*? '*/'       -> channel(HIDDEN) ;
+LINE_COMMENT_SLASH   :   '//' .*? '\r'? '\n' -> channel(HIDDEN) ;
+LINE_COMMENT_HASH    :   '#' .*? '\r'? '\n'  -> channel(HIDDEN) ;
+WS                   :   [ \t\n\r]+          -> channel(HIDDEN) ;

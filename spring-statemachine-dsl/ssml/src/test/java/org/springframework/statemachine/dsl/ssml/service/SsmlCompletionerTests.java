@@ -48,6 +48,16 @@ public class SsmlCompletionerTests {
 	}
 
 	@Test
+	public void testTransitionBlockKeywords() {
+		String input = "statemachine M1 { transition T1 {}}";
+		assertCompletions(input, Position.from(0, 33), "source", "target", "event", "action", "guard");
+		input = "transition T1 {}";
+		assertCompletions(input, Position.from(0, 15), "source", "target", "event", "action", "guard");
+		input = "transition T1 {\n}";
+		assertCompletions(input, Position.from(0, 15), "source", "target", "event", "action", "guard");
+	}
+
+	@Test
 	public void testEmpty() {
 		String input = "";
 		assertCompletions(input, Position.from(0, 0), "statemachine", "state", "transition", "action", "guard");
