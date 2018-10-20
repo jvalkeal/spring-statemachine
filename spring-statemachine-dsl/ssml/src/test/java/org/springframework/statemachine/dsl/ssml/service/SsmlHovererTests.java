@@ -16,6 +16,7 @@
 package org.springframework.statemachine.dsl.ssml.service;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 
@@ -70,6 +71,8 @@ public class SsmlHovererTests {
 		hover = hoverer.hover(document, Position.from(1, 7)).block();
 		assertThat(hover, notNullValue());
 		assertThat(hover.getContents().getValue(), containsString("S2"));
+		hover = hoverer.hover(document, Position.from(0, 0)).block();
+		assertThat(hover, nullValue());
 	}
 
 }

@@ -48,8 +48,8 @@ public class SsmlTransitionTargetStateDslParserResultError implements ReconcileP
 
 	@Override
 	public Range getRange() {
-		Position start = new Position(token.getLine(), token.getCharPositionInLine());
-		Position end = new Position(token.getLine(), token.getCharPositionInLine());
+		Position start = new Position(token.getLine() - 1, token.getCharPositionInLine());
+		Position end = new Position(token.getLine() - 1, token.getCharPositionInLine());
 		return new Range(start, end);
 	}
 

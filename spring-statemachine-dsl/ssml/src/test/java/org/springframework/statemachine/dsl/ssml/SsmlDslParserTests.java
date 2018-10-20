@@ -45,7 +45,6 @@ import org.springframework.util.ObjectUtils;
  */
 public class SsmlDslParserTests {
 
-
 	@Test
 	public void testSimpleMachineNormal() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-normal.ssml");
@@ -89,7 +88,7 @@ public class SsmlDslParserTests {
 		assertThat(dslParserResult.hasErrors(), is(true));
 		assertThat(dslParserResult.getErrors().get(0).getMessage(), is("undefined state 'S4' referenced in transition target"));
 
-		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getLine(), is(22));
+		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getLine(), is(21));
 		assertThat(dslParserResult.getErrors().get(0).getRange().getStart().getCharacter(), is(9));
 	}
 

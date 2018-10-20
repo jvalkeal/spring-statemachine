@@ -42,11 +42,16 @@ public class SsmlCompletionerTests {
 	@Test
 	public void testStateBlockKeywords() {
 		String input = "statemachine M1 { state S1 {";
-		assertCompletions(input, Position.from(0, 28), "ENTRY", "EXIT", "INITIAL", "END", "DO");
+		assertCompletions(input, Position.from(0, 28), "entry", "exit", "initial", "end", "do");
 		input = "state S1 {";
-		assertCompletions(input, Position.from(0, 10), "ENTRY", "EXIT", "INITIAL", "END", "DO");
+		assertCompletions(input, Position.from(0, 10), "entry", "exit", "initial", "end", "do");
 	}
 
+	@Test
+	public void testEmpty() {
+		String input = "";
+		assertCompletions(input, Position.from(0, 0), "statemachine", "state", "transition", "action", "guard");
+	}
 
 //	@Test
 	public void testCompleteKeywords() {

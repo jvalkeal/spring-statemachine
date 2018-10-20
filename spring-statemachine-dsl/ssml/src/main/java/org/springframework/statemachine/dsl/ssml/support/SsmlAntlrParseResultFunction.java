@@ -118,7 +118,7 @@ public class SsmlAntlrParseResultFunction
 					});
 					return Flux.concat(items)
 							.flatMap(c -> {
-								return Mono.just(CompletionItem.completionItem().label(c).build());
+								return Mono.just(CompletionItem.completionItem().label(c.toLowerCase()).build());
 							});
 	        	}
 

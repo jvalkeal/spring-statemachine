@@ -25,9 +25,11 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.springframework.dsl.antlr.support.DefaultAntlrParseService;
 import org.springframework.dsl.document.TextDocument;
+import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineModel;
 import org.springframework.statemachine.dsl.ssml.SsmlLanguage;
+import org.springframework.statemachine.dsl.ssml.TestResourceUtils;
 import org.springframework.statemachine.dsl.ssml.support.SsmlAntlrParseResultFunction;
 
 import reactor.core.publisher.Flux;
@@ -55,4 +57,19 @@ public class SsmlLinterTests {
 		assertThat(problems.size(), is(0));
 	}
 
+	@Test
+	public void testSimpleErrors() throws Exception {
+		String input = TestResourceUtils.resourceAsString(TestResourceUtils.class, "simplemachine-error-wrongstate.ssml");
+		TextDocument document = new TextDocument("", SsmlLanguage.LANGUAGE_ID, 0, input);
+
+		DefaultAntlrParseService<StateMachineModel<String, String>> antlrParseService = new DefaultAntlrParseService<>();
+		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
+
+		SsmlLinter ssmlLinter = new SsmlLinter(antlrParseService, antlrParseResultFunction);
+		Flux<ReconcileProblem> lints = ssmlLinter.lint(document);
+		List<ReconcileProblem> problems = lints.toStream().collect(Collectors.toList());
+		assertThat(problems, notNullValue());
+		assertThat(problems.size(), is(1));
+		assertThat(problems.get(0).getRange(), is(Range.from(21, 9, 21, 9)));
+	}
 }
