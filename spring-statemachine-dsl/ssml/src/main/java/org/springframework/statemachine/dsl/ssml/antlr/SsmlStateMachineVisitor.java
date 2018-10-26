@@ -121,6 +121,7 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 							.name(s.getName())
 							.kind(SymbolKind.String)
 							.range(s.getRange())
+							.selectionRange(s.getRange())
 							.build());
 			}
 		};

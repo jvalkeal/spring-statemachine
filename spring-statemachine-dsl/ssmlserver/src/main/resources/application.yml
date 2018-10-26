@@ -1,7 +1,7 @@
 logging:
   file: ssmlserver.log
   level:
-    org.springframework.dsl: info
+    org.springframework.dsl: debug
 spring:
   main:
     banner-mode: "off"
