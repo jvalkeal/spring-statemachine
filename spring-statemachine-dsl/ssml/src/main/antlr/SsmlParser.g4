@@ -87,7 +87,6 @@ guardParameter       : guardType
                      ;
 
 guardType            : BEAN beanId
-
                      ;
                      
 // generic id mappings
