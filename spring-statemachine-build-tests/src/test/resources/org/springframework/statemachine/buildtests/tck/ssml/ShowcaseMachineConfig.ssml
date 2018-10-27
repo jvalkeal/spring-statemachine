@@ -7,7 +7,7 @@ state S0 {
 
 state S1 {
   parent S0
-  initial
+  initial fooAction
 }
 state S11 {
   parent S1

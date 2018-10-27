@@ -27,6 +27,7 @@ import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ExitIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ParentIdContext;
@@ -72,6 +73,7 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 		seenStates.add(state);
 		StateData<S, E> stateData = new StateData<>(state);
 		List<Action<S, E>> exitActions = new ArrayList<>();
+		Action<S, E> initialAction = null;
 
 		for (StateParameterContext parameterContext : ctx.stateParameters().stateParameter()) {
 
@@ -79,6 +81,13 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 
 			if (parameterContext.stateType().INITIAL() != null) {
 				stateData.setInitial(true);
+				ActionIdContext actionId = parameterContext.stateType().actionId();
+				if (actionId != null) {
+					initialAction = actions.get(actionId.getText());
+					if (initialAction != null) {
+						stateData.setInitialAction(initialAction);
+					}
+				}
 			} else if (parameterContext.stateType().END() != null) {
 				stateData.setEnd(true);
 			} else if (parameterContext.stateType().EXIT() != null) {
@@ -98,7 +107,6 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 
 		}
 		stateData.setExitActions(exitActions);
-
 		return stateData;
 	}
 
