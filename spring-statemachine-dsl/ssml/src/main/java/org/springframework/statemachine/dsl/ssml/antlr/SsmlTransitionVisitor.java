@@ -21,6 +21,8 @@ import java.util.Map;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.EventIdContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.SourceIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TargetIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
@@ -76,10 +78,17 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 				}
 			}
 			if (parameterContext.transitionType().EVENT() != null) {
-				event = (E) parameterContext.id().getText();
+				EventIdContext eventId = parameterContext.transitionType().eventId();
+				if (eventId != null) {
+					event = (E) eventId.getText();
+				}
 			}
 			if (parameterContext.transitionType().GUARD() != null) {
-				guard = guards.get(parameterContext.id().getText());
+				GuardIdContext guardId = parameterContext.transitionType().guardId();
+				if (guardId != null) {
+					guard = guards.get(guardId.getText());
+				}
+
 			}
 		}
 		TransitionData<S, E> transitionData = new TransitionData<>(source, target, event, null, guard, TransitionKind.EXTERNAL);

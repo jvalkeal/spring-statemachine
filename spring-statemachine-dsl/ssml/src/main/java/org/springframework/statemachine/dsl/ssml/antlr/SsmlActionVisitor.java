@@ -19,6 +19,7 @@ import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionParameterContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlActionVisitor.SsmlActionResult;
 
 /**
@@ -42,7 +43,10 @@ class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionRe
 		String bean = null;
 		for (ActionParameterContext parameterContext : ctx.actionParameters().actionParameter()) {
 			if (parameterContext.actionType().BEAN() != null) {
-				bean = parameterContext.id().getText();
+				BeanIdContext beanId = parameterContext.actionType().beanId();
+				if (beanId != null) {
+					bean = beanId.getText();
+				}
 			}
 		}
 

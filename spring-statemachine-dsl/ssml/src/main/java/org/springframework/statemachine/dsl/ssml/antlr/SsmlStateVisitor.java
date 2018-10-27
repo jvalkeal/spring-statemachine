@@ -27,6 +27,7 @@ import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.ExitIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ParentIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.StateContext;
@@ -81,9 +82,12 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 			} else if (parameterContext.stateType().END() != null) {
 				stateData.setEnd(true);
 			} else if (parameterContext.stateType().EXIT() != null) {
-				Action<S, E> action = actions.get(parameterContext.id().getText());
-				if (action != null) {
-					exitActions.add(action);
+				ExitIdContext exitId = parameterContext.stateType().exitId();
+				if (exitId != null) {
+					Action<S, E> action = actions.get(exitId.getText());
+					if (action != null) {
+						exitActions.add(action);
+					}
 				}
 			}
 
