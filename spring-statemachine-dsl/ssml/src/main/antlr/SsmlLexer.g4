@@ -89,7 +89,8 @@ LETTER               : [a-zA-Z\u0080-\u00FF_]
 // HTML strings, angle brackets must occur in matched pairs, and
 // unescaped newlines are allowed.
 fragment
-TAG                  : '<' .*? '>' ;
+TAG                  : '<' .*? '>'
+                     ;
 
 COMMENT              : '/*' .*? '*/'       -> channel(HIDDEN)
                      ;
