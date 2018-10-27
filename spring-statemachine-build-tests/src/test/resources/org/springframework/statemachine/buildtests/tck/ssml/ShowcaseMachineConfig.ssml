@@ -1,0 +1,149 @@
+# config for showcase machine
+
+# states
+state S0 {
+  initial
+}
+
+state S1 {
+  parent S0
+  initial
+}
+state S11 {
+  parent S1
+  initial
+}
+state S12 {
+  parent S1
+}
+
+state S2 {
+  parent S0
+}
+state S21 {
+  parent S2
+  initial
+}
+
+state S211 {
+  parent S21
+  initial
+}
+state S212 {
+  parent S21
+}
+
+# transitions
+transition {
+  source S1
+  target S1
+  event A
+  guard foo1Guard
+}
+transition {
+  source S1
+  target S11
+  event B
+}
+transition {
+  source S21
+  target S211
+  event B
+}
+transition {
+  source S1
+  target S2
+  event C
+}
+transition {
+  source S2
+  target S1
+  event K
+}
+transition {
+  source S1
+  target S0
+  event D
+}
+transition {
+  source S211
+  target S21
+  event D
+}
+transition {
+  source S0
+  target S211
+  event E
+}
+transition {
+  source S1
+  target S211
+  event F
+}
+transition {
+  source S2
+  target S11
+  event F
+}
+transition {
+  source S11
+  target S211
+  event G
+}
+transition {
+  source S211
+  target S0
+  event G
+}
+transition {
+  internal
+  source S0
+  event H
+  guard foo0Guard
+  action fooAction
+}
+transition {
+  internal
+  source S2
+  event H
+  guard foo1Guard
+  action fooAction
+}
+transition {
+  internal
+  source S1
+  event H
+}
+transition {
+  source S11
+  target S12
+  event I
+}
+transition {
+  source S211
+  target S212
+  event I
+}
+transition {
+  source S12
+  target S212
+  event I
+}
+transition {
+  internal
+  source S11
+  event J
+}
+
+# guards
+guard foo0Guard {
+  bean foo0Guard
+}
+guard foo1Guard {
+  bean foo1Guard
+}
+
+# actions
+action fooAction {
+  bean fooAction
+}

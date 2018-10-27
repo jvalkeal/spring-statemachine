@@ -81,7 +81,8 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 				.collect(Collectors.toMap(result -> result.id, result -> result.guard));
 
 		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, symbolTable);
-		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor, guards);
+		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor,
+				guards, actions);
 
 		List<StateData<S, E>> stateDatas = ctx.machineObjectList().state().stream()
 			.map(stateContext -> stateContext.accept(stateVisitor))

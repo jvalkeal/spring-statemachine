@@ -15,12 +15,17 @@
  */
 package org.springframework.statemachine.dsl.ssml.antlr;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.EventIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.SourceIdContext;
@@ -43,16 +48,20 @@ import org.springframework.statemachine.transition.TransitionKind;
  */
 class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, TransitionData<S, E>> {
 
+	private static final Log log = LogFactory.getLog(SsmlTransitionVisitor.class);
 	private final List<ReconcileProblem> errors;
 	private final SsmlStateVisitor<S, E> stateVisitor;
 	private final Map<String, Guard<S, E>> guards;
+	private final Map<String, Action<S, E>> actions;
 
 	SsmlTransitionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards) {
+			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards,
+			Map<String, Action<S, E>> actions) {
 		super(stateMachineComponentResolver);
 		this.errors = errors;
 		this.stateVisitor = stateVisitor;
 		this.guards = guards;
+		this.actions = actions;
 	}
 
 	@Override
@@ -60,7 +69,9 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 		S source = null;
 		S target = null;
 		E event = null;
-		Guard<S, E> guard = null;
+		Guard<S, E> resolvedGuard = null;
+		List<Action<S, E>> resolvedActions = new ArrayList<>();
+		TransitionKind kind = TransitionKind.EXTERNAL;
 		for (TransitionParameterContext parameterContext : ctx.transitionParameters().transitionParameter()) {
 			SourceIdContext sourceId = parameterContext.transitionType().sourceId();
 			TargetIdContext targetId = parameterContext.transitionType().targetId();
@@ -86,12 +97,31 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 			if (parameterContext.transitionType().GUARD() != null) {
 				GuardIdContext guardId = parameterContext.transitionType().guardId();
 				if (guardId != null) {
-					guard = guards.get(guardId.getText());
+					resolvedGuard = guards.get(guardId.getText());
+					log.debug("visitTransition guard=" + resolvedGuard);
 				}
+			}
 
+			if (parameterContext.transitionType().ACTION() != null) {
+				ActionIdContext actionId = parameterContext.transitionType().actionId();
+				if (actionId != null) {
+					Action<S, E> action = actions.get(actionId.getText());
+					if (action != null) {
+						resolvedActions.add(action);
+						log.debug("visitTransition action=" + action);
+					}
+				}
+			}
+
+			if (parameterContext.transitionType().EXTERNAL() != null) {
+				kind = TransitionKind.EXTERNAL;
+			} else if (parameterContext.transitionType().INTERNAL() != null) {
+				kind = TransitionKind.INTERNAL;
+			} else if (parameterContext.transitionType().LOCAL() != null) {
+				kind = TransitionKind.LOCAL;
 			}
 		}
-		TransitionData<S, E> transitionData = new TransitionData<>(source, target, event, null, guard, TransitionKind.EXTERNAL);
-		return transitionData;
+		log.debug("visitTransition kind=" + kind);
+		return new TransitionData<>(source, target, event, resolvedActions, resolvedGuard, kind);
 	}
 }

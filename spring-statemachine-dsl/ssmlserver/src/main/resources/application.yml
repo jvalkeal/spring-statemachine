@@ -2,6 +2,7 @@ logging:
   file: ssmlserver.log
   level:
     org.springframework.dsl: debug
+    org.springframework.statemachine.dsl: debug
 spring:
   main:
     banner-mode: "off"

@@ -21,7 +21,7 @@ stateType            :   INITIAL | END | PARENT parentId | EXIT exitId | DO doId
 // transition structure
 transitionParameters :   ( transitionParameter SEMI? )* ;
 transitionParameter  :   transitionType ;
-transitionType       :   SOURCE sourceId | TARGET targetId | EVENT eventId | ACTION actionId | GUARD guardId ;
+transitionType       :   EXTERNAL | INTERNAL | LOCAL | SOURCE sourceId | TARGET targetId | EVENT eventId | ACTION actionId | GUARD guardId ;
 
 // action structure
 actionParameters     :   ( actionParameter SEMI? )* ;

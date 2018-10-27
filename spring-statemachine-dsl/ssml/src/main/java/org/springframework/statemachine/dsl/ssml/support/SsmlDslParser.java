@@ -54,6 +54,7 @@ public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser>
 	 * Instantiates a new ssml dsl parser.
 	 */
 	public SsmlDslParser() {
+		// TODO: think we should force StateMachineComponentResolver?
 		super(SsmlLanguage.ANTRL_FACTORY);
 	}
 

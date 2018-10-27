@@ -15,6 +15,8 @@
  */
 package org.springframework.statemachine.dsl.ssml.antlr;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
@@ -32,6 +34,8 @@ import org.springframework.statemachine.guard.Guard;
  */
 class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResult<S, E>> {
 
+	private static final Log log = LogFactory.getLog(SsmlGuardVisitor.class);
+
 	SsmlGuardVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
 		super(stateMachineComponentResolver);
 	}
@@ -39,6 +43,7 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 	@Override
 	public SsmlGuardResult<S, E> visitGuard(GuardContext ctx) {
 		String guard = ctx.id().getText();
+		log.debug("visitGuard "+ guard);
 
 		String bean = null;
 		for (GuardParameterContext parameterContext : ctx.guardParameters().guardParameter()) {

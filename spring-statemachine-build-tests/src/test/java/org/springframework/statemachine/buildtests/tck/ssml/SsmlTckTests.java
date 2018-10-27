@@ -29,6 +29,12 @@ import org.springframework.statemachine.config.model.StateMachineModelFactory;
 import org.springframework.statemachine.dsl.DslStateMachineModelFactory;
 import org.springframework.statemachine.dsl.ssml.support.SsmlDslParser;
 
+/**
+ * Tck tests for machine configs imported from ssml definitions.
+ *
+ * @author Janne Valkealahti
+ *
+ */
 public class SsmlTckTests extends AbstractTckTests {
 
 	@Override
@@ -52,7 +58,7 @@ public class SsmlTckTests extends AbstractTckTests {
 
 	@Override
 	protected StateMachine<String, String> getShowcaseMachine() throws Exception {
-		context.register(ShowcaseMachineConfig.class);
+		context.register(ShowcaseMachineBeansConfig.class, ShowcaseMachineConfig.class);
 		context.refresh();
 		return getStateMachineFromContext();
 	}

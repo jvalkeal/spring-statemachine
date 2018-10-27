@@ -13,6 +13,10 @@ TARGET               :   [Tt][Aa][Rr][Gg][Ee][Tt] ;
 EVENT                :   [Ee][Vv][Ee][Nn][Tt] ;
 PARENT               :   [Pp][Aa][Rr][Ee][Nn][Tt] ;
 
+EXTERNAL             :   [Ee][Xx][Tt][Ee][Rr][Nn][Aa][Ll] ;
+INTERNAL             :   [Ii][Nn][Tt][Ee][Rr][Nn][Aa][Ll] ;
+LOCAL                :   [Ll][Oo][Cc][Aa][Ll] ;
+
 ENTRY                :   [Ee][Nn][Tt][Rr][Yy] ;
 EXIT                 :   [Ee][Xx][Ii][Tt] ;
 DO                   :   [Dd][Oo] ;

@@ -15,6 +15,8 @@
  */
 package org.springframework.statemachine.dsl.ssml.antlr;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
@@ -32,6 +34,8 @@ import org.springframework.statemachine.dsl.ssml.antlr.SsmlActionVisitor.SsmlAct
  */
 class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionResult<S, E>> {
 
+	private static final Log log = LogFactory.getLog(SsmlActionVisitor.class);
+
 	SsmlActionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
 		super(stateMachineComponentResolver);
 	}
@@ -39,6 +43,7 @@ class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionRe
 	@Override
 	public SsmlActionResult<S, E> visitAction(ActionContext ctx) {
 		String action = ctx.id().getText();
+		log.debug("visitAction " + action);
 
 		String bean = null;
 		for (ActionParameterContext parameterContext : ctx.actionParameters().actionParameter()) {
