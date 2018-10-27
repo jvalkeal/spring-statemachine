@@ -1,0 +1,25 @@
+state S1 {
+  initial
+}
+state S2 {}
+state S3 {}
+state S21 {
+  parent S2
+  initial
+}
+state S22 {}
+transition T1 {
+  source S1
+  target S2
+  event E1
+}
+transition T2 {
+  source S21
+  target S22
+  event E2
+}
+transition T3 {
+  source S2
+  target S3
+  event E3
+}

@@ -11,6 +11,7 @@ END                  :   [Ee][Nn][Dd] ;
 SOURCE               :   [Ss][Oo][Uu][Rr][Cc][Ee] ;
 TARGET               :   [Tt][Aa][Rr][Gg][Ee][Tt] ;
 EVENT                :   [Ee][Vv][Ee][Nn][Tt] ;
+PARENT               :   [Pp][Aa][Rr][Ee][Nn][Tt] ;
 
 ENTRY                :   [Ee][Nn][Tt][Rr][Yy] ;
 EXIT                 :   [Ee][Xx][Ii][Tt] ;

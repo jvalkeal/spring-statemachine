@@ -16,7 +16,7 @@ guard                :   GUARD id LBRACE guardParameters RBRACE ;
 // state structure
 stateParameters      :   ( stateParameter SEMI? )* ;
 stateParameter       :   stateType id? ;
-stateType            :   INITIAL | END | EXIT | DO | ENTRY ;
+stateType            :   INITIAL | END | PARENT parentId | EXIT | DO | ENTRY ;
 
 // transition structure
 transitionParameters :   ( transitionParameter SEMI? )* ;
@@ -35,4 +35,5 @@ guardType            :   BEAN ;
 
 sourceId             :   ID ;
 targetId             :   ID ;
+parentId             :   ID ;
 id                   :   ID ;

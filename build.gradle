@@ -357,14 +357,15 @@ project('spring-statemachine-build-tests') {
 
 	dependencies {
 		testCompile project(":spring-statemachine-uml")
+		testCompile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-ssml")
 		testCompile project(":spring-statemachine-test")
 		testCompile project(":spring-statemachine-data-common:spring-statemachine-data-jpa")
 		testCompile project(":spring-statemachine-data-common:spring-statemachine-data-redis")
 		testCompile project(":spring-statemachine-data-common:spring-statemachine-data-mongodb")
-        testCompile "org.apache.commons:commons-pool2"
+		testCompile "org.apache.commons:commons-pool2"
 		testRuntime "org.springframework.boot:spring-boot-starter-data-mongodb"
 		testRuntime "org.springframework.boot:spring-boot-starter-data-redis"
-        testRuntime "redis.clients:jedis"
+		testRuntime "redis.clients:jedis"
 		testCompile "org.springframework.boot:spring-boot-starter-data-jpa"
 		testCompile "com.h2database:h2"
 		testCompile "org.springframework.boot:spring-boot-starter"
@@ -376,7 +377,7 @@ project('spring-statemachine-build-tests') {
 }
 
 project('spring-statemachine-dsl-common') {
-	apply plugin: 'antlr'
+	description = "Spring State Machine Dsl Common"
 
 	dependencies {
 		compile project(":spring-statemachine-core")
