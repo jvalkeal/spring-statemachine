@@ -7,7 +7,9 @@ state S21 {
   parent S2
   initial
 }
-state S22 {}
+state S22 {
+  parent S2
+}
 transition T1 {
   source S1
   target S2
