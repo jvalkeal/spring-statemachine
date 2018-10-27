@@ -107,11 +107,21 @@ public class SsmlAntlrParseResultFunction
 						AntlrCompletionResult completionResult = completionEngine.collectResults(position,
 								parser.definitions());
 						ArrayList<String> completions = new ArrayList<String>();
+						Vocabulary vocabulary = parser.getVocabulary();
 						for (Entry<Integer, List<Integer>> e : completionResult.getTokens().entrySet()) {
-							if (e.getKey() > 0) {
-								Vocabulary vocabulary = parser.getVocabulary();
-								String displayName = vocabulary.getDisplayName(e.getKey());
-								completions.add(displayName);
+							Integer key = e.getKey();
+							if (key > 0) {
+								if (key == SsmlParser.LBRACE) {
+									completions.add("{");
+								} else if (key == SsmlParser.RBRACE) {
+									completions.add("}");
+								} else if (key == SsmlParser.SEMI) {
+									completions.add(";");
+								} else if (key == SsmlParser.COMMA) {
+									completions.add(",");
+								} else {
+									completions.add(vocabulary.getDisplayName(key));
+								}
 							}
 						}
 						return Flux.fromIterable(completions);

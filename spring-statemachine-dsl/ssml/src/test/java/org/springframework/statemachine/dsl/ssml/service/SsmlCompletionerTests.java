@@ -63,10 +63,10 @@ public class SsmlCompletionerTests {
 		assertCompletions(input, Position.from(0, 0), "statemachine", "state", "transition", "action", "guard");
 	}
 
-//	@Test
-	public void testCompleteKeywords() {
-		String input = "s";
-		assertCompletions(input, Position.from(0, 1), "STATE");
+	@Test
+	public void testBlocks() {
+		String input = "state S1";
+		assertCompletions(input, Position.from(0, 8), "{");
 	}
 
 //	@Test
