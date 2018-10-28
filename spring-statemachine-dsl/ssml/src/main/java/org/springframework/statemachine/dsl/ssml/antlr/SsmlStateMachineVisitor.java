@@ -23,7 +23,6 @@ import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.domain.SymbolKind;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
-import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.dsl.symboltable.SymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
@@ -34,6 +33,7 @@ import org.springframework.statemachine.config.model.StatesData;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.config.model.TransitionsData;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.DefinitionsContext;
+import org.springframework.statemachine.dsl.ssml.support.SsmlSymbolTable;
 import org.springframework.statemachine.guard.Guard;
 
 import reactor.core.publisher.Flux;
@@ -59,7 +59,7 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 	 * @param resolver the resolver
 	 */
 	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
-		super(resolver, new DefaultSymbolTable());
+		super(resolver, new SsmlSymbolTable());
 		this.errors = errors;
 		this.resolver = resolver;
 	}

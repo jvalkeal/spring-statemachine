@@ -19,13 +19,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.symboltable.ClassSymbol;
-import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardParameterContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlGuardVisitor.SsmlGuardResult;
+import org.springframework.statemachine.dsl.ssml.support.SsmlSymbolTable;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.util.ClassUtils;
 
@@ -42,7 +42,7 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 	private static final Log log = LogFactory.getLog(SsmlGuardVisitor.class);
 
 	SsmlGuardVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			DefaultSymbolTable symbolTable) {
+			SsmlSymbolTable symbolTable) {
 		super(stateMachineComponentResolver, symbolTable);
 	}
 

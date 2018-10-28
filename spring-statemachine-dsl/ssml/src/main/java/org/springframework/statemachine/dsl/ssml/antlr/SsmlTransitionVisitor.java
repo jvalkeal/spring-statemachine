@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.dsl.symboltable.ClassSymbol;
-import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
@@ -36,6 +35,7 @@ import org.springframework.statemachine.dsl.ssml.SsmlParser.SourceIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TargetIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionParameterContext;
+import org.springframework.statemachine.dsl.ssml.support.SsmlSymbolTable;
 import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionSourceStateDslParserResultError;
 import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionTargetStateDslParserResultError;
 import org.springframework.statemachine.guard.Guard;
@@ -61,7 +61,7 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 
 	SsmlTransitionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
 			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards,
-			Map<String, Action<S, E>> actions, DefaultSymbolTable symbolTable) {
+			Map<String, Action<S, E>> actions, SsmlSymbolTable symbolTable) {
 		super(stateMachineComponentResolver, symbolTable);
 		this.errors = errors;
 		this.stateVisitor = stateVisitor;

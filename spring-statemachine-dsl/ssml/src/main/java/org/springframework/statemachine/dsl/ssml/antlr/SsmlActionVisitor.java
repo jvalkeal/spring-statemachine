@@ -19,7 +19,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.symboltable.ClassSymbol;
-import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
@@ -27,6 +26,7 @@ import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionParameterConte
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlActionVisitor.SsmlActionResult;
+import org.springframework.statemachine.dsl.ssml.support.SsmlSymbolTable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -42,7 +42,7 @@ class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionRe
 	private static final Log log = LogFactory.getLog(SsmlActionVisitor.class);
 
 	SsmlActionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			DefaultSymbolTable symbolTable) {
+			SsmlSymbolTable symbolTable) {
 		super(stateMachineComponentResolver, symbolTable);
 	}
 
