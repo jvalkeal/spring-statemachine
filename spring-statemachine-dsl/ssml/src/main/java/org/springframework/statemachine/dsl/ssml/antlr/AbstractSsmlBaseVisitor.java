@@ -15,6 +15,8 @@
  */
 package org.springframework.statemachine.dsl.ssml.antlr;
 
+import java.util.function.Function;
+
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
@@ -32,13 +34,58 @@ import org.springframework.util.Assert;
 abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T> {
 
 	private final StateMachineComponentResolver<S, E> stateMachineComponentResolver;
+	@SuppressWarnings("unchecked")
+	private Function<String, S> stateMapperFunction = id -> (S)id;
+	@SuppressWarnings("unchecked")
+	private Function<String, E> eventMapperFunction = id -> (E)id;
 
 	AbstractSsmlBaseVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
 		Assert.notNull(stateMachineComponentResolver, "stateMachineComponentResolver must be set");
 		this.stateMachineComponentResolver = stateMachineComponentResolver;
 	}
 
-	StateMachineComponentResolver<S, E> getStateMachineComponentResolver() {
+	/**
+	 * Gets the state machine component resolver.
+	 *
+	 * @return the state machine component resolver
+	 */
+	public StateMachineComponentResolver<S, E> getStateMachineComponentResolver() {
 		return stateMachineComponentResolver;
+	}
+
+	/**
+	 * Gets the state mapper function.
+	 *
+	 * @return the state mapper function
+	 */
+	public Function<String, S> getStateMapperFunction() {
+		return stateMapperFunction;
+	}
+
+	/**
+	 * Sets the state mapper function.
+	 *
+	 * @param stateMapperFunction the state mapper function
+	 */
+	public void setStateMapperFunction(Function<String, S> stateMapperFunction) {
+		this.stateMapperFunction = stateMapperFunction;
+	}
+
+	/**
+	 * Gets the event mapper function.
+	 *
+	 * @return the event mapper function
+	 */
+	public Function<String, E> getEventMapperFunction() {
+		return eventMapperFunction;
+	}
+
+	/**
+	 * Sets the event mapper function.
+	 *
+	 * @param eventMapperFunction the event mapper function
+	 */
+	public void setEventMapperFunction(Function<String, E> eventMapperFunction) {
+		this.eventMapperFunction = eventMapperFunction;
 	}
 }

@@ -27,19 +27,21 @@ import org.springframework.statemachine.config.model.StateMachineModel;
  *
  * @author Janne Valkealahti
  *
+ * @param <S> the type of state
+ * @param <E> the type of event
  */
-public class SsmlDslParserResult implements DslParserResult<StateMachineModel<String, String>> {
+public class SsmlDslParserResult<S, E> implements DslParserResult<StateMachineModel<S, E>> {
 
-	private final StateMachineModel<String, String> model;
+	private final StateMachineModel<S, E> model;
 	private final List<ReconcileProblem> errors;
 
-	public SsmlDslParserResult(StateMachineModel<String, String> model, List<ReconcileProblem> errors) {
+	public SsmlDslParserResult(StateMachineModel<S, E> model, List<ReconcileProblem> errors) {
 		this.model = model;
 		this.errors = errors;
 	}
 
 	@Override
-	public StateMachineModel<String, String> getResult() {
+	public StateMachineModel<S, E> getResult() {
 		return model;
 	}
 

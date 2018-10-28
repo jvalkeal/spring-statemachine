@@ -77,13 +77,13 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 			TargetIdContext targetId = parameterContext.transitionType().targetId();
 
 			if (sourceId  != null) {
-				source = (S) sourceId.getText();
+				source = getStateMapperFunction().apply(sourceId.getText());
 				if (!stateVisitor.getSeenStates().contains(source)) {
 					errors.add(new SsmlTransitionSourceStateDslParserResultError(sourceId.ID().getSymbol()));
 				}
 			}
 			if (targetId  != null) {
-				target = (S) targetId.getText();
+				target = getStateMapperFunction().apply(targetId.getText());
 				if (!stateVisitor.getSeenStates().contains(target)) {
 					errors.add(new SsmlTransitionTargetStateDslParserResultError(targetId.ID().getSymbol()));
 				}
@@ -91,7 +91,7 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 			if (parameterContext.transitionType().EVENT() != null) {
 				EventIdContext eventId = parameterContext.transitionType().eventId();
 				if (eventId != null) {
-					event = (E) eventId.getText();
+					event = getEventMapperFunction().apply(eventId.getText());
 				}
 			}
 			if (parameterContext.transitionType().GUARD() != null) {

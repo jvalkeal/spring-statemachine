@@ -87,7 +87,7 @@ public class StateMachineModelFactoryTests {
 		@Bean
 		public StateMachineModelFactory<String, String> modelFactory() {
 			Resource ssml = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-normal.ssml");
-			return new DslStateMachineModelFactory(ssml, new SsmlDslParser());
+			return new DslStateMachineModelFactory<>(ssml, new SsmlDslParser<>());
 		}
 	}
 }

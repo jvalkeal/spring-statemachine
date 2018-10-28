@@ -34,7 +34,6 @@ import org.springframework.statemachine.config.model.StatesData;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.config.model.TransitionsData;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.DefinitionsContext;
-import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
 import org.springframework.statemachine.guard.Guard;
 
 import reactor.core.publisher.Flux;
@@ -48,7 +47,7 @@ import reactor.core.publisher.Mono;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrParseResult<StateMachineModel<S, E>>> {
+public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, AntlrParseResult<StateMachineModel<S, E>>> {
 
 	private final List<ReconcileProblem> errors;
 	private final StateMachineComponentResolver<S, E> resolver;
@@ -60,6 +59,7 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 	 * @param resolver the resolver
 	 */
 	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
+		super(resolver);
 		this.errors = errors;
 		this.resolver = resolver;
 	}
@@ -81,8 +81,13 @@ public class SsmlStateMachineVisitor<S, E> extends SsmlParserBaseVisitor<AntlrPa
 				.collect(Collectors.toMap(result -> result.id, result -> result.guard));
 
 		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, symbolTable);
+		stateVisitor.setStateMapperFunction(getStateMapperFunction());
+		stateVisitor.setEventMapperFunction(getEventMapperFunction());
+
 		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor,
 				guards, actions);
+		transitionVisitor.setStateMapperFunction(getStateMapperFunction());
+		transitionVisitor.setEventMapperFunction(getEventMapperFunction());
 
 		List<StateData<S, E>> stateDatas = ctx.machineObjectList().state().stream()
 			.map(stateContext -> stateContext.accept(stateVisitor))

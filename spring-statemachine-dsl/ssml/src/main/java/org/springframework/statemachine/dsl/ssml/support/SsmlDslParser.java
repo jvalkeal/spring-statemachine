@@ -18,6 +18,7 @@ package org.springframework.statemachine.dsl.ssml.support;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.function.Function;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -44,11 +45,17 @@ import org.springframework.util.FileCopyUtils;
  *
  * @author Janne Valkealahti
  *
+ * @param <S> the type of state
+ * @param <E> the type of event
  */
-public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser>
-		implements StateMachineDslParser<String, String, StateMachineModel<String, String>> {
+public class SsmlDslParser<S, E> extends AntlrObjectSupport<SsmlLexer, SsmlParser>
+		implements StateMachineDslParser<S, E, StateMachineModel<S, E>> {
 
-	private StateMachineComponentResolver<String, String> resolver;
+	private StateMachineComponentResolver<S, E> resolver;
+	@SuppressWarnings("unchecked")
+	private Function<String, S> stateMapperFunction = id -> (S)id;
+	@SuppressWarnings("unchecked")
+	private Function<String, E> eventMapperFunction = id -> (E)id;
 
 	/**
 	 * Instantiates a new ssml dsl parser.
@@ -63,14 +70,14 @@ public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser>
 	 *
 	 * @param resolver the resolver
 	 */
-	public SsmlDslParser(StateMachineComponentResolver<String, String> resolver) {
+	public SsmlDslParser(StateMachineComponentResolver<S, E> resolver) {
 		super(SsmlLanguage.ANTRL_FACTORY);
 		Assert.notNull(resolver, "StateMachineComponentResolver must be set");
 		this.resolver = resolver;
 	}
 
 	@Override
-	public DslParserResult<StateMachineModel<String, String>> parse(Resource resource) {
+	public DslParserResult<StateMachineModel<S, E>> parse(Resource resource) {
 		String content = null;
 		try {
 			content = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
@@ -86,15 +93,37 @@ public class SsmlDslParser extends AntlrObjectSupport<SsmlLexer, SsmlParser>
 
 		ParseTree tree = parser.definitions();
 
-		SsmlStateMachineVisitor<String, String> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
+		SsmlStateMachineVisitor<S, E> stateMachineVisitor = new SsmlStateMachineVisitor<>(errors, resolver);
+		stateMachineVisitor.setStateMapperFunction(stateMapperFunction);
+		stateMachineVisitor.setEventMapperFunction(eventMapperFunction);
 
-		StateMachineModel<String, String> model = stateMachineVisitor.visit(tree).getResult().block();
+		StateMachineModel<S, E> model = stateMachineVisitor.visit(tree).getResult().block();
 
-		return new SsmlDslParserResult(model, errors);
+		return new SsmlDslParserResult<S, E>(model, errors);
 	}
 
 	@Override
-	public void setStateMachineComponentResolver(StateMachineComponentResolver<String, String> resolver) {
+	public void setStateMachineComponentResolver(StateMachineComponentResolver<S, E> resolver) {
 		this.resolver = resolver;
+	}
+
+	/**
+	 * Sets the state mapper function.
+	 *
+	 * @param stateMapperFunction the state mapper function
+	 */
+	public void setStateMapperFunction(Function<String, S> stateMapperFunction) {
+		Assert.notNull(stateMapperFunction, "stateMapperFunction cannot be null");
+		this.stateMapperFunction = stateMapperFunction;
+	}
+
+	/**
+	 * Sets the event mapper function.
+	 *
+	 * @param eventMapperFunction the event mapper function
+	 */
+	public void setEventMapperFunction(Function<String, E> eventMapperFunction) {
+		Assert.notNull(eventMapperFunction, "eventMapperFunction cannot be null");
+		this.eventMapperFunction = eventMapperFunction;
 	}
 }

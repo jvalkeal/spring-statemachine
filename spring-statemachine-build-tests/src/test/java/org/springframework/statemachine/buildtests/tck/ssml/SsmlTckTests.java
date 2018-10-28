@@ -77,7 +77,7 @@ public class SsmlTckTests extends AbstractTckTests {
 		@Bean
 		public StateMachineModelFactory<String, String> modelFactory() {
 			Resource ssml = new ClassPathResource("org/springframework/statemachine/buildtests/tck/ssml/SimpleMachine.ssml");
-			return new DslStateMachineModelFactory(ssml, new SsmlDslParser());
+			return new DslStateMachineModelFactory<>(ssml, new SsmlDslParser<>());
 		}
 	}
 
@@ -95,7 +95,7 @@ public class SsmlTckTests extends AbstractTckTests {
 		@Bean
 		public StateMachineModelFactory<String, String> modelFactory() {
 			Resource ssml = new ClassPathResource("org/springframework/statemachine/buildtests/tck/ssml/SimpleSubMachineConfig.ssml");
-			return new DslStateMachineModelFactory(ssml, new SsmlDslParser());
+			return new DslStateMachineModelFactory<>(ssml, new SsmlDslParser<>());
 		}
 	}
 
@@ -113,7 +113,7 @@ public class SsmlTckTests extends AbstractTckTests {
 		@Bean
 		public StateMachineModelFactory<String, String> modelFactory() {
 			Resource ssml = new ClassPathResource("org/springframework/statemachine/buildtests/tck/ssml/ShowcaseMachineConfig.ssml");
-			return new DslStateMachineModelFactory(ssml, new SsmlDslParser());
+			return new DslStateMachineModelFactory<>(ssml, new SsmlDslParser<>());
 		}
 	}
 }

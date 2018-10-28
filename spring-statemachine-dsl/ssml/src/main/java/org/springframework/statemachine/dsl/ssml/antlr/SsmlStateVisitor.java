@@ -69,7 +69,8 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 		classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
 				id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
 
-		S state = (S) ctx.id().getText();
+
+		S state = getStateMapperFunction().apply(ctx.id().getText());
 		seenStates.add(state);
 		StateData<S, E> stateData = new StateData<>(state);
 		List<Action<S, E>> exitActions = new ArrayList<>();
@@ -101,7 +102,7 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 			}
 
 			if (parentId != null) {
-				S parent = (S) parentId.getText();
+				S parent = getStateMapperFunction().apply(parentId.getText());
 				stateData.setParent(parent);
 			}
 

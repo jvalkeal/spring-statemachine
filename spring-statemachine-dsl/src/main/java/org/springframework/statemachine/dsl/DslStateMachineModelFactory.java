@@ -27,12 +27,14 @@ import org.springframework.util.Assert;
  *
  * @author Janne Valkealahti
  *
+ * @param <S> the type of state
+ * @param <E> the type of event
  */
-public class DslStateMachineModelFactory extends AbstractStateMachineModelFactory<String, String>
-		implements StateMachineModelFactory<String, String> {
+public class DslStateMachineModelFactory<S, E> extends AbstractStateMachineModelFactory<S, E>
+		implements StateMachineModelFactory<S, E> {
 
 	private final Resource resource;
-	private final StateMachineDslParser<String, String, StateMachineModel<String, String>> dslParser;
+	private final StateMachineDslParser<S, E, StateMachineModel<S, E>> dslParser;
 
 	/**
 	 * Instantiate a dsl state machine factory.
@@ -41,7 +43,7 @@ public class DslStateMachineModelFactory extends AbstractStateMachineModelFactor
 	 * @param dslParser the statemachine dsl parser
 	 */
 	public DslStateMachineModelFactory(Resource resource,
-			StateMachineDslParser<String, String, StateMachineModel<String, String>> dslParser) {
+			StateMachineDslParser<S, E, StateMachineModel<S, E>> dslParser) {
 		Assert.notNull(resource, "Resource must be set");
 		this.resource = resource;
 		this.dslParser = dslParser;
@@ -49,12 +51,12 @@ public class DslStateMachineModelFactory extends AbstractStateMachineModelFactor
 	}
 
 	@Override
-	public StateMachineModel<String, String> build() {
+	public StateMachineModel<S, E> build() {
 		return dslParser.parse(resource).getResult();
 	}
 
 	@Override
-	public StateMachineModel<String, String> build(String machineId) {
+	public StateMachineModel<S, E> build(String machineId) {
 		return build();
 	}
 }
