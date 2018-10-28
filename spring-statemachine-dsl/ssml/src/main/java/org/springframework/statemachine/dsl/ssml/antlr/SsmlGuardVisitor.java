@@ -17,12 +17,17 @@ package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.dsl.domain.Range;
+import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardParameterContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlGuardVisitor.SsmlGuardResult;
 import org.springframework.statemachine.guard.Guard;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@code Visitor} visiting {@link Guard} definitions.
@@ -36,12 +41,23 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 
 	private static final Log log = LogFactory.getLog(SsmlGuardVisitor.class);
 
-	SsmlGuardVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
-		super(stateMachineComponentResolver);
+	SsmlGuardVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
+			DefaultSymbolTable symbolTable) {
+		super(stateMachineComponentResolver, symbolTable);
 	}
 
 	@Override
 	public SsmlGuardResult<S, E> visitGuard(GuardContext ctx) {
+		IdContext id = ctx.id();
+		if (id != null) {
+			ClassSymbol classSymbol = new ClassSymbol(id.getText());
+			classSymbol.setSuperClass(ClassUtils.getQualifiedName(Guard.class));
+			getSymbolTable().defineGlobal(classSymbol);
+			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
+					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+		}
+
 		String guard = ctx.id().getText();
 		log.debug("visitGuard "+ guard);
 

@@ -18,6 +18,7 @@ package org.springframework.statemachine.dsl.ssml.antlr;
 import java.util.function.Function;
 
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
 import org.springframework.util.Assert;
@@ -34,14 +35,19 @@ import org.springframework.util.Assert;
 abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T> {
 
 	private final StateMachineComponentResolver<S, E> stateMachineComponentResolver;
+	private final DefaultSymbolTable symbolTable;
+
 	@SuppressWarnings("unchecked")
 	private Function<String, S> stateMapperFunction = id -> (S)id;
 	@SuppressWarnings("unchecked")
 	private Function<String, E> eventMapperFunction = id -> (E)id;
 
-	AbstractSsmlBaseVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
+	AbstractSsmlBaseVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
+			DefaultSymbolTable symbolTable) {
 		Assert.notNull(stateMachineComponentResolver, "stateMachineComponentResolver must be set");
+		Assert.notNull(symbolTable, "symbolTable must be set");
 		this.stateMachineComponentResolver = stateMachineComponentResolver;
+		this.symbolTable = symbolTable;
 	}
 
 	/**
@@ -51,6 +57,15 @@ abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T>
 	 */
 	public StateMachineComponentResolver<S, E> getStateMachineComponentResolver() {
 		return stateMachineComponentResolver;
+	}
+
+	/**
+	 * Gets the symbol table.
+	 *
+	 * @return the symbol table
+	 */
+	public DefaultSymbolTable getSymbolTable() {
+		return symbolTable;
 	}
 
 	/**

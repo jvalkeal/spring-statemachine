@@ -17,12 +17,17 @@ package org.springframework.statemachine.dsl.ssml.antlr;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.dsl.domain.Range;
+import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionParameterContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.antlr.SsmlActionVisitor.SsmlActionResult;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@code Visitor} visiting {@link Action} definitions.
@@ -36,12 +41,24 @@ class SsmlActionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlActionRe
 
 	private static final Log log = LogFactory.getLog(SsmlActionVisitor.class);
 
-	SsmlActionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver) {
-		super(stateMachineComponentResolver);
+	SsmlActionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
+			DefaultSymbolTable symbolTable) {
+		super(stateMachineComponentResolver, symbolTable);
 	}
 
 	@Override
 	public SsmlActionResult<S, E> visitAction(ActionContext ctx) {
+		IdContext id = ctx.id();
+		if (id != null) {
+			ClassSymbol classSymbol = new ClassSymbol(id.getText());
+			classSymbol.setSuperClass(ClassUtils.getQualifiedName(Action.class));
+			getSymbolTable().defineGlobal(classSymbol);
+			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
+					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+		}
+
+
 		String action = ctx.id().getText();
 		log.debug("visitAction " + action);
 

@@ -59,33 +59,31 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 	 * @param resolver the resolver
 	 */
 	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
-		super(resolver);
+		super(resolver, new DefaultSymbolTable());
 		this.errors = errors;
 		this.resolver = resolver;
 	}
 
 	@Override
 	public AntlrParseResult<StateMachineModel<S, E>> visitDefinitions(DefinitionsContext ctx) {
-		DefaultSymbolTable symbolTable = new DefaultSymbolTable();
-
 		// TODO: visit machine as well as everything else outside of machine
 		//       is kinda anonymous
-		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver);
+		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver, getSymbolTable());
 		Map<String, Action<S, E>> actions = ctx.machineObjectList().action().stream()
 				.map(actionContext -> actionContext.accept(actionVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.action));
 
-		SsmlGuardVisitor<S, E> guardVisitor = new SsmlGuardVisitor<>(resolver);
+		SsmlGuardVisitor<S, E> guardVisitor = new SsmlGuardVisitor<>(resolver, getSymbolTable());
 		Map<String, Guard<S, E>> guards = ctx.machineObjectList().guard().stream()
 				.map(guardContext -> guardContext.accept(guardVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.guard));
 
-		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, symbolTable);
+		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, getSymbolTable());
 		stateVisitor.setStateMapperFunction(getStateMapperFunction());
 		stateVisitor.setEventMapperFunction(getEventMapperFunction());
 
 		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor,
-				guards, actions);
+				guards, actions, getSymbolTable());
 		transitionVisitor.setStateMapperFunction(getStateMapperFunction());
 		transitionVisitor.setEventMapperFunction(getEventMapperFunction());
 
@@ -111,7 +109,7 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 
 			@Override
 			public Mono<SymbolTable> getSymbolTable() {
-				return Mono.just(symbolTable);
+				return Mono.just(SsmlStateMachineVisitor.this.getSymbolTable());
 			};
 
 			@Override

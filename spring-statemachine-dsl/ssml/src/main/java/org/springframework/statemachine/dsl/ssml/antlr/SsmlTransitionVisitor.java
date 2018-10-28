@@ -21,13 +21,17 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.DefaultSymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.ActionIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.EventIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardIdContext;
+import org.springframework.statemachine.dsl.ssml.SsmlParser.IdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.SourceIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TargetIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.TransitionContext;
@@ -37,6 +41,7 @@ import org.springframework.statemachine.dsl.ssml.support.SsmlTransitionTargetSta
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@code Visitor} visiting {@link Transition} definitions.
@@ -56,8 +61,8 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 
 	SsmlTransitionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
 			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards,
-			Map<String, Action<S, E>> actions) {
-		super(stateMachineComponentResolver);
+			Map<String, Action<S, E>> actions, DefaultSymbolTable symbolTable) {
+		super(stateMachineComponentResolver, symbolTable);
 		this.errors = errors;
 		this.stateVisitor = stateVisitor;
 		this.guards = guards;
@@ -66,6 +71,16 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 
 	@Override
 	public TransitionData<S, E> visitTransition(TransitionContext ctx) {
+		IdContext id = ctx.id();
+		if (id != null) {
+			ClassSymbol classSymbol = new ClassSymbol(id.getText());
+			classSymbol.setSuperClass(ClassUtils.getQualifiedName(Transition.class));
+			getSymbolTable().defineGlobal(classSymbol);
+			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
+					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+		}
+
 		S source = null;
 		S target = null;
 		E event = null;

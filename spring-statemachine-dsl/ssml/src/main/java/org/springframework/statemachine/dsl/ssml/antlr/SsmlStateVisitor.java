@@ -48,26 +48,24 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 
 	private final Set<S> seenStates = new HashSet<>();
 	private final Map<String, Action<S, E>> actions;
-	private final DefaultSymbolTable symbolTable;
 
 	SsmlStateVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
 			Map<String, Action<S, E>> actions, DefaultSymbolTable symbolTable) {
-		super(stateMachineComponentResolver);
+		super(stateMachineComponentResolver, symbolTable);
 		this.actions = actions;
-		this.symbolTable = symbolTable;
 	}
 
 	@Override
 	public StateData<S, E> visitState(StateContext ctx) {
-		ClassSymbol classSymbol = new ClassSymbol(ctx.id().getText());
-		classSymbol.setSuperClass(ClassUtils.getQualifiedName(State.class));
-		symbolTable.defineGlobal(classSymbol);
 		IdContext id = ctx.id();
-
-		int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
-
-		classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
-				id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+		if (id != null) {
+			ClassSymbol classSymbol = new ClassSymbol(id.getText());
+			classSymbol.setSuperClass(ClassUtils.getQualifiedName(State.class));
+			getSymbolTable().defineGlobal(classSymbol);
+			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
+					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+		}
 
 
 		S state = getStateMapperFunction().apply(ctx.id().getText());
