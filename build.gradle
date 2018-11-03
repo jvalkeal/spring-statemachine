@@ -79,6 +79,7 @@ configure(allprojects) {
 	[compileJava, compileTestJava]*.options*.compilerArgs = ['-Xlint:none']
 
 	repositories {
+		mavenLocal()
 		mavenCentral()
 		maven { url "http://repo.springsource.org/libs-snapshot" }
 		maven { url "http://repo.springsource.org/libs-release" }

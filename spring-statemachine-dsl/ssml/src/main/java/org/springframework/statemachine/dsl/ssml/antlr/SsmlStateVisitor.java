@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.dsl.domain.Range;
-import org.springframework.dsl.symboltable.ClassSymbol;
 import org.springframework.dsl.symboltable.Scope;
+import org.springframework.dsl.symboltable.model.ClassSymbol;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
