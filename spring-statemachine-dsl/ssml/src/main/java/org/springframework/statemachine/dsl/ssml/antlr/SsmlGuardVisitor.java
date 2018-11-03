@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.Scope;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.BeanIdContext;
 import org.springframework.statemachine.dsl.ssml.SsmlParser.GuardContext;
@@ -42,8 +43,8 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 	private static final Log log = LogFactory.getLog(SsmlGuardVisitor.class);
 
 	SsmlGuardVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			SsmlSymbolTable symbolTable) {
-		super(stateMachineComponentResolver, symbolTable);
+			SsmlSymbolTable symbolTable, Scope scope) {
+		super(stateMachineComponentResolver, symbolTable, scope);
 	}
 
 	@Override
@@ -52,10 +53,10 @@ class SsmlGuardVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, SsmlGuardResu
 		if (id != null) {
 			ClassSymbol classSymbol = new ClassSymbol(id.getText());
 			classSymbol.setSuperClass(ClassUtils.getQualifiedName(Guard.class));
-			getSymbolTable().defineGlobal(classSymbol);
-			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			int len = id.getText().length();
 			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
 					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+			getScope().define(classSymbol);
 		}
 
 		String guard = ctx.id().getText();

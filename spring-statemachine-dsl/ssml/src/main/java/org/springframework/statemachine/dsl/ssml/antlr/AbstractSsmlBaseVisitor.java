@@ -18,6 +18,7 @@ package org.springframework.statemachine.dsl.ssml.antlr;
 import java.util.function.Function;
 
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
+import org.springframework.dsl.symboltable.Scope;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.dsl.ssml.SsmlParserBaseVisitor;
 import org.springframework.statemachine.dsl.ssml.support.SsmlSymbolTable;
@@ -36,6 +37,7 @@ abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T>
 
 	private final StateMachineComponentResolver<S, E> stateMachineComponentResolver;
 	private final SsmlSymbolTable symbolTable;
+	private final Scope scope;
 
 	@SuppressWarnings("unchecked")
 	private Function<String, S> stateMapperFunction = id -> (S)id;
@@ -43,11 +45,12 @@ abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T>
 	private Function<String, E> eventMapperFunction = id -> (E)id;
 
 	AbstractSsmlBaseVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			SsmlSymbolTable symbolTable) {
+			SsmlSymbolTable symbolTable, Scope scope) {
 		Assert.notNull(stateMachineComponentResolver, "stateMachineComponentResolver must be set");
 		Assert.notNull(symbolTable, "symbolTable must be set");
 		this.stateMachineComponentResolver = stateMachineComponentResolver;
 		this.symbolTable = symbolTable;
+		this.scope = scope;
 	}
 
 	/**
@@ -66,6 +69,15 @@ abstract class AbstractSsmlBaseVisitor<S, E, T> extends SsmlParserBaseVisitor<T>
 	 */
 	public SsmlSymbolTable getSymbolTable() {
 		return symbolTable;
+	}
+
+	/**
+	 * Gets the scope.
+	 *
+	 * @return the scope
+	 */
+	public Scope getScope() {
+		return scope;
 	}
 
 	/**

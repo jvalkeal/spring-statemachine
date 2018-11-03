@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.Scope;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateData;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
@@ -50,8 +51,8 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 	private final Map<String, Action<S, E>> actions;
 
 	SsmlStateVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
-			Map<String, Action<S, E>> actions, SsmlSymbolTable symbolTable) {
-		super(stateMachineComponentResolver, symbolTable);
+			Map<String, Action<S, E>> actions, SsmlSymbolTable symbolTable, Scope scope) {
+		super(stateMachineComponentResolver, symbolTable, scope);
 		this.actions = actions;
 	}
 
@@ -61,10 +62,10 @@ class SsmlStateVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, StateData<S, 
 		if (id != null) {
 			ClassSymbol classSymbol = new ClassSymbol(id.getText());
 			classSymbol.setSuperClass(ClassUtils.getQualifiedName(State.class));
-			getSymbolTable().defineGlobal(classSymbol);
-			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			int len = id.getText().length();
 			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
 					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+			getScope().define(classSymbol);
 		}
 
 

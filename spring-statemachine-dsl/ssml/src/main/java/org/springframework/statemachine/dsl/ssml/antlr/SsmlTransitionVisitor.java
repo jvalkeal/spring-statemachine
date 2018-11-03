@@ -24,6 +24,9 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.dsl.domain.Range;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.dsl.symboltable.ClassSymbol;
+import org.springframework.dsl.symboltable.FieldSymbol;
+import org.springframework.dsl.symboltable.LocalScope;
+import org.springframework.dsl.symboltable.Scope;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.StateMachineComponentResolver;
 import org.springframework.statemachine.config.model.TransitionData;
@@ -61,8 +64,8 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 
 	SsmlTransitionVisitor(StateMachineComponentResolver<S, E> stateMachineComponentResolver,
 			List<ReconcileProblem> errors, SsmlStateVisitor<S, E> stateVisitor, Map<String, Guard<S, E>> guards,
-			Map<String, Action<S, E>> actions, SsmlSymbolTable symbolTable) {
-		super(stateMachineComponentResolver, symbolTable);
+			Map<String, Action<S, E>> actions, SsmlSymbolTable symbolTable, Scope scope) {
+		super(stateMachineComponentResolver, symbolTable, scope);
 		this.errors = errors;
 		this.stateVisitor = stateVisitor;
 		this.guards = guards;
@@ -72,13 +75,15 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 	@Override
 	public TransitionData<S, E> visitTransition(TransitionContext ctx) {
 		IdContext id = ctx.id();
+		Scope transitionScope = new LocalScope(getScope());
 		if (id != null) {
 			ClassSymbol classSymbol = new ClassSymbol(id.getText());
 			classSymbol.setSuperClass(ClassUtils.getQualifiedName(Transition.class));
-			getSymbolTable().defineGlobal(classSymbol);
-			int len = id.ID().getSymbol().getStopIndex() - id.ID().getSymbol().getStartIndex();
+			int len = id.getText().length();
 			classSymbol.setRange(Range.from(id.getStart().getLine() - 1, id.getStart().getCharPositionInLine(),
 					id.getStop().getLine() - 1, id.getStop().getCharPositionInLine() + len));
+			getScope().define(classSymbol);
+			transitionScope = classSymbol;
 		}
 
 		S source = null;
@@ -96,12 +101,26 @@ class SsmlTransitionVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E, Transiti
 				if (!stateVisitor.getSeenStates().contains(source)) {
 					errors.add(new SsmlTransitionSourceStateDslParserResultError(sourceId.ID().getSymbol()));
 				}
+				FieldSymbol sourceSymbol = new FieldSymbol(sourceId.getText());
+				int len = sourceId.getText().length();
+				sourceSymbol.setRange(Range.from(sourceId.getStart().getLine() - 1, sourceId.getStart().getCharPositionInLine(),
+						sourceId.getStop().getLine() - 1, sourceId.getStop().getCharPositionInLine() + len));
+				Scope transitionSourceScope = new LocalScope(transitionScope);
+				transitionScope.nest(transitionSourceScope);
+				transitionSourceScope.define(sourceSymbol);
 			}
 			if (targetId  != null) {
 				target = getStateMapperFunction().apply(targetId.getText());
 				if (!stateVisitor.getSeenStates().contains(target)) {
 					errors.add(new SsmlTransitionTargetStateDslParserResultError(targetId.ID().getSymbol()));
 				}
+				FieldSymbol targetSymbol = new FieldSymbol(targetId.getText());
+				int len = targetId.getText().length();
+				targetSymbol.setRange(Range.from(targetId.getStart().getLine() - 1, targetId.getStart().getCharPositionInLine(),
+						targetId.getStop().getLine() - 1, targetId.getStop().getCharPositionInLine() + len));
+				Scope transitionTargetScope = new LocalScope(transitionScope);
+				transitionScope.nest(transitionTargetScope);
+				transitionTargetScope.define(targetSymbol);
 			}
 			if (parameterContext.transitionType().EVENT() != null) {
 				EventIdContext eventId = parameterContext.transitionType().eventId();

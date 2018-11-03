@@ -23,6 +23,7 @@ import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.domain.SymbolKind;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
+import org.springframework.dsl.symboltable.Scope;
 import org.springframework.dsl.symboltable.SymbolTable;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
@@ -59,7 +60,7 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 	 * @param resolver the resolver
 	 */
 	public SsmlStateMachineVisitor(List<ReconcileProblem> errors, StateMachineComponentResolver<S, E> resolver) {
-		super(resolver, new SsmlSymbolTable());
+		super(resolver, new SsmlSymbolTable(), null);
 		this.errors = errors;
 		this.resolver = resolver;
 	}
@@ -68,22 +69,25 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 	public AntlrParseResult<StateMachineModel<S, E>> visitDefinitions(DefinitionsContext ctx) {
 		// TODO: visit machine as well as everything else outside of machine
 		//       is kinda anonymous
-		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver, getSymbolTable());
+
+		Scope scope = getSymbolTable().getGlobalScope();
+
+		SsmlActionVisitor<S, E> actionVisitor = new SsmlActionVisitor<>(resolver, getSymbolTable(), scope);
 		Map<String, Action<S, E>> actions = ctx.machineObjectList().action().stream()
 				.map(actionContext -> actionContext.accept(actionVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.action));
 
-		SsmlGuardVisitor<S, E> guardVisitor = new SsmlGuardVisitor<>(resolver, getSymbolTable());
+		SsmlGuardVisitor<S, E> guardVisitor = new SsmlGuardVisitor<>(resolver, getSymbolTable(), scope);
 		Map<String, Guard<S, E>> guards = ctx.machineObjectList().guard().stream()
 				.map(guardContext -> guardContext.accept(guardVisitor))
 				.collect(Collectors.toMap(result -> result.id, result -> result.guard));
 
-		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, getSymbolTable());
+		SsmlStateVisitor<S, E> stateVisitor = new SsmlStateVisitor<>(resolver, actions, getSymbolTable(), scope);
 		stateVisitor.setStateMapperFunction(getStateMapperFunction());
 		stateVisitor.setEventMapperFunction(getEventMapperFunction());
 
 		SsmlTransitionVisitor<S, E> transitionVisitor = new SsmlTransitionVisitor<>(resolver, errors, stateVisitor,
-				guards, actions, getSymbolTable());
+				guards, actions, getSymbolTable(), scope);
 		transitionVisitor.setStateMapperFunction(getStateMapperFunction());
 		transitionVisitor.setEventMapperFunction(getEventMapperFunction());
 

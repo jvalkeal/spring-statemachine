@@ -63,6 +63,23 @@ public class SsmlDslParserTests {
 	}
 
 	@Test
+	public void testSimpleMachineNotransitionids() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-notransitionids.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
+
+		SsmlDslParser<String, String> ssmlDslParser = new SsmlDslParser<>(resolver);
+		ssmlDslParser.setStateMapperFunction(id -> id);
+		ssmlDslParser.setEventMapperFunction(id -> id);
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(0));
+		assertThat(dslParserResult.hasErrors(), is(false));
+
+		assertSimpleMachineModel(dslParserResult);
+	}
+
+	@Test
 	public void testSimpleMachineNormalWithEnums() throws Exception {
 		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/simplemachine-normal.ssml");
 		StateMachineComponentResolver<MyStates, MyEvents> resolver = new MockStateMachineComponentResolver2();
@@ -187,6 +204,23 @@ public class SsmlDslParserTests {
 		assertSubMachineModel(dslParserResult);
 	}
 
+	@Test
+	public void testTransitionMachineNotransitionids() throws Exception {
+		Resource ssmlResource = new ClassPathResource("org/springframework/statemachine/dsl/ssml/transitionmachine-notransitionids.ssml");
+		StateMachineComponentResolver<String, String> resolver = new MockStateMachineComponentResolver();
+
+		SsmlDslParser<String, String> ssmlDslParser = new SsmlDslParser<>(resolver);
+		ssmlDslParser.setStateMapperFunction(id -> id);
+		ssmlDslParser.setEventMapperFunction(id -> id);
+		DslParserResult<StateMachineModel<String, String>> dslParserResult = ssmlDslParser.parse(ssmlResource);
+
+		assertThat(dslParserResult.getErrors(), notNullValue());
+		assertThat(dslParserResult.getErrors().size(), is(0));
+		assertThat(dslParserResult.hasErrors(), is(false));
+
+		assertTransitionMachineModel(dslParserResult);
+	}
+
 	private static void assertSimpleMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
 		assertThat(dslParserResult, notNullValue());
 		assertThat(dslParserResult.getResult(), notNullValue());
@@ -274,6 +308,51 @@ public class SsmlDslParserTests {
 			if (ObjectUtils.nullSafeEquals(t.getSource(), MyStates.S2)) {
 				assertThat(t.getEvent(), is(MyEvents.E2));
 			}
+		});
+	}
+
+	private static void assertTransitionMachineModel(DslParserResult<StateMachineModel<String, String>> dslParserResult) {
+		assertThat(dslParserResult, notNullValue());
+		assertThat(dslParserResult.getResult(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData(), notNullValue());
+		assertThat(dslParserResult.getResult().getStatesData().getStateData().size(), is(3));
+		assertThat(dslParserResult.getResult().getTransitionsData(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions(), notNullValue());
+		assertThat(dslParserResult.getResult().getTransitionsData().getTransitions().size(), is(6));
+
+		Collection<StateData<String, String>> stateData = dslParserResult.getResult().getStatesData().getStateData();
+		Collection<TransitionData<String, String>> transitions = dslParserResult.getResult().getTransitionsData()
+				.getTransitions();
+
+		assertThat(stateData.stream().map(sd -> sd.getState()).collect(Collectors.toList()),
+				containsInAnyOrder("S1", "S2", "S3"));
+
+		assertThat(transitions.stream().map(t -> t.getSource() + t.getTarget()).collect(Collectors.toList()),
+				containsInAnyOrder("S1S2", "S2S3", "S1S3", "S2S1", "S2null", "S1S1"));
+
+		stateData.stream().forEach(sd -> {
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S1")) {
+				assertThat(sd.isInitial(), is(true));
+				assertThat(sd.isEnd(), is(false));
+			}
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S2")) {
+				assertThat(sd.isInitial(), is(false));
+				assertThat(sd.isEnd(), is(false));
+			}
+			if (ObjectUtils.nullSafeEquals(sd.getState(), "S3")) {
+				assertThat(sd.isInitial(), is(false));
+				assertThat(sd.isEnd(), is(true));
+			}
+		});
+
+		transitions.stream().forEach(t -> {
+//			if (ObjectUtils.nullSafeEquals(t.getSource(), "S1")) {
+//				assertThat(t.getEvent(), is("E1"));
+//			}
+//			if (ObjectUtils.nullSafeEquals(t.getSource(), "S2")) {
+//				assertThat(t.getEvent(), is("E2"));
+//			}
 		});
 	}
 

@@ -16,6 +16,7 @@
 package org.springframework.statemachine.dsl.ssml.support;
 
 import org.springframework.dsl.symboltable.AbstractSymbolTable;
+import org.springframework.dsl.symboltable.SymbolTable;
 
 /**
  * {@link SymbolTable} for {@code ssml} related features easing to work with
