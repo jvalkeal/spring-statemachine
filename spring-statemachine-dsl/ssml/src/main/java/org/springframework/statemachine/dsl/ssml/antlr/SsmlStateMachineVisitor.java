@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.dsl.antlr.AntlrParseResult;
 import org.springframework.dsl.domain.DocumentSymbol;
-import org.springframework.dsl.domain.SymbolKind;
 import org.springframework.dsl.service.reconcile.ReconcileProblem;
 import org.springframework.dsl.symboltable.Scope;
 import org.springframework.dsl.symboltable.SymbolTable;
+import org.springframework.dsl.symboltable.support.DocumentSymbolTableVisitor;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.model.DefaultStateMachineModel;
 import org.springframework.statemachine.config.model.StateData;
@@ -124,13 +124,11 @@ public class SsmlStateMachineVisitor<S, E> extends AbstractSsmlBaseVisitor<S, E,
 			@Override
 			public Flux<DocumentSymbol> getDocumentSymbols() {
 				return getSymbolTable()
-					.flatMapMany(st -> Flux.fromIterable(st.getAllSymbols()))
-					.map(s -> DocumentSymbol.documentSymbol()
-							.name(s.getName())
-							.kind(SymbolKind.String)
-							.range(s.getRange())
-							.selectionRange(s.getRange())
-							.build());
+					.flatMapMany(st -> {
+						DocumentSymbolTableVisitor visitor = new DocumentSymbolTableVisitor();
+						st.visitSymbolTable(visitor);
+						return Flux.fromIterable(visitor.getDocumentSymbols());
+					});
 			}
 		};
 	}

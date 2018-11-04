@@ -15,6 +15,9 @@
  */
 package org.springframework.statemachine.dsl.ssml.service;
 
+import java.util.function.Function;
+
+import org.reactivestreams.Publisher;
 import org.springframework.dsl.document.Document;
 import org.springframework.dsl.domain.DocumentSymbol;
 import org.springframework.dsl.domain.Position;
@@ -40,6 +43,10 @@ import reactor.core.publisher.Mono;
 public class SsmlRenamer extends AbstractDslService implements Renamer {
 
 	private final Symbolizer symbolizer;
+	private final static Function<DocumentSymbol, Publisher<DocumentSymbol>> expander =
+			ds -> (ds.getChildren() == null || ds.getChildren().isEmpty())
+				? Flux.empty()
+				: Flux.fromIterable(ds.getChildren());
 
 	/**
 	 * Instantiates a new ssml renamer.
@@ -54,9 +61,11 @@ public class SsmlRenamer extends AbstractDslService implements Renamer {
 
 	@Override
 	public Mono<WorkspaceEdit> rename(Document document, Position position, String newName) {
-		Flux<DocumentSymbol> symbols = symbolizer.symbolize(document);
+		Flux<DocumentSymbol> symbols = symbolizer.symbolize(document)
+				.expandDeep(expander);
 		Mono<DocumentSymbol> symbol = symbols
-				.filter(s -> DslUtils.isPositionInRange(position, s.getRange())).next();
+				.filter(s -> DslUtils.isPositionInRange(position, s.getRange()))
+				.next();
 		return symbols
 				.filterWhen(s -> symbol.map(sym -> ObjectUtils.nullSafeEquals(s.getName(), sym.getName())))
 				.map(s -> TextEdit.textEdit()
