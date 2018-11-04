@@ -84,7 +84,6 @@ configure(allprojects) {
 		maven { url "http://repo.springsource.org/libs-snapshot" }
 		maven { url "http://repo.springsource.org/libs-release" }
 		maven { url "http://repo.springsource.org/libs-milestone" }
-		maven { url "http://repo.springsource.org/test-libs-snapshot-local" }
 	}
 
 	dependencyManagement {
