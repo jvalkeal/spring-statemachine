@@ -61,7 +61,7 @@ public class SsmlRenamer extends AbstractDslService implements Renamer {
 
 	@Override
 	public Mono<WorkspaceEdit> rename(Document document, Position position, String newName) {
-		Flux<DocumentSymbol> symbols = symbolizer.symbolize(document)
+		Flux<DocumentSymbol> symbols = symbolizer.symbolize(document).documentSymbols()
 				.expandDeep(expander);
 		Mono<DocumentSymbol> symbol = symbols
 				.filter(s -> DslUtils.isPositionInRange(position, s.getRange()))

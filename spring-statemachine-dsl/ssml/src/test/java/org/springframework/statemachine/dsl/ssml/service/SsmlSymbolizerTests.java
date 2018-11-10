@@ -48,7 +48,8 @@ public class SsmlSymbolizerTests {
 		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
 
 		SsmlSymbolizer symbolizer = new SsmlSymbolizer(antlrParseService, antlrParseResultFunction);
-		List<DocumentSymbol> symbols = symbolizer.symbolize(document).toStream().collect(Collectors.toList());
+		List<DocumentSymbol> symbols = symbolizer.symbolize(document).documentSymbols().toStream()
+				.collect(Collectors.toList());
 		List<String> labels = symbols.stream().map(symbol -> symbol.getName()).collect(Collectors.toList());
 
 		assertThat(labels.size(), is(0));
@@ -64,7 +65,8 @@ public class SsmlSymbolizerTests {
 		SsmlAntlrParseResultFunction antlrParseResultFunction = new SsmlAntlrParseResultFunction(SsmlLanguage.ANTRL_FACTORY);
 
 		SsmlSymbolizer symbolizer = new SsmlSymbolizer(antlrParseService, antlrParseResultFunction);
-		List<DocumentSymbol> symbols = symbolizer.symbolize(document).toStream().collect(Collectors.toList());
+		List<DocumentSymbol> symbols = symbolizer.symbolize(document).documentSymbols().toStream()
+				.collect(Collectors.toList());
 		List<String> labels = symbols.stream().map(symbol -> symbol.getName()).collect(Collectors.toList());
 
 		assertThat(labels.size(), is(1));
