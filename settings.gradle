@@ -36,6 +36,10 @@ include 'spring-statemachine-data:jpa'
 include 'spring-statemachine-data:redis'
 include 'spring-statemachine-data:mongodb'
 
+include 'spring-statemachine-dsl'
+include 'spring-statemachine-dsl:ssml'
+include 'spring-statemachine-dsl:ssmlserver'
+
 rootProject.children.find {
 	if (it.name == 'spring-statemachine-recipes') {
 		it.name = 'spring-statemachine-recipes-common'
@@ -50,6 +54,12 @@ rootProject.children.find {
 		it.name = 'spring-statemachine-data-common'
 		it.children.each {
 			it.name = 'spring-statemachine-data-' + it.name
+		}
+	}
+	if (it.name == 'spring-statemachine-dsl') {
+		it.name = 'spring-statemachine-dsl-common'
+		it.children.each {
+			it.name = 'spring-statemachine-dsl-' + it.name
 		}
 	}
 }

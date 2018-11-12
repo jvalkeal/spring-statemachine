@@ -1,0 +1,53 @@
+description = "Spring State Machine Dsl Common"
+
+project('spring-statemachine-dsl-ssml') {
+	description = "Spring State Machine Dsl SSML"
+	apply plugin: 'antlr'
+
+	generateGrammarSource {
+		arguments += ["-visitor", "-long-messages", "-package", "org.springframework.statemachine.dsl.ssml"]
+		doLast {
+			def parserFilePattern = 'Ssml*'
+			def outputPath = generateGrammarSource.outputDirectory.canonicalPath
+			def parserPackagePath = "${outputPath}/org/springframework/statemachine/dsl/ssml"
+			file(parserPackagePath).mkdirs()
+			copy {
+				from outputPath
+				into parserPackagePath
+				include parserFilePattern
+			}
+			delete fileTree(outputPath) {
+				include parserFilePattern
+			}
+		}
+	}
+
+	dependencies {
+		antlr "org.antlr:antlr4"
+		compile project(":spring-statemachine-dsl-common")
+		compile "org.springframework.dsl:spring-dsl-antlr"
+		compile "org.springframework.dsl:spring-dsl-symboltable"
+		testCompile "org.springframework:spring-context"
+		testCompile "org.springframework:spring-test"
+		testCompile "org.hamcrest:hamcrest-core"
+		testCompile "org.hamcrest:hamcrest-library"
+		testCompile "junit:junit"
+		testRuntime "org.apache.logging.log4j:log4j-core"
+	}
+}
+
+project('spring-statemachine-dsl-ssmlserver') {
+	apply plugin: 'org.springframework.boot'
+	description = "Spring State Machine Dsl SSML Language Server"
+
+	dependencies {
+		compile project(":spring-statemachine-dsl-common:spring-statemachine-dsl-ssml")
+		compile "org.springframework.dsl:spring-dsl-starter-lspserver"
+		testCompile "org.springframework:spring-context"
+		testCompile "org.springframework:spring-test"
+		testCompile "org.hamcrest:hamcrest-core"
+		testCompile "org.hamcrest:hamcrest-library"
+		testCompile "junit:junit"
+		testRuntime "org.apache.logging.log4j:log4j-core"
+	}
+}
