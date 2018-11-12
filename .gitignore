@@ -9,6 +9,7 @@ build
 *.ipr
 *.iws
 *.swp
+*.gz
 metastore_db
 /src/test/resources/s3.properties
 /.idea/
@@ -17,3 +18,4 @@ metastore_db
 target
 classes
 .sts4-cache
+.attach_pid*

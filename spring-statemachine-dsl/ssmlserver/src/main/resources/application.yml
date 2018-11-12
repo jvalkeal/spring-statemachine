@@ -1,0 +1,22 @@
+logging:
+  file: ssmlserver.log
+  level:
+    org.springframework.dsl: debug
+    org.springframework.statemachine.dsl: debug
+spring:
+  main:
+    banner-mode: "off"
+  dsl:
+    lsp:
+      server:
+        mode: PROCESS
+---
+# eclipse really doesn't work with DocumentSymbol so prefer SymbolInformation
+spring:
+  profiles: eclipse
+  dsl:
+    lsp:
+      server:
+        text-document:
+          document-symbol:
+            prefer: SymbolInformation

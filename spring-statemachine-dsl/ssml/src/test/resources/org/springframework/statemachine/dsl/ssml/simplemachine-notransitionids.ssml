@@ -1,0 +1,25 @@
+# simple 3 state flat machine with states and transitions
+# defined in order and no lexical problems. transitions
+# don't have id's
+
+state S1 {
+  initial
+}
+
+state S2 {}
+
+state S3 {
+  end
+}
+
+transition {
+  source S1
+  target S2
+  event E1
+}
+
+transition {
+  source S2
+  target S3
+  event E2
+}
