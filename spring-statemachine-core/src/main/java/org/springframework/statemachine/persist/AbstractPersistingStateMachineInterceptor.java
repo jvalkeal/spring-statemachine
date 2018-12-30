@@ -18,8 +18,11 @@ package org.springframework.statemachine.persist;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateMachine;
@@ -56,11 +59,14 @@ import org.springframework.util.Assert;
 public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends StateMachineInterceptorAdapter<S, E>
 		implements StateMachinePersist<S, E, T> {
 
+	private static final Log log = LogFactory.getLog(AbstractPersistingStateMachineInterceptor.class);
 	private Function<StateMachine<S, E>, Map<Object, Object>> extendedStateVariablesFunction = new AllVariablesFunction<>();
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+		log.info("XXXX1 preStateChange " + stateMachine);
+		log.info("XXXX2 preStateChange " + state);
 		// try to persist context and in case of failure, interceptor
 		// call chain aborts transition
 		// TODO: should probably come up with a policy vs. not force feeding this functionality
@@ -74,6 +80,8 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 	@SuppressWarnings("unchecked")
 	@Override
 	public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+		log.info("XXXX1 postStateChange " + stateMachine);
+		log.info("XXXX2 postStateChange " + state);
 		// initial transitions are never intercepted as those cannot fail or get aborted.
 		// for now, handle persistence in post state change
 		// TODO: consider intercept initial transition, but not aborting if error is thrown?
@@ -126,15 +134,17 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 		ExtendedState extendedState = new DefaultExtendedState();
 		extendedState.getVariables().putAll(extendedStateVariablesFunction.apply(stateMachine));
 
-		ArrayList<StateMachineContext<S, E>> childs = new ArrayList<StateMachineContext<S, E>>();
+		List<StateMachineContext<S, E>> childs = new ArrayList<StateMachineContext<S, E>>();
 		S id = null;
 		if (state.isSubmachineState()) {
 			id = getDeepState(state);
 		} else if (state.isOrthogonal()) {
-			Collection<Region<S, E>> regions = ((AbstractState<S, E>)state).getRegions();
-			for (Region<S, E> r : regions) {
-				StateMachine<S, E> rsm = (StateMachine<S, E>) r;
-				childs.add(buildStateMachineContext(rsm, state));
+			if (stateMachine.getState().isOrthogonal()) {
+				Collection<Region<S, E>> regions = ((AbstractState<S, E>)state).getRegions();
+				for (Region<S, E> r : regions) {
+					StateMachine<S, E> rsm = (StateMachine<S, E>) r;
+					childs.add(buildStateMachineContext(rsm, rsm.getState()));
+				}
 			}
 			id = state.getId();
 		} else {

@@ -1,0 +1,7 @@
+logging:
+  level:
+    root: INFO
+    com.esotericsoftware: TRACE
+security:
+  basic:
+    enabled: false

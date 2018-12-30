@@ -80,6 +80,7 @@ import org.springframework.statemachine.state.StateMachineState;
 import org.springframework.statemachine.support.DefaultExtendedState;
 import org.springframework.statemachine.support.LifecycleObjectSupport;
 import org.springframework.statemachine.support.StateMachineInterceptor;
+import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
 import org.springframework.statemachine.support.tree.Tree;
 import org.springframework.statemachine.support.tree.Tree.Node;
 import org.springframework.statemachine.support.tree.TreeTraverser;
@@ -219,9 +220,18 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 
 			if (initialCount > 1) {
 				for (Collection<StateData<S, E>> regionStateDatas : regionsStateDatas) {
+//					machine = buildMachine(machineMap, stateMap, holderList, regionStateDatas, transitionsData, resolveBeanFactory(stateMachineModel),
+//							contextEvents, defaultExtendedState, stateMachineModel.getTransitionsData(), resolveTaskExecutor(stateMachineModel),
+//							resolveTaskScheduler(stateMachineModel), machineId, null, stateMachineModel);
+
+					Object xxxregion = regionStateDatas.iterator().next().getRegion();
+					String xxxid = machineId + "#" + (xxxregion != null ? xxxregion.toString() : "");
+					System.out.println("XXXX machineid "  + xxxid);
+
+
 					machine = buildMachine(machineMap, stateMap, holderList, regionStateDatas, transitionsData, resolveBeanFactory(stateMachineModel),
 							contextEvents, defaultExtendedState, stateMachineModel.getTransitionsData(), resolveTaskExecutor(stateMachineModel),
-							resolveTaskScheduler(stateMachineModel), machineId, null, stateMachineModel);
+							resolveTaskScheduler(stateMachineModel), xxxid, null, stateMachineModel);
 					regionStack.push(new MachineStackItem<S, E>(machine));
 					machines.add(machine);
 				}
@@ -359,12 +369,23 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 		List<StateMachineInterceptor<S,E>> interceptors = stateMachineModel.getConfigurationData().getStateMachineInterceptors();
 		if (interceptors != null) {
 			for (final StateMachineInterceptor<S, E> interceptor : interceptors) {
-				machine.getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
+//				machine.getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
+//					@Override
+//					public void apply(StateMachineAccess<S, E> function) {
+//						function.addStateMachineInterceptor(interceptor);
+//					}
+//				});
+
+				Xxx<S, E> xxx = new Xxx<>(interceptor, machine);
+
+				machine.getStateMachineAccessor().doWithAllRegions(new StateMachineFunction<StateMachineAccess<S,E>>() {
 					@Override
 					public void apply(StateMachineAccess<S, E> function) {
-						function.addStateMachineInterceptor(interceptor);
+						function.addStateMachineInterceptor(xxx);
 					}
 				});
+
+
 			}
 		}
 
@@ -375,6 +396,32 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 		}
 
 		return delegateAutoStartup(machine);
+	}
+
+	private class Xxx<S, E> extends StateMachineInterceptorAdapter<S, E> {
+
+		private final StateMachineInterceptor<S, E> interceptor;
+		private final StateMachine<S, E> machine;
+
+		public Xxx(StateMachineInterceptor<S, E> interceptor, StateMachine<S, E> machine) {
+			this.interceptor = interceptor;
+			this.machine = machine;
+		}
+
+		@Override
+		public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+				StateMachine<S, E> stateMachine) {
+			log.info("UUU1 preStateChange " + stateMachine + " / " + machine);
+			interceptor.preStateChange(state, message, transition, machine);
+		}
+
+		@Override
+		public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+				StateMachine<S, E> stateMachine) {
+			log.info("UUU2 postStateChange " + stateMachine + " / " + machine);
+			interceptor.postStateChange(state, message, transition, machine);
+		}
+
 	}
 
 	/**

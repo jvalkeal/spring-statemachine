@@ -16,6 +16,7 @@
 package org.springframework.statemachine.data.jpa;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
@@ -314,6 +315,22 @@ public class JpaRepositoryTests extends AbstractRepositoryTests {
 		assertThat(stateMachine.getState().getId(), is(PersistTestStates.S1));
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testStateMachinePersistWithRootRegions() {
+		context.register(TestConfig.class, ConfigWithRootRegions.class);
+		context.refresh();
+		JpaStateMachineRepository stateMachineRepository = context.getBean(JpaStateMachineRepository.class);
+
+		StateMachine<String, String> stateMachine = context.getBean(StateMachine.class);
+		stateMachine.start();
+		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S10", "S20"));
+		stateMachine.sendEvent("E1");
+		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S11", "S21"));
+
+		assertThat(stateMachineRepository.count(), is(1l));
+	}
+
 	@EnableAutoConfiguration
 	static class TestConfig {
 	}
@@ -441,5 +458,56 @@ public class JpaRepositoryTests extends AbstractRepositoryTests {
 
 	public enum PersistTestEvents {
 		E1, E2;
+	}
+
+	@Configuration
+	@EnableStateMachine
+	static class ConfigWithRootRegions extends StateMachineConfigurerAdapter<String, String> {
+
+		@Autowired
+		private JpaStateMachineRepository jpaStateMachineRepository;
+
+		@Override
+		public void configure(StateMachineConfigurationConfigurer<String, String> config) throws Exception {
+			config
+				.withConfiguration()
+					.machineId("testid")
+					.and()
+				.withPersistence()
+					.runtimePersister(stateMachineRuntimePersister());
+		}
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("S10")
+					.state("S10")
+					.state("S11")
+					.and()
+				.withStates()
+					.initial("S20")
+					.state("S20")
+					.state("S21");
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("S10")
+					.target("S11")
+					.event("E1")
+					.and()
+				.withExternal()
+					.source("S20")
+					.target("S21")
+					.event("E1");
+		}
+
+		@Bean
+		public StateMachineRuntimePersister<String, String, String> stateMachineRuntimePersister() {
+			return new JpaPersistingStateMachineInterceptor<>(jpaStateMachineRepository);
+		}
 	}
 }

@@ -884,6 +884,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		try {
 			getStateMachineInterceptors().postStateChange(state, message, transition, stateMachine);
 		} catch (Exception e) {
+			log.warn("Interceptors threw exception in post state change", e);
 		}
 	}
 
