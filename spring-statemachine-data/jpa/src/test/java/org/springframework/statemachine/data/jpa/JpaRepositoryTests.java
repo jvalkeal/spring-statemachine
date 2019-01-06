@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -329,6 +331,14 @@ public class JpaRepositoryTests extends AbstractRepositoryTests {
 		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S11", "S21"));
 
 		assertThat(stateMachineRepository.count(), is(3l));
+
+		List<String> ids = StreamSupport.stream(stateMachineRepository.findAll().spliterator(), false)
+				.map(jrsm -> jrsm.getMachineId()).collect(Collectors.toList());
+		assertThat(ids.size(), is(3));
+
+		// [null#238e8cc0-a932-4583-b696-2c057e5ebefe, null#486e20be-853e-4e4d-9a68-c62c061469ef, testid]
+		assertThat(ids, containsInAnyOrder("testid", "testid#R1", "testid#R2"));
+
 	}
 
 	@EnableAutoConfiguration
@@ -481,11 +491,13 @@ public class JpaRepositoryTests extends AbstractRepositoryTests {
 		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
 			states
 				.withStates()
+					.region("R1")
 					.initial("S10")
 					.state("S10")
 					.state("S11")
 					.and()
 				.withStates()
+					.region("R2")
 					.initial("S20")
 					.state("S20")
 					.state("S21");

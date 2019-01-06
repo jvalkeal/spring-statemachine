@@ -220,18 +220,14 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 
 			if (initialCount > 1) {
 				for (Collection<StateData<S, E>> regionStateDatas : regionsStateDatas) {
-//					machine = buildMachine(machineMap, stateMap, holderList, regionStateDatas, transitionsData, resolveBeanFactory(stateMachineModel),
-//							contextEvents, defaultExtendedState, stateMachineModel.getTransitionsData(), resolveTaskExecutor(stateMachineModel),
-//							resolveTaskScheduler(stateMachineModel), machineId, null, stateMachineModel);
-
-					Object xxxregion = regionStateDatas.iterator().next().getRegion();
-					String xxxid = machineId + "#" + (xxxregion != null ? xxxregion.toString() : "");
-					System.out.println("XXXX machineid "  + xxxid);
-
+					// try to build reqion id's
+					Object rId = regionStateDatas.iterator().next().getRegion();
+					String mId = machineId != null ? machineId : stateMachineModel.getConfigurationData().getMachineId();
+					mId = mId + "#" + (rId != null ? rId.toString() : "");
 
 					machine = buildMachine(machineMap, stateMap, holderList, regionStateDatas, transitionsData, resolveBeanFactory(stateMachineModel),
 							contextEvents, defaultExtendedState, stateMachineModel.getTransitionsData(), resolveTaskExecutor(stateMachineModel),
-							resolveTaskScheduler(stateMachineModel), xxxid, null, stateMachineModel);
+							resolveTaskScheduler(stateMachineModel), mId, null, stateMachineModel);
 					regionStack.push(new MachineStackItem<S, E>(machine));
 					machines.add(machine);
 				}
