@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,9 +66,11 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 	@Override
 	public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
-		log.info("XXXX1 preStateChange " + stateMachine);
-		log.info("XXXX2 preStateChange " + rootStateMachine);
-		log.info("XXXX3 preStateChange " + state);
+		if (log.isDebugEnabled()) {
+			log.debug("preStateChange with stateMachine " + stateMachine);
+			log.debug("preStateChange with root stateMachine " + rootStateMachine);
+			log.debug("preStateChange with state " + state);
+		}
 		// try to persist context and in case of failure, interceptor
 		// call chain aborts transition
 		// TODO: should probably come up with a policy vs. not force feeding this functionality
@@ -89,9 +91,11 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 	@Override
 	public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
-		log.info("XXXX1 postStateChange " + stateMachine);
-		log.info("XXXX2 postStateChange " + rootStateMachine);
-		log.info("XXXX3 postStateChange " + state);
+		if (log.isDebugEnabled()) {
+			log.debug("postStateChange with stateMachine " + stateMachine);
+			log.debug("postStateChange with root stateMachine " + rootStateMachine);
+			log.debug("postStateChange with state " + state);
+		}
 		// initial transitions are never intercepted as those cannot fail or get aborted.
 		// for now, handle persistence in post state change
 		// TODO: consider intercept initial transition, but not aborting if error is thrown?
@@ -159,9 +163,9 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 			if (stateMachine.getState().isOrthogonal()) {
 				Collection<Region<S, E>> regions = ((AbstractState<S, E>)state).getRegions();
 				for (Region<S, E> r : regions) {
+					// realistically we can only add refs because reqions are independent
+					// and when restoring, those child contexts need to get dehydrated
 					childRefs.add(r.getId());
-//					StateMachine<S, E> rsm = (StateMachine<S, E>) r;
-//					childs.add(buildStateMachineContext(rsm, rsm.getState()));
 				}
 			}
 			id = state.getId();

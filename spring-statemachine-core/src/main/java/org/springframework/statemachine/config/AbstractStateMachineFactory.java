@@ -369,23 +369,14 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 		List<StateMachineInterceptor<S,E>> interceptors = stateMachineModel.getConfigurationData().getStateMachineInterceptors();
 		if (interceptors != null) {
 			for (final StateMachineInterceptor<S, E> interceptor : interceptors) {
-//				machine.getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
-//					@Override
-//					public void apply(StateMachineAccess<S, E> function) {
-//						function.addStateMachineInterceptor(interceptor);
-//					}
-//				});
-
+				// add persisting interceptor hooks to all regions
 				RegionPersistingInterceptorAdapter<S, E> adapter = new RegionPersistingInterceptorAdapter<>(interceptor, machine);
-
 				machine.getStateMachineAccessor().doWithAllRegions(new StateMachineFunction<StateMachineAccess<S,E>>() {
 					@Override
 					public void apply(StateMachineAccess<S, E> function) {
 						function.addStateMachineInterceptor(adapter);
 					}
 				});
-
-
 			}
 		}
 
@@ -398,7 +389,7 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 		return delegateAutoStartup(machine);
 	}
 
-	private class RegionPersistingInterceptorAdapter<S, E> extends StateMachineInterceptorAdapter<S, E> {
+	private static class RegionPersistingInterceptorAdapter<S, E> extends StateMachineInterceptorAdapter<S, E> {
 
 		private final StateMachineInterceptor<S, E> interceptor;
 		private final StateMachine<S, E> rootStateMachine;

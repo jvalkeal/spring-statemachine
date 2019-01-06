@@ -705,6 +705,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 						for (Region<S, E> region : regions) {
 							for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
+								// only call if reqion id matches with context id
 								if (ObjectUtils.nullSafeEquals(region.getId(), child.getId())) {
 									((StateMachine<S, E>)region).getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
 
@@ -716,18 +717,6 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 								}
 							}
 						}
-
-//						for (Region<S, E> region : regions) {
-//							for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
-//								((StateMachine<S, E>)region).getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
-//
-//									@Override
-//									public void apply(StateMachineAccess<S, E> function) {
-//										function.resetStateMachine(child);
-//									}
-//								});
-//							}
-//						}
 					} else {
 						for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
 							S state2 = child.getState();

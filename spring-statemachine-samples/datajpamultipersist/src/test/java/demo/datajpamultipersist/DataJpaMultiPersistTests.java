@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,22 @@ public class DataJpaMultiPersistTests {
 			andExpect(content().string(allOf(
 				containsString("Enter S10"),
 				containsString("Enter S20"),
+				containsString("Enter null"))));
+	}
+
+	@Test
+	public void testSendEventsE10E20WithMachine2() throws Exception {
+		mvc.
+			perform(get("/state")
+				.param("events", "E10")
+				.param("events", "E20")
+				.param("machine", StateMachineController.MACHINE_ID_2)).
+			andExpect(status().isOk()).
+			andExpect(content().string(allOf(
+				containsString("Enter S10"),
+				containsString("Enter S20"),
+				containsString("Enter S11"),
+				containsString("Enter S21"),
 				containsString("Enter null"))));
 	}
 
