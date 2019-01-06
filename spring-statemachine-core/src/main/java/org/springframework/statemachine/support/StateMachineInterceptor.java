@@ -54,6 +54,9 @@ public interface StateMachineInterceptor<S, E> {
 	void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine);
 
+	void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine);
+
 	/**
 	 * Called after a state change.
 	 *
@@ -64,6 +67,9 @@ public interface StateMachineInterceptor<S, E> {
 	 */
 	void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine);
+
+	void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine);
 
 	/**
 	 * Called prior of a start of a transition. Returning

@@ -1,7 +1,7 @@
 logging:
   level:
     root: INFO
-    com.esotericsoftware: TRACE
+    org.springframework.statemachine: DEBUG
 security:
   basic:
     enabled: false

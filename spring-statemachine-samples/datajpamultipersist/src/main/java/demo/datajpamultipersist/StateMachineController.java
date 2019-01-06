@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ public class StateMachineController {
 
 	public final static String MACHINE_ID_1 = "datajpamultipersist1";
 	public final static String MACHINE_ID_2 = "datajpamultipersist2";
+	public final static String MACHINE_ID_2R1 = "datajpamultipersist2#R1";
+	public final static String MACHINE_ID_2R2 = "datajpamultipersist2#R2";
 	private final static String[] MACHINES = new String[] { MACHINE_ID_1, MACHINE_ID_2 };
 	private final StateMachineLogListener listener = new StateMachineLogListener();
 
@@ -68,14 +70,32 @@ public class StateMachineController {
 				stateMachine.sendEvent(event);
 			}
 		}
-		StateMachineContext<String, String> stateMachineContext = stateMachinePersist.read(machine);
 
+		StringBuilder contextBuf = new StringBuilder();
+
+		StateMachineContext<String, String> stateMachineContext = stateMachinePersist.read(machine);
+		if (stateMachineContext != null) {
+			contextBuf.append(stateMachineContext.toString());
+		}
+		if (ObjectUtils.nullSafeEquals(machine, MACHINE_ID_2)) {
+			stateMachineContext = stateMachinePersist.read(MACHINE_ID_2R1);
+			if (stateMachineContext != null) {
+				contextBuf.append("\n---\n");
+				contextBuf.append(stateMachineContext.toString());
+			}
+			stateMachineContext = stateMachinePersist.read(MACHINE_ID_2R2);
+			if (stateMachineContext != null) {
+				contextBuf.append("\n---\n");
+				contextBuf.append(stateMachineContext.toString());
+			}
+		}
 
 		model.addAttribute("allMachines", MACHINES);
 		model.addAttribute("machine", machine);
+		model.addAttribute("currentMachine", currentStateMachine);
 		model.addAttribute("allEvents", getEvents());
 		model.addAttribute("messages", createMessages(listener.getMessages()));
-		model.addAttribute("context", stateMachineContext != null ? stateMachineContext.toString() : "");
+		model.addAttribute("context", contextBuf.toString());
 		return "states";
 	}
 

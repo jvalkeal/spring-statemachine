@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,7 +328,7 @@ public class JpaRepositoryTests extends AbstractRepositoryTests {
 		stateMachine.sendEvent("E1");
 		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S11", "S21"));
 
-		assertThat(stateMachineRepository.count(), is(1l));
+		assertThat(stateMachineRepository.count(), is(3l));
 	}
 
 	@EnableAutoConfiguration

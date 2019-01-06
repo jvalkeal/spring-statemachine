@@ -376,12 +376,12 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 //					}
 //				});
 
-				Xxx<S, E> xxx = new Xxx<>(interceptor, machine);
+				RegionPersistingInterceptorAdapter<S, E> adapter = new RegionPersistingInterceptorAdapter<>(interceptor, machine);
 
 				machine.getStateMachineAccessor().doWithAllRegions(new StateMachineFunction<StateMachineAccess<S,E>>() {
 					@Override
 					public void apply(StateMachineAccess<S, E> function) {
-						function.addStateMachineInterceptor(xxx);
+						function.addStateMachineInterceptor(adapter);
 					}
 				});
 
@@ -398,28 +398,38 @@ public abstract class AbstractStateMachineFactory<S, E> extends LifecycleObjectS
 		return delegateAutoStartup(machine);
 	}
 
-	private class Xxx<S, E> extends StateMachineInterceptorAdapter<S, E> {
+	private class RegionPersistingInterceptorAdapter<S, E> extends StateMachineInterceptorAdapter<S, E> {
 
 		private final StateMachineInterceptor<S, E> interceptor;
-		private final StateMachine<S, E> machine;
+		private final StateMachine<S, E> rootStateMachine;
 
-		public Xxx(StateMachineInterceptor<S, E> interceptor, StateMachine<S, E> machine) {
+		public RegionPersistingInterceptorAdapter(StateMachineInterceptor<S, E> interceptor, StateMachine<S, E> rootStateMachine) {
 			this.interceptor = interceptor;
-			this.machine = machine;
+			this.rootStateMachine = rootStateMachine;
 		}
 
 		@Override
 		public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 				StateMachine<S, E> stateMachine) {
-			log.info("UUU1 preStateChange " + stateMachine + " / " + machine);
-			interceptor.preStateChange(state, message, transition, machine);
+			interceptor.preStateChange(state, message, transition, stateMachine, rootStateMachine);
+		}
+
+		@Override
+		public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+				StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
+			interceptor.preStateChange(state, message, transition, stateMachine, rootStateMachine);
 		}
 
 		@Override
 		public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
 				StateMachine<S, E> stateMachine) {
-			log.info("UUU2 postStateChange " + stateMachine + " / " + machine);
-			interceptor.postStateChange(state, message, transition, machine);
+			interceptor.postStateChange(state, message, transition, stateMachine, rootStateMachine);
+		}
+
+		@Override
+		public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+				StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
+			interceptor.postStateChange(state, message, transition, stateMachine, rootStateMachine);
 		}
 
 	}

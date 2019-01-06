@@ -67,6 +67,7 @@ import org.springframework.statemachine.transition.TransitionKind;
 import org.springframework.statemachine.trigger.DefaultTriggerContext;
 import org.springframework.statemachine.trigger.Trigger;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -697,21 +698,36 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					}
 					stateSet = true;
 					break;
-				} else if (!stateMachineContext.getChilds().isEmpty()) {
+				} else if (stateMachineContext.getChilds() != null && !stateMachineContext.getChilds().isEmpty()) {
 					// we're here because root machine only have regions
 					if (s.isOrthogonal()) {
 						Collection<Region<S, E>> regions = ((AbstractState<S, E>)s).getRegions();
+
 						for (Region<S, E> region : regions) {
 							for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
-								((StateMachine<S, E>)region).getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
+								if (ObjectUtils.nullSafeEquals(region.getId(), child.getId())) {
+									((StateMachine<S, E>)region).getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
 
-									@Override
-									public void apply(StateMachineAccess<S, E> function) {
-										function.resetStateMachine(child);
-									}
-								});
+										@Override
+										public void apply(StateMachineAccess<S, E> function) {
+											function.resetStateMachine(child);
+										}
+									});
+								}
 							}
 						}
+
+//						for (Region<S, E> region : regions) {
+//							for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
+//								((StateMachine<S, E>)region).getStateMachineAccessor().doWithRegion(new StateMachineFunction<StateMachineAccess<S,E>>() {
+//
+//									@Override
+//									public void apply(StateMachineAccess<S, E> function) {
+//										function.resetStateMachine(child);
+//									}
+//								});
+//							}
+//						}
 					} else {
 						for (final StateMachineContext<S, E> child : stateMachineContext.getChilds()) {
 							S state2 = child.getState();
@@ -872,7 +888,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	private boolean callPreStateChangeInterceptors(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
 		try {
-			getStateMachineInterceptors().preStateChange(state, message, transition, stateMachine);
+			getStateMachineInterceptors().preStateChange(state, message, transition, this, stateMachine);
 		} catch (Exception e) {
 			log.info("Interceptors threw exception, skipping state change", e);
 			return false;
@@ -882,7 +898,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	private void callPostStateChangeInterceptors(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
 		try {
-			getStateMachineInterceptors().postStateChange(state, message, transition, stateMachine);
+			getStateMachineInterceptors().postStateChange(state, message, transition, this, stateMachine);
 		} catch (Exception e) {
 			log.warn("Interceptors threw exception in post state change", e);
 		}

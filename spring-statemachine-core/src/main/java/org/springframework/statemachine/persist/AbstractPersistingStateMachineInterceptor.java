@@ -64,34 +64,50 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+	public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
 		log.info("XXXX1 preStateChange " + stateMachine);
-		log.info("XXXX2 preStateChange " + state);
+		log.info("XXXX2 preStateChange " + rootStateMachine);
+		log.info("XXXX3 preStateChange " + state);
 		// try to persist context and in case of failure, interceptor
 		// call chain aborts transition
 		// TODO: should probably come up with a policy vs. not force feeding this functionality
 		try {
-			write(buildStateMachineContext(stateMachine, state), (T)stateMachine.getId());
+			write(buildStateMachineContext(stateMachine, rootStateMachine, state), (T)stateMachine.getId());
 		} catch (Exception e) {
 			throw new StateMachineException("Unable to persist stateMachineContext", e);
 		}
 	}
 
+	@Override
+	public void preStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine) {
+		preStateChange(state, message, transition, stateMachine, stateMachine);
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+	public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine) {
 		log.info("XXXX1 postStateChange " + stateMachine);
-		log.info("XXXX2 postStateChange " + state);
+		log.info("XXXX2 postStateChange " + rootStateMachine);
+		log.info("XXXX3 postStateChange " + state);
 		// initial transitions are never intercepted as those cannot fail or get aborted.
 		// for now, handle persistence in post state change
 		// TODO: consider intercept initial transition, but not aborting if error is thrown?
 		if (state != null && transition != null && transition.getKind() == TransitionKind.INITIAL) {
 			try {
-				write(buildStateMachineContext(stateMachine, state), (T)stateMachine.getId());
+				write(buildStateMachineContext(stateMachine, rootStateMachine, state), (T)stateMachine.getId());
 			} catch (Exception e) {
 				throw new StateMachineException("Unable to persist stateMachineContext", e);
 			}
 		}
+	}
+
+	@Override
+	public void postStateChange(State<S, E> state, Message<E> message, Transition<S, E> transition,
+			StateMachine<S, E> stateMachine) {
+		postStateChange(state, message, transition, stateMachine, stateMachine);
 	}
 
 	/**
@@ -130,11 +146,12 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 	 * @param state the state
 	 * @return the state machine context
 	 */
-	protected StateMachineContext<S, E> buildStateMachineContext(StateMachine<S, E> stateMachine, State<S, E> state) {
+	protected StateMachineContext<S, E> buildStateMachineContext(StateMachine<S, E> stateMachine, StateMachine<S, E> rootStateMachine, State<S, E> state) {
 		ExtendedState extendedState = new DefaultExtendedState();
 		extendedState.getVariables().putAll(extendedStateVariablesFunction.apply(stateMachine));
 
 		List<StateMachineContext<S, E>> childs = new ArrayList<StateMachineContext<S, E>>();
+		List<String> childRefs = new ArrayList<>();
 		S id = null;
 		if (state.isSubmachineState()) {
 			id = getDeepState(state);
@@ -142,8 +159,9 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 			if (stateMachine.getState().isOrthogonal()) {
 				Collection<Region<S, E>> regions = ((AbstractState<S, E>)state).getRegions();
 				for (Region<S, E> r : regions) {
-					StateMachine<S, E> rsm = (StateMachine<S, E>) r;
-					childs.add(buildStateMachineContext(rsm, rsm.getState()));
+					childRefs.add(r.getId());
+//					StateMachine<S, E> rsm = (StateMachine<S, E>) r;
+//					childs.add(buildStateMachineContext(rsm, rsm.getState()));
 				}
 			}
 			id = state.getId();
@@ -170,7 +188,7 @@ public abstract class AbstractPersistingStateMachineInterceptor<S, E, T> extends
 				}
 			}
 		}
-		return new DefaultStateMachineContext<S, E>(childs, id, null, null, extendedState, historyStates, stateMachine.getId());
+		return new DefaultStateMachineContext<S, E>(childRefs, childs, id, null, null, extendedState, historyStates, stateMachine.getId());
 	}
 
 	private S getDeepState(State<S, E> state) {
