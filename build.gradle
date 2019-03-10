@@ -182,6 +182,7 @@ project('spring-statemachine-core') {
 			exclude group: "org.hamcrest"
 		}
 		testCompile "junit:junit"
+		testCompile "org.assertj:assertj-core"
 		testCompile "org.springframework.security:spring-security-config"
 		testCompile "org.springframework.security:spring-security-test"
 		testCompile "javax.servlet:javax.servlet-api"

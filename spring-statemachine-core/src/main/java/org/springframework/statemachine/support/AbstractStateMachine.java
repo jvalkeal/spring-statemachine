@@ -338,7 +338,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					}
 				}
 				// TODO: looks like events should be called here and anno processing earlier
-				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
+				if (!StateMachineUtils.isNormalPseudoState(t.getTarget())) {
+					notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
+				}
+//				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
 				notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
 			}
 		});
@@ -905,6 +908,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
 		State<S,E> toState = followLinkedPseudoStates(state, stateContext);
+		System.out.println("XXX1 " + (state != null ? state.getId() : state) + " " + (toState != null ? toState.getId() : toState));
 		PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
 		if (kind != null && (kind != PseudoStateKind.INITIAL && kind != PseudoStateKind.JOIN
 				&& kind != PseudoStateKind.FORK && kind != PseudoStateKind.END)) {
@@ -942,6 +946,23 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			if (toState == null) {
 				return state;
 			} else {
+				System.out.println("XXX2 " + (state != null ? state.getId() : state) + " " + (toState != null ? toState.getId() : toState));
+
+				if (StateMachineUtils.isNormalPseudoState(stateContext.getTransition().getTarget())) {
+					notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, stateContext.getMessage(),
+							stateContext.getTransition(), getRelayStateMachine(), stateContext.getTransition().getSource(), state));
+				}
+
+
+//				buildStateContext(Stage.TRANSITION, stateContext.getMessage(), stateContext.getTransition(), getRelayStateMachine(), state, toState)
+
+//				notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, stateContext.getMessage(),
+//						stateContext.getTransition(), getRelayStateMachine(), state, toState));
+//				notifyTransition(buildStateContext(Stage.TRANSITION, stateContext.getMessage(),
+//						stateContext.getTransition(), getRelayStateMachine(), state, toState));
+//				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, stateContext.getMessage(),
+//						stateContext.getTransition(), getRelayStateMachine(), state, toState));
+
 				return followLinkedPseudoStates(toState, stateContext);
 			}
 		} else {
@@ -961,6 +982,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 						State<S, E> toStateOrig = findStateWithPseudoState(pseudoState);
 						StateContext<S, E> stateContext = buildStateContext(Stage.STATE_EXIT, null, null, getRelayStateMachine());
 						State<S, E> toState = followLinkedPseudoStates(toStateOrig, stateContext);
+						System.out.println("XXX3 " + (state != null ? state.getId() : state) + " " + (toState != null ? toState.getId() : toState));
 						// TODO: try to find matching transition based on direct link.
 						// should make this built-in in pseudostates
 						Transition<S, E> transition = findTransition(toStateOrig, toState);
