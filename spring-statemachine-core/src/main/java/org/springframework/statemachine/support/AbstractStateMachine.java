@@ -327,16 +327,16 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					throw new StateMachineException("Aborting as transition " + t + " caused error ", e);
 				}
 				notifyTransition(buildStateContext(Stage.TRANSITION, message, t, getRelayStateMachine()));
-				Pair<S,E> toState = null;
+				Pair<S, E> pair = new Pair<S, E>();
 				if (t.getTarget().getPseudoState() != null && t.getTarget().getPseudoState().getKind() == PseudoStateKind.JOIN) {
 					exitFromState(t.getSource(), message, t, getRelayStateMachine());
 				} else {
 					System.out.println("XXX10 " + t.getTarget());
 					if (t.getKind() == TransitionKind.INITIAL) {
-						toState = switchToState(t.getTarget(), message, t, getRelayStateMachine());
+						pair = switchToState(t.getTarget(), message, t, getRelayStateMachine());
 						notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
 					} else if (t.getKind() != TransitionKind.INTERNAL) {
-						toState = switchToState(t.getTarget(), message, t, getRelayStateMachine());
+						pair = switchToState(t.getTarget(), message, t, getRelayStateMachine());
 					}
 				}
 				// TODO: looks like events should be called here and anno processing earlier
@@ -345,10 +345,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
 				} else {
 					System.out.println("XXX12 " + t.getTarget());
-					System.out.println("XXX13 " + toState.from);
-					System.out.println("XXX14 " + toState.to);
+					System.out.println("XXX13 " + pair.from);
+					System.out.println("XXX14 " + pair.to);
+					// we're here to end transition with possible linked pseudostates.
+					// other notifications are done conjunction with followLinkedPseudoStates
+					// and pair here is to get accurate from/to states.
 					notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine(),
-							t.getTarget(), toState.to));
+							t.getTarget(), pair.to));
 				}
 				notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
 			}
@@ -912,6 +915,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		State<S, E> from;
 		State<S, E> to;
 
+		Pair() {
+			this(null, null);
+		}
+
 		Pair(State<S, E> from, State<S, E> to) {
 			this.from = from;
 			this.to = to;
@@ -925,7 +932,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 
 		StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
-		Pair<S, E> pair = followLinkedPseudoStates2(state, stateContext, new Pair<S, E>(null, null));
+		Pair<S, E> pair = followLinkedPseudoStates2(state, stateContext, new Pair<S, E>());
 		State<S, E> toState = pair.to;
 		PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
 		if (kind != null && (kind != PseudoStateKind.INITIAL && kind != PseudoStateKind.JOIN
@@ -953,18 +960,21 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			stop();
 		}
 		callPostStateChangeInterceptors(toState, message, transition, stateMachine);
-		return new Pair<S, E>(null, toState);
+		return pair;
 	}
 
 	private Pair<S, E> followLinkedPseudoStates2(State<S,E> state, StateContext<S, E> stateContext, Pair<S, E> pair) {
+//		pair.to = state;
 		State<S,E> fromState = null;
 		PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
 		if (kind == PseudoStateKind.INITIAL || kind == PseudoStateKind.FORK) {
 			return new Pair<S, E>(pair.from, state);
+//			return pair;
 		} else if (kind != null) {
 			State<S,E> toState = state.getPseudoState().entry(stateContext);
 			if (toState == null) {
 				return new Pair<S, E>(pair.from, state);
+//				return pair;
 			} else {
 				if (stateContext.getTransition() != null
 						&& StateMachineUtils.isNormalPseudoState(stateContext.getTransition().getTarget())) {
@@ -990,6 +1000,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 		} else {
 			return new Pair<S, E>(fromState, state);
+//			return pair;
 		}
 	}
 
