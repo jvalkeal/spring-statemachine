@@ -134,12 +134,14 @@ public class SubmachineStateTests extends AbstractStateMachineTests {
 
 		State<TestStates, TestEvents> s = machine.getState();
 		StateMachine<TestStates, TestEvents> m = ((StateMachineState<TestStates, TestEvents>) s).getSubmachine();
-		boolean r = TestUtils.readField("running", m);
+		boolean r = TestUtils.callMethod("isRunning", m);
+//		boolean r = TestUtils.readField("running", m);
 		assertThat(r, is(true));
 
 		s = m.getState();
 		m = ((StateMachineState<TestStates, TestEvents>) s).getSubmachine();
-		r = TestUtils.readField("running", m);
+		r = TestUtils.callMethod("isRunning", m);
+//		r = TestUtils.readField("running", m);
 		assertThat(r, is(true));
 
 		assertThat(machine.getState().getIds(), contains(TestStates.S2, TestStates.S20, TestStates.S2011));
@@ -160,12 +162,14 @@ public class SubmachineStateTests extends AbstractStateMachineTests {
 
 		State<TestStates, TestEvents> s = machine.getState();
 		StateMachine<TestStates, TestEvents> m = ((StateMachineState<TestStates, TestEvents>) s).getSubmachine();
-		boolean r = TestUtils.readField("running", m);
+		boolean r = TestUtils.callMethod("isRunning", m);
+//		boolean r = TestUtils.readField("running", m);
 		assertThat(r, is(true));
 
 		s = m.getState();
 		m = ((StateMachineState<TestStates, TestEvents>) s).getSubmachine();
-		r = TestUtils.readField("running", m);
+		r = TestUtils.callMethod("isRunning", m);
+//		r = TestUtils.readField("running", m);
 		assertThat(r, is(true));
 
 		assertThat(machine.getState().getIds(), contains(TestStates.S2, TestStates.S21, TestStates.S212));
@@ -193,9 +197,11 @@ public class SubmachineStateTests extends AbstractStateMachineTests {
 
 		machine.sendEvent(TestEvents.E3);
 
-		boolean r1 = TestUtils.readField("running", m1);
+		boolean r1 = TestUtils.callMethod("isRunning", m1);
+//		boolean r1 = TestUtils.readField("running", m1);
 		assertThat(r1, is(false));
-		boolean r2 = TestUtils.readField("running", m2);
+		boolean r2 = TestUtils.callMethod("isRunning", m2);
+//		boolean r2 = TestUtils.readField("running", m2);
 		assertThat(r2, is(false));
 
 		assertThat(machine.getState().getIds(), contains(TestStates.S1));
