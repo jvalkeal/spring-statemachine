@@ -69,6 +69,7 @@ public class StateMachineConfigurationBuilder<S, E>
 	private TransitionConflictPolicy transitionConflictPolicy;
 	private StateDoActionPolicy stateDoActionPolicy;
 	private Long stateDoActionPolicyTimeout;
+	private boolean regionParallel = false;
 	private StateMachineEnsemble<S, E> ensemble;
 	private final List<StateMachineListener<S, E>> listeners = new ArrayList<StateMachineListener<S, E>>();
 	private boolean securityEnabled = false;
@@ -145,13 +146,15 @@ public class StateMachineConfigurationBuilder<S, E>
 		if (persister != null) {
 			StateMachineInterceptor<S, E> interceptor = persister.getInterceptor();
 			if (interceptor != null) {
-				interceptorsCopy.add((StateMachineInterceptor<S, E>) interceptor);
+				interceptorsCopy.add(interceptor);
 			}
 		}
-		return new ConfigurationData<S, E>(beanFactory, taskExecutor, taskScheculer, autoStart, ensemble, listeners,
+		ConfigurationData<S, E> cd = new ConfigurationData<S, E>(beanFactory, taskExecutor, taskScheculer, autoStart, ensemble, listeners,
 				securityEnabled, transitionSecurityAccessDecisionManager, eventSecurityAccessDecisionManager,
 				eventSecurityRule, transitionSecurityRule, verifierEnabled, verifier, machineId, stateMachineMonitor,
 				interceptorsCopy, transitionConflictPolicy, stateDoActionPolicy, stateDoActionPolicyTimeout);
+		cd.setRegionParallel(regionParallel);
+		return cd;
 	}
 
 	/**
@@ -317,5 +320,9 @@ public class StateMachineConfigurationBuilder<S, E>
 	public void setStateDoActionPolicy(StateDoActionPolicy stateDoActionPolicy, Long stateDoActionPolicyTimeout) {
 		this.stateDoActionPolicy = stateDoActionPolicy;
 		this.stateDoActionPolicyTimeout = stateDoActionPolicyTimeout;
+	}
+
+	public void setRegionParallel(boolean regionParallel) {
+		this.regionParallel = regionParallel;
 	}
 }

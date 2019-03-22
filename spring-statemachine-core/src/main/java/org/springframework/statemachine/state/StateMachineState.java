@@ -22,12 +22,16 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.access.StateMachineAccess;
 import org.springframework.statemachine.access.StateMachineFunction;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.support.StateMachineUtils;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A {@link State} implementation where state is wrapped in a substatemachine.
@@ -135,105 +139,118 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	}
 
 	@Override
-	public void exit(StateContext<S, E> context) {
-		super.exit(context);
-		// don't stop if it looks like we're coming back
-		// stop would cause start with entry which would
-		// enable default transition and state
-		if (getSubmachine().getState() != null && context.getTransition() != null
-				&& context.getTransition().getSource().getId() != getSubmachine().getState().getId()) {
-			getSubmachine().stop();
-		} else if (context.getTransition() != null && !StateMachineUtils.isSubstate(context.getTransition().getTarget(), context.getTransition()
-				.getSource())) {
-			getSubmachine().stop();
-		}
-		if (!isLocal(context)) {
-			for (Action<S, E> action : getExitActions()) {
-				executeAction(action, context);
+	public Mono<Void> exit(StateContext<S, E> context) {
+		return super.exit(context).and(Mono.defer(() -> {
+			// don't stop if it looks like we're coming back
+			// stop would cause start with entry which would
+			// enable default transition and state
+			Mono<Void> ret = null;
+			if (getSubmachine().getState() != null && context.getTransition() != null
+					&& context.getTransition().getSource().getId() != getSubmachine().getState().getId()) {
+//				getSubmachine().stop();
+				ret = getSubmachine().stopReactively();
+			} else if (context.getTransition() != null && !StateMachineUtils.isSubstate(context.getTransition().getTarget(), context.getTransition()
+					.getSource())) {
+//				getSubmachine().stop();
+				ret = getSubmachine().stopReactively();
+			} else {
+				ret = Mono.empty();
 			}
-		}
+			if (!isLocal(context)) {
+				ret = ret.and(Flux.fromIterable(getExitActions()).doOnNext(ea -> executeAction(ea, context)).then());
+//				for (Action<S, E> action : getExitActions()) {
+//					executeAction(action, context);
+//				}
+			}
+//			return Mono.empty();
+			return ret;
+		}));
 	}
 
 	@Override
-	public void entry(final StateContext<S, E> context) {
-		super.entry(context);
-		if (!isLocal(context)) {
-			for (Action<S, E> action : getEntryActions()) {
-				executeAction(action, context);
-			}
-		}
-
-		if (context.getTransition() != null) {
-			State<S, E> target = context.getTransition().getTarget();
-			State<S, E> immediateDeepParent = findDeepParent(getSubmachine().getStates(), target);
-
-			if (context.getEvent() != null) {
-				getSubmachine().getStateMachineAccessor().doWithRegion(
-						new StateMachineFunction<StateMachineAccess<S, E>>() {
-
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setForwardedInitialEvent(MessageBuilder.withPayload(context.getEvent())
-										.copyHeaders(context.getMessageHeaders()).build());
-							}
-						});
+	public Mono<Void> entry(final StateContext<S, E> context) {
+		return super.entry(context).and(Mono.defer(() -> {
+			if (!isLocal(context)) {
+				for (Action<S, E> action : getEntryActions()) {
+					executeAction(action, context);
+				}
 			}
 
-			// disable initial state where needed
-			if (immediateDeepParent != null && immediateDeepParent.isSubmachineState() && (!isInitial(target))) {
+			if (context.getTransition() != null) {
+				State<S, E> target = context.getTransition().getTarget();
+				State<S, E> immediateDeepParent = findDeepParent(getSubmachine().getStates(), target);
 
-				((StateMachineState<S, E>) immediateDeepParent).getSubmachine().getStateMachineAccessor()
-						.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+				if (context.getEvent() != null) {
+					getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
 
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setInitialEnabled(false);
-							}
-						});
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setForwardedInitialEvent(MessageBuilder.withPayload(context.getEvent())
+											.copyHeaders(context.getMessageHeaders()).build());
+								}
+							});
+				}
 
+				// disable initial state where needed
+				if (immediateDeepParent != null && immediateDeepParent.isSubmachineState() && (!isInitial(target))) {
+
+					((StateMachineState<S, E>) immediateDeepParent).getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setInitialEnabled(false);
+								}
+							});
+
+				}
+				if (immediateDeepParent != null && !isInitial(immediateDeepParent)) {
+					getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setInitialEnabled(false);
+								}
+							});
+				} else if (immediateDeepParent != null && isInitial(immediateDeepParent) && isInitial(target)) {
+					((StateMachineState<S, E>) immediateDeepParent).getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setInitialEnabled(false);
+								}
+							});
+				}
+				if (immediateDeepParent == null && getSubmachine().getStates().contains(target) && !isInitial(target)
+						&& StateMachineUtils.isSubstate(context.getTransition().getSource(),
+								context.getTransition().getTarget())) {
+					getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setInitialEnabled(false);
+								}
+							});
+				}
+				if (immediateDeepParent == null && getSubmachine().getStates().contains(target) && isEntry(target)) {
+					getSubmachine().getStateMachineAccessor()
+							.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
+
+								@Override
+								public void apply(StateMachineAccess<S, E> function) {
+									function.setInitialEnabled(false);
+								}
+							});
+				}
 			}
-			if (immediateDeepParent != null && !isInitial(immediateDeepParent)) {
-				getSubmachine().getStateMachineAccessor().doWithRegion(
-						new StateMachineFunction<StateMachineAccess<S, E>>() {
-
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setInitialEnabled(false);
-							}
-						});
-			} else if (immediateDeepParent != null && isInitial(immediateDeepParent) && isInitial(target)) {
-				((StateMachineState<S, E>) immediateDeepParent).getSubmachine().getStateMachineAccessor()
-						.doWithRegion(new StateMachineFunction<StateMachineAccess<S, E>>() {
-
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setInitialEnabled(false);
-							}
-						});
-			}
-			if (immediateDeepParent == null && getSubmachine().getStates().contains(target) && !isInitial(target)
-					&& StateMachineUtils.isSubstate(context.getTransition().getSource(), context.getTransition().getTarget())) {
-				getSubmachine().getStateMachineAccessor().doWithRegion(
-						new StateMachineFunction<StateMachineAccess<S, E>>() {
-
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setInitialEnabled(false);
-							}
-						});
-			}
-			if (immediateDeepParent == null && getSubmachine().getStates().contains(target) && isEntry(target)) {
-				getSubmachine().getStateMachineAccessor().doWithRegion(
-						new StateMachineFunction<StateMachineAccess<S, E>>() {
-
-							@Override
-							public void apply(StateMachineAccess<S, E> function) {
-								function.setInitialEnabled(false);
-							}
-						});
-			}
-		}
-		getSubmachine().start();
+//			getSubmachine().start();
+//			return Mono.empty();
+			return getSubmachine().startReactively();
+		}));
 	}
 
 	private boolean isInitial(State<S, E> state) {
@@ -256,13 +273,22 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	}
 
 	@Override
-	public boolean sendEvent(Message<E> event) {
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		StateMachine<S, E> machine = getSubmachine();
 		if (machine != null) {
-			return machine.sendEvent(event);
+			return machine.sendEvent(Mono.just(event));
 		}
 		return super.sendEvent(event);
 	}
+
+//	@Override
+//	public boolean sendEvent(Message<E> event) {
+//		StateMachine<S, E> machine = getSubmachine();
+//		if (machine != null) {
+//			return machine.sendEvent(event);
+//		}
+//		return super.sendEvent(event);
+//	}
 
 	@Override
 	public boolean shouldDefer(Message<E> event) {

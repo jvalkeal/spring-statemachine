@@ -64,6 +64,7 @@ public class ConfigurationData<S, E> {
 	private final SecurityRule transitionSecurityRule;
 	private final StateMachineMonitor<S, E> stateMachineMonitor;
 	private final List<StateMachineInterceptor<S, E>> interceptors;
+	private boolean regionParallel = false;
 
 	/**
 	 * Instantiates a new state machine configuration config data.
@@ -321,5 +322,13 @@ public class ConfigurationData<S, E> {
 	 */
 	public Long getStateDoActionPolicyTimeout() {
 		return stateDoActionPolicyTimeout;
+	}
+
+	public void setRegionParallel(boolean regionParallel) {
+		this.regionParallel = regionParallel;
+	}
+
+	public boolean isRegionParallel() {
+		return regionParallel;
 	}
 }

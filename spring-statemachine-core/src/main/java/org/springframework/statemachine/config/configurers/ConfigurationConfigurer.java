@@ -114,4 +114,7 @@ public interface ConfigurationConfigurer<S, E> extends
 	 * @return the configuration configurer
 	 */
 	ConfigurationConfigurer<S, E> stateDoActionPolicyTimeout(long timeout, TimeUnit unit);
+
+	// TODO: REACTOR think about this setting, just dump boolean for now
+	ConfigurationConfigurer<S, E>  regionParallel(boolean enabled);
 }

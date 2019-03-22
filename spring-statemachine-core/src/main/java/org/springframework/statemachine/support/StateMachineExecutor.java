@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.Trigger;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Interface for a {@link StateMachine} event executor.
  *
@@ -33,14 +35,15 @@ import org.springframework.statemachine.trigger.Trigger;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public interface StateMachineExecutor<S, E> {
+public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycle {
 
 	/**
 	 * Queue event.
 	 *
 	 * @param message the message
+	 * @return completion when event is queued
 	 */
-	void queueEvent(Message<E> message);
+	Mono<Void> queueEvent(Mono<Message<E>> message);
 
 	/**
 	 * Queue trigger.
@@ -62,8 +65,9 @@ public interface StateMachineExecutor<S, E> {
 	 *
 	 * @param context the state context
 	 * @param state the state
+	 * @return completion when handled
 	 */
-	void executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
+	Mono<Void> executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
 
 	/**
 	 * Execute {@code StateMachineExecutor} logic.
@@ -131,8 +135,9 @@ public interface StateMachineExecutor<S, E> {
 		 * @param transition the transition
 		 * @param stateContext the state context
 		 * @param message the message
+		 * @return completion when handled
 		 */
-		void transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
+		Mono<Void> transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
 
 	}
 
