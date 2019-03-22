@@ -193,6 +193,48 @@ public class EndStateTests extends AbstractStateMachineTests {
 		ObjectStateMachine<TestStates4,TestEvents> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
 		TestStateMachineListener4 listener = new TestStateMachineListener4();
+		// TODO: REACTOR old state change notifications seem to be a bit messy and wrong order
+		//       as we got 6 while now 5 which seem to be correct.
+//		XXX1 null
+//		XXX2 ObjectState [getIds()=[READY], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1651162064, toString()=AbstractState [id=READY, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@169bb4dd, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 StateMachineState [getIds()=[TASKS, T1E], toString()=AbstractState [id=TASKS, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=T1E T1  /  / uuid=b3278fb2-e7dd-4580-934c-d6e215fbfa77 / id=null], getClass()=class org.springframework.statemachine.state.StateMachineState]
+//		XXX2 ObjectState [getIds()=[DONE], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=2113604623, toString()=AbstractState [id=DONE, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 ObjectState [getIds()=[DONE], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=2113604623, toString()=AbstractState [id=DONE, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX2 ObjectState [getIds()=[DONE], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=2113604623, toString()=AbstractState [id=DONE, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX1 ObjectState [getIds()=[T1], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1764996806, toString()=AbstractState [id=T1, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@7d3e8655, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX2 ObjectState [getIds()=[T1E], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=629454893, toString()=AbstractState [id=T1E, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@7bbc8656, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 null
+//		XXX2 ObjectState [getIds()=[T1], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1764996806, toString()=AbstractState [id=T1, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@7d3e8655, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 ObjectState [getIds()=[READY], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1651162064, toString()=AbstractState [id=READY, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@169bb4dd, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX2 StateMachineState [getIds()=[TASKS], toString()=AbstractState [id=TASKS, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=T1E T1  /  / uuid=b3278fb2-e7dd-4580-934c-d6e215fbfa77 / id=null], getClass()=class org.springframework.statemachine.state.StateMachineState]
+//
+//
+//		---
+//
+//
+//		XXX1 null
+//		XXX2 ObjectState [getIds()=[READY], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1439632660, toString()=AbstractState [id=READY, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@3b74ac8, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 null
+//		XXX2 ObjectState [getIds()=[T1], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=831654622, toString()=AbstractState [id=T1, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@1d483de4, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//		XXX1 ObjectState [getIds()=[READY], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1439632660, toString()=AbstractState [id=READY, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@3b74ac8, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX2 StateMachineState [getIds()=[TASKS, T1], toString()=AbstractState [id=TASKS, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=T1 T1E  / T1 / uuid=7814c5fb-6361-406c-bef8-8ee57661865f / id=null], getClass()=class org.springframework.statemachine.state.StateMachineState]
+//
+//		XXX1 ObjectState [getIds()=[T1], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=831654622, toString()=AbstractState [id=T1, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@1d483de4, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//		XXX2 ObjectState [getIds()=[T1E], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=1077072774, toString()=AbstractState [id=T1E, pseudoState=org.springframework.statemachine.state.DefaultPseudoState@28d18df5, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+//
+//
+//		XXX1 StateMachineState [getIds()=[TASKS, T1E], toString()=AbstractState [id=TASKS, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=T1 T1E  /  / uuid=7814c5fb-6361-406c-bef8-8ee57661865f / id=null], getClass()=class org.springframework.statemachine.state.StateMachineState]
+//		XXX2 ObjectState [getIds()=[DONE], getClass()=class org.springframework.statemachine.state.ObjectState, hashCode()=154449611, toString()=AbstractState [id=DONE, pseudoState=null, deferred=[], entryActions=[], exitActions=[], stateActions=[], regions=[], submachine=null]]
+
+
+
+		listener.reset(5, 1);
 		machine.addStateListener(listener);
 		machine.start();
 		assertThat(listener.stateMachineStartedLatch.await(2, TimeUnit.SECONDS), is(true));
