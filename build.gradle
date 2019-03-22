@@ -170,6 +170,7 @@ project('spring-statemachine-core') {
 	dependencies {
 		compile "org.springframework:spring-tx"
 		compile "org.springframework:spring-messaging"
+		optional "io.projectreactor:reactor-core"
 		optional "org.springframework.security:spring-security-core"
 
 		testCompile "org.springframework:spring-test"

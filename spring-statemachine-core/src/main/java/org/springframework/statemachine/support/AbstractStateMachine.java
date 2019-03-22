@@ -70,6 +70,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 /**
  * Base implementation of a {@link StateMachine} loosely modelled from UML state
  * machine.
@@ -282,7 +285,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 		}
 
-		DefaultStateMachineExecutor<S, E> executor = new DefaultStateMachineExecutor<S, E>(this, getRelayStateMachine(), transitions,
+//		DefaultStateMachineExecutor<S, E> executor = new DefaultStateMachineExecutor<S, E>(this, getRelayStateMachine(), transitions,
+//				triggerToTransitionMap, triggerlessTransitions, initialTransition, initialEvent, transitionConflictPolicy);
+		ReactiveStateMachineExecutor<S, E> executor = new ReactiveStateMachineExecutor<S, E>(this, getRelayStateMachine(), transitions,
 				triggerToTransitionMap, triggerlessTransitions, initialTransition, initialEvent, transitionConflictPolicy);
 		if (getBeanFactory() != null) {
 			executor.setBeanFactory(getBeanFactory());
@@ -582,6 +587,32 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		this.transitionConflictPolicy = transitionConflictPolicy;
 	}
 
+	// XXX
+	public static class EventHandlerMessage {
+	}
+
+	public Flux<EventHandlerMessage> handleEvents(Flux<Message<E>> event) {
+		return null;
+	}
+
+	public Flux<EventHandlerMessage> handleMessageEvent(Mono<E> event) {
+		return null;
+	}
+
+	public Flux<EventHandlerMessage> handleEvent(Mono<Message<E>> event) {
+		return null;
+	}
+
+	private Flux<EventHandlerMessage> handleEventInternal(Mono<Message<E>> event) {
+		return null;
+	}
+
+	protected Flux<EventHandlerMessage> acceptEvent(Mono<Message<E>> event) {
+		return null;
+	}
+
+	// XXXX
+
 	private boolean sendEventInternal(Message<E> event) {
 		if (hasStateMachineError()) {
 			// TODO: should we throw exception?
@@ -608,6 +639,42 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 		return accepted;
 	}
+
+//	protected synchronized boolean acceptEvent(Message<E> message) {
+//		State<S, E> cs = currentState;
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		if ((cs != null && cs.sendEvent(message))) {
+//			return true;
+//		}
+//
+//		if (log.isDebugEnabled()) {
+//			log.debug("Queue event " + message + " " + this);
+//		}
+//
+//		for (Transition<S,E> transition : transitions) {
+//			State<S,E> source = transition.getSource();
+//			Trigger<S, E> trigger = transition.getTrigger();
+//
+//			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+//					stateMachineExecutor.queueEvent(message);
+//					return true;
+//				}
+//			}
+//		}
+//		// if we're about to not accept event, check defer again in case
+//		// state was changed between original check and now
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		return false;
+//	}
 
 	private StateMachine<S, E> getRelayStateMachine() {
 		return relay != null ? relay : this;
