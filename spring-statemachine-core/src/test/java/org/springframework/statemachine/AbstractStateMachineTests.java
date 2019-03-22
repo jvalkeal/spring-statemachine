@@ -263,6 +263,8 @@ public abstract class AbstractStateMachineTests {
 
 		@Override
 		public void stateChanged(State<TestStates, TestEvents> from, State<TestStates, TestEvents> to) {
+			System.out.println("XXX1 " + from);
+			System.out.println("XXX2 " + to);
 			stateChangedLatch.countDown();
 		}
 
@@ -285,6 +287,8 @@ public abstract class AbstractStateMachineTests {
 
 		@Override
 		public void stateChanged(State<TestStates4, TestEvents> from, State<TestStates4, TestEvents> to) {
+			System.out.println("XXX1 " + from);
+			System.out.println("XXX2 " + to);
 			stateChangedLatch.countDown();
 		}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.springframework.statemachine.support;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +30,8 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Convenient base class for object which needs spring task scheduler, task
  * executor and life cycle handling.
@@ -38,17 +39,19 @@ import org.springframework.util.Assert;
  * @author Janne Valkealahti
  *
  */
-public abstract class LifecycleObjectSupport implements InitializingBean, DisposableBean, SmartLifecycle, BeanFactoryAware {
+public abstract class LifecycleObjectSupport
+		/*extends ReactiveLifecycleManager*/
+		implements InitializingBean, DisposableBean, SmartLifecycle, BeanFactoryAware, StateMachineReactiveLifecycle {
 
 	private static final Log log = LogFactory.getLog(LifecycleObjectSupport.class);
 
 	// fields for lifecycle
 	private volatile boolean autoStartup = false;
 	private volatile int phase = 0;
-	private volatile boolean running;
+//	private volatile boolean running;
 
 	// lock to protect lifycycle methods
-	private final ReentrantLock lifecycleLock = new ReentrantLock();
+//	private final ReentrantLock lifecycleLock = new ReentrantLock();
 
 	// common task handling
 	private TaskScheduler taskScheduler;
@@ -59,6 +62,18 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 
 	// protect InitializingBean for single call
 	private final AtomicBoolean afterPropertiesSetCalled = new AtomicBoolean(false);
+
+	private final ReactiveLifecycleManager reactiveLifecycleManager;
+
+	public LifecycleObjectSupport() {
+		this.reactiveLifecycleManager = new ReactiveLifecycleManager(
+				() -> doPreStartReactively(),
+				() -> doPreStopReactively(),
+				() -> doPostStartReactively(),
+				() -> doPostStopReactively()
+				);
+		this.reactiveLifecycleManager.setOwner(this);
+	}
 
 	@Override
 	public final void afterPropertiesSet() {
@@ -85,8 +100,8 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		Assert.notNull(beanFactory, "beanFactory must not be null");
-		if(log.isDebugEnabled()) {
-			log.debug("Setting bean factory: " + beanFactory + " for " + this);
+		if(log.isTraceEnabled()) {
+			log.trace("Setting bean factory: " + beanFactory + " for " + this);
 		}
 		this.beanFactory = beanFactory;
 	}
@@ -102,70 +117,146 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 	}
 
 	@Override
-	public final boolean isRunning() {
-		this.lifecycleLock.lock();
-		try {
-			return this.running;
-		} finally {
-			this.lifecycleLock.unlock();
-		}
+	public void start() {
+		startReactively().block();
 	}
 
 	@Override
-	public final void start() {
-		this.lifecycleLock.lock();
-		try {
-			if (!this.running) {
-				this.running = true;
-				this.doStart();
-				if (log.isInfoEnabled()) {
-					log.info("started " + this);
-				} else {
-					if(log.isDebugEnabled()) {
-						log.debug("already started " + this);
-					}
-				}
-			}
-		} finally {
-			this.lifecycleLock.unlock();
-		}
+	public void stop() {
+		stopReactively().block();
 	}
 
 	@Override
-	public final void stop() {
-		if (!this.lifecycleLock.tryLock()) {
-			if (log.isDebugEnabled()) {
-				log.debug("already stopping " + this);
-			}
-			return;
-		}
-		try {
-			if (this.running) {
-				this.doStop();
-				this.running = false;
-				if (log.isInfoEnabled()) {
-					log.info("stopped " + this);
-				}
-			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("already stopped " + this);
-				}
-			}
-		} finally {
-			this.lifecycleLock.unlock();
-		}
+	public Mono<Void> startReactively() {
+		log.debug("startReactively " + this + " with rlm " + this.reactiveLifecycleManager);
+		return this.reactiveLifecycleManager.startReactively();
 	}
 
 	@Override
-	public final void stop(Runnable callback) {
-		this.lifecycleLock.lock();
-		try {
-			this.stop();
-			callback.run();
-		} finally {
-			this.lifecycleLock.unlock();
-		}
+	public Mono<Void> stopReactively() {
+		log.debug("stopReactively " + this + " with rlm " + this.reactiveLifecycleManager);
+		return this.reactiveLifecycleManager.stopReactively();
 	}
+
+	protected Mono<Void> doPreStartReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doPreStopReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doPostStartReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doPostStopReactively() {
+		return Mono.empty();
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.reactiveLifecycleManager.isRunning();
+	}
+
+	//	@Override
+//	public final boolean isRunning() {
+//		this.lifecycleLock.lock();
+//		try {
+//			return this.running;
+//		} finally {
+//			this.lifecycleLock.unlock();
+//		}
+//	}
+
+//	@Override
+//	public final void start() {
+//		this.lifecycleLock.lock();
+//		try {
+//			if (!this.running) {
+//				this.running = true;
+//				this.doStart();
+//				if (log.isInfoEnabled()) {
+//					log.info("started " + this);
+//				} else {
+//					if(log.isDebugEnabled()) {
+//						log.debug("already started " + this);
+//					}
+//				}
+//			}
+//		} finally {
+//			this.lifecycleLock.unlock();
+//		}
+//	}
+//
+//	private AtomicBoolean starting = new AtomicBoolean();
+//
+//	@Override
+//	public Mono<Void> startReactively() {
+//
+//		return Mono.defer(() -> {
+//			if (starting.get()) {
+//				return Mono.empty();
+//			} else {
+//				return Mono.just(starting.compareAndSet(false, true))
+//						.filter(s -> s)
+//						.flatMap(s -> doStartReactively())
+//						.doOnSuccess(s -> {
+//							starting.set(false);
+//							this.running = true;
+//						})
+//						;
+//			}
+//		})
+//		;
+//
+//
+////		return doStartReactively()
+////			.doOnSuccess(x -> {
+////				this.running = true;
+////			})
+////			;
+//	}
+//
+//	@Override
+//	public final void stop() {
+//		if (!this.lifecycleLock.tryLock()) {
+//			if (log.isDebugEnabled()) {
+//				log.debug("already stopping " + this);
+//			}
+//			return;
+//		}
+//		try {
+//			if (this.running) {
+//				this.doStop();
+//				this.running = false;
+//				if (log.isInfoEnabled()) {
+//					log.info("stopped " + this);
+//				}
+//			} else {
+//				if (log.isDebugEnabled()) {
+//					log.debug("already stopped " + this);
+//				}
+//			}
+//		} finally {
+//			this.lifecycleLock.unlock();
+//		}
+//	}
+//
+//	@Override
+//	public Mono<Void> stopReactively() {
+//		return doStopReactively().doOnSuccess(x -> {
+//			this.running = false;
+//		});
+//	}
+//
+//	@Override
+//	public final void stop(Runnable callback) {
+//		this.lifecycleLock.lock();
+//		try {
+//			this.stop();
+//			callback.run();
+//		} finally {
+//			this.lifecycleLock.unlock();
+//		}
+//	}
 
 	/**
 	 * Sets the auto startup.
@@ -213,8 +304,8 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 	 */
 	protected TaskScheduler getTaskScheduler() {
 		if(taskScheduler == null && getBeanFactory() != null) {
-			if(log.isDebugEnabled()) {
-				log.debug("getting taskScheduler service from bean factory " + getBeanFactory());
+			if(log.isTraceEnabled()) {
+				log.trace("getting taskScheduler service from bean factory " + getBeanFactory());
 			}
 			taskScheduler = StateMachineContextUtils.getTaskScheduler(getBeanFactory());
 		}
@@ -238,8 +329,8 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 	 */
 	protected TaskExecutor getTaskExecutor() {
 		if(taskExecutor == null && getBeanFactory() != null) {
-			if(log.isDebugEnabled()) {
-				log.debug("getting taskExecutor service from bean factory " + getBeanFactory());
+			if(log.isTraceEnabled()) {
+				log.trace("getting taskExecutor service from bean factory " + getBeanFactory());
 			}
 			taskExecutor = StateMachineContextUtils.getTaskExecutor(getBeanFactory());
 		}
@@ -255,18 +346,29 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 	 */
 	protected void onInit() throws Exception {}
 
-	/**
-	 * Subclasses may implement this method with the start behavior. This
-	 * method will be invoked while holding the {@link #lifecycleLock}.
-	 */
-	protected void doStart() {};
+//	/**
+//	 * Subclasses may implement this method with the start behavior. This
+//	 * method will be invoked while holding the {@link #lifecycleLock}.
+//	 */
+//	@Override
+//	protected void doStart() {};
 
-	/**
-	 * Subclasses may implement this method with the stop behavior. This method
-	 * will be invoked while holding the {@link #lifecycleLock}.
-	 */
-	protected void doStop() {};
+//	/**
+//	 * Subclasses may implement this method with the stop behavior. This method
+//	 * will be invoked while holding the {@link #lifecycleLock}.
+//	 */
+//	@Override
+//	protected void doStop() {};
 
 	protected void doDestroy() {};
 
+//	@Override
+//	protected Mono<Void> doStartReactively() {
+//		return Mono.empty();
+//	}
+//
+//	@Override
+//	protected Mono<Void> doStopReactively() {
+//		return Mono.empty();
+//	}
 }
