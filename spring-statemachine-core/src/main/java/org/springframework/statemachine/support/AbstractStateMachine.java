@@ -591,14 +591,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	// XXX
 
-	private class Holder {
-		Message<E> event;
-		boolean accepted;
-		public Holder(Message<E> event, boolean accepted) {
-			this.event = event;
-			this.accepted = accepted;
-		}
-	}
+//	private class Holder {
+//		Message<E> event;
+//		boolean accepted;
+//		public Holder(Message<E> event, boolean accepted) {
+//			this.event = event;
+//			this.accepted = accepted;
+//		}
+//	}
 
 	@SuppressWarnings("serial")
 	private class RequestMessageHolder extends AtomicReference<Message<E>> {
@@ -627,7 +627,12 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				}
 				return Mono.just(e);
 			})
-			.map(e -> !(isComplete() || !isRunning()))
+			.map(e -> {
+				if (e) {
+					return !(isComplete() || !isRunning());
+				}
+				return e;
+			})
 			.flatMap(e -> {
 				if (!e) {
 					return Mono.subscriberContext().map(ctx -> {
@@ -642,9 +647,6 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			.subscriberContext(ctx -> ctx.put(RequestMessageHolder.class, new RequestMessageHolder()))
 			;
 
-
-
-//		return null;
 	}
 
 	protected Mono<Boolean> acceptEvent2(Message<E> message) {
@@ -684,69 +686,69 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	// XXXX
 
-	private boolean sendEventInternal(Message<E> event) {
-		if (hasStateMachineError()) {
-			// TODO: should we throw exception?
-			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
-			return false;
-		}
-
-		try {
-			event = getStateMachineInterceptors().preEvent(event, this);
-		} catch (Exception e) {
-			log.info("Event " + event + " threw exception in interceptors, not accepting event");
-			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
-			return false;
-		}
-
-		if (isComplete() || !isRunning()) {
-			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
-			return false;
-		}
-		boolean accepted = acceptEvent(event);
-		stateMachineExecutor.execute();
-		if (!accepted) {
-			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
-		}
-		return accepted;
-	}
-
-	protected synchronized boolean acceptEvent(Message<E> message) {
-		State<S, E> cs = currentState;
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return true;
-		}
-		if ((cs != null && cs.sendEvent(message))) {
-			return true;
-		}
-
-		if (log.isDebugEnabled()) {
-			log.debug("Queue event " + message + " " + this);
-		}
-
-		for (Transition<S,E> transition : transitions) {
-			State<S,E> source = transition.getSource();
-			Trigger<S, E> trigger = transition.getTrigger();
-
-			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-//					stateMachineExecutor.queueEvent(message);
-					stateMachineExecutor.queueEventX(Mono.just(message)).subscribe();
-					return true;
-				}
-			}
-		}
-		// if we're about to not accept event, check defer again in case
-		// state was changed between original check and now
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return true;
-		}
-		return false;
-	}
+//	private boolean sendEventInternal(Message<E> event) {
+//		if (hasStateMachineError()) {
+//			// TODO: should we throw exception?
+//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
+//			return false;
+//		}
+//
+//		try {
+//			event = getStateMachineInterceptors().preEvent(event, this);
+//		} catch (Exception e) {
+//			log.info("Event " + event + " threw exception in interceptors, not accepting event");
+//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
+//			return false;
+//		}
+//
+//		if (isComplete() || !isRunning()) {
+//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
+//			return false;
+//		}
+//		boolean accepted = acceptEvent(event);
+//		stateMachineExecutor.execute();
+//		if (!accepted) {
+//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, event, null, getRelayStateMachine(), getState(), null));
+//		}
+//		return accepted;
+//	}
+//
+//	protected synchronized boolean acceptEvent(Message<E> message) {
+//		State<S, E> cs = currentState;
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		if ((cs != null && cs.sendEvent(message))) {
+//			return true;
+//		}
+//
+//		if (log.isDebugEnabled()) {
+//			log.debug("Queue event " + message + " " + this);
+//		}
+//
+//		for (Transition<S,E> transition : transitions) {
+//			State<S,E> source = transition.getSource();
+//			Trigger<S, E> trigger = transition.getTrigger();
+//
+//			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+////					stateMachineExecutor.queueEvent(message);
+//					stateMachineExecutor.queueEventX(Mono.just(message)).subscribe();
+//					return true;
+//				}
+//			}
+//		}
+//		// if we're about to not accept event, check defer again in case
+//		// state was changed between original check and now
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		return false;
+//	}
 
 	private StateMachine<S, E> getRelayStateMachine() {
 		return relay != null ? relay : this;
