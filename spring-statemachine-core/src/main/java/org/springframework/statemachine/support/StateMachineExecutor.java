@@ -25,6 +25,8 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.trigger.Trigger;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Interface for a {@link StateMachine} event executor.
  *
@@ -34,6 +36,8 @@ import org.springframework.statemachine.trigger.Trigger;
  * @param <E> the type of event
  */
 public interface StateMachineExecutor<S, E> {
+
+	Mono<Void> queueEventX(Mono<Message<E>> message);
 
 	/**
 	 * Queue event.

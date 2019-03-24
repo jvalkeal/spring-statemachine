@@ -54,6 +54,7 @@ import org.springframework.statemachine.trigger.TriggerListener;
 import reactor.core.Disposable;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.TopicProcessor;
 
 public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport implements StateMachineExecutor<S, E> {
@@ -112,11 +113,11 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		messageFlux = Flux.from(eventProcessor)
 			.flatMap(messages -> messages)
 			.doOnNext(message -> {
-				 handleEvent(message);
+				handleEvent(message);
 			});
 		triggerFlux = Flux.from(triggerProcessor)
 			.doOnNext(item -> {
-				 handleTrigger(item);
+				handleTrigger(item);
 			});
 	}
 
@@ -157,6 +158,17 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			triggerDisposable = null;
 		}
 		initialHandled.set(false);
+	}
+
+	@Override
+	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+		Flux<Message<E>> messageFlux = message.flux();
+		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
+
+		return flux.then().doOnSubscribe(s -> {
+			eventProcessor.onNext(flux);
+		});
 	}
 
 	@Override

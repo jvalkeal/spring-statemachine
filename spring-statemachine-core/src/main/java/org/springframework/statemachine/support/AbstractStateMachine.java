@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.logging.Log;
@@ -219,7 +220,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	@Override
 	public boolean sendEvent(Message<E> event) {
-		return sendEventInternal(event);
+		return handleEvent(Mono.just(event)).block();
+//		return sendEventInternal(event);
 	}
 
 	@Override
@@ -588,27 +590,96 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	}
 
 	// XXX
-	public static class EventHandlerMessage {
+
+	private class Holder {
+		Message<E> event;
+		boolean accepted;
+		public Holder(Message<E> event, boolean accepted) {
+			this.event = event;
+			this.accepted = accepted;
+		}
 	}
 
-	public Flux<EventHandlerMessage> handleEvents(Flux<Message<E>> event) {
-		return null;
+	@SuppressWarnings("serial")
+	private class RequestMessageHolder extends AtomicReference<Message<E>> {
 	}
 
-	public Flux<EventHandlerMessage> handleMessageEvent(Mono<E> event) {
-		return null;
+	public Mono<Boolean> handleEvent(Mono<Message<E>> event) {
+
+
+		return event
+			.flatMap(e -> Mono.subscriberContext().map(ctx -> {
+				RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+				holder.set(e);
+				return e;
+			}))
+			.map(e -> {
+				return !hasStateMachineError();
+			})
+			.flatMap(e -> {
+				if (e) {
+					return Mono.subscriberContext().map(ctx -> {
+						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+						Message<E> message = holder.get();
+						return acceptEvent2(message);
+					}).flatMap(x -> x);
+
+				}
+				return Mono.just(e);
+			})
+			.map(e -> !(isComplete() || !isRunning()))
+			.flatMap(e -> {
+				if (!e) {
+					return Mono.subscriberContext().map(ctx -> {
+						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+						Message<E> message = holder.get();
+						notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, message, null, getRelayStateMachine(), getState(), null));
+						return e;
+					});
+				}
+				return Mono.just(e);
+			})
+			.subscriberContext(ctx -> ctx.put(RequestMessageHolder.class, new RequestMessageHolder()))
+			;
+
+
+
+//		return null;
 	}
 
-	public Flux<EventHandlerMessage> handleEvent(Mono<Message<E>> event) {
-		return null;
-	}
+	protected Mono<Boolean> acceptEvent2(Message<E> message) {
+		State<S, E> cs = currentState;
+		if ((cs != null && cs.shouldDefer(message))) {
+			log.info("Current state " + cs + " deferred event " + message);
+			stateMachineExecutor.queueDeferredEvent(message);
+			return Mono.just(true);
+		}
+		if ((cs != null && cs.sendEvent(message))) {
+			return Mono.just(true);
+		}
 
-	private Flux<EventHandlerMessage> handleEventInternal(Mono<Message<E>> event) {
-		return null;
-	}
+		if (log.isDebugEnabled()) {
+			log.debug("Queue event " + message + " " + this);
+		}
 
-	protected Flux<EventHandlerMessage> acceptEvent(Mono<Message<E>> event) {
-		return null;
+		for (Transition<S,E> transition : transitions) {
+			State<S,E> source = transition.getSource();
+			Trigger<S, E> trigger = transition.getTrigger();
+
+			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+					return stateMachineExecutor.queueEventX(Mono.just(message)).thenReturn(true);
+				}
+			}
+		}
+		// if we're about to not accept event, check defer again in case
+		// state was changed between original check and now
+		if ((cs != null && cs.shouldDefer(message))) {
+			log.info("Current state " + cs + " deferred event " + message);
+			stateMachineExecutor.queueDeferredEvent(message);
+			return Mono.just(true);
+		}
+		return Mono.just(false);
 	}
 
 	// XXXX
@@ -640,41 +711,42 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return accepted;
 	}
 
-//	protected synchronized boolean acceptEvent(Message<E> message) {
-//		State<S, E> cs = currentState;
-//		if ((cs != null && cs.shouldDefer(message))) {
-//			log.info("Current state " + cs + " deferred event " + message);
-//			stateMachineExecutor.queueDeferredEvent(message);
-//			return true;
-//		}
-//		if ((cs != null && cs.sendEvent(message))) {
-//			return true;
-//		}
-//
-//		if (log.isDebugEnabled()) {
-//			log.debug("Queue event " + message + " " + this);
-//		}
-//
-//		for (Transition<S,E> transition : transitions) {
-//			State<S,E> source = transition.getSource();
-//			Trigger<S, E> trigger = transition.getTrigger();
-//
-//			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+	protected synchronized boolean acceptEvent(Message<E> message) {
+		State<S, E> cs = currentState;
+		if ((cs != null && cs.shouldDefer(message))) {
+			log.info("Current state " + cs + " deferred event " + message);
+			stateMachineExecutor.queueDeferredEvent(message);
+			return true;
+		}
+		if ((cs != null && cs.sendEvent(message))) {
+			return true;
+		}
+
+		if (log.isDebugEnabled()) {
+			log.debug("Queue event " + message + " " + this);
+		}
+
+		for (Transition<S,E> transition : transitions) {
+			State<S,E> source = transition.getSource();
+			Trigger<S, E> trigger = transition.getTrigger();
+
+			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
 //					stateMachineExecutor.queueEvent(message);
-//					return true;
-//				}
-//			}
-//		}
-//		// if we're about to not accept event, check defer again in case
-//		// state was changed between original check and now
-//		if ((cs != null && cs.shouldDefer(message))) {
-//			log.info("Current state " + cs + " deferred event " + message);
-//			stateMachineExecutor.queueDeferredEvent(message);
-//			return true;
-//		}
-//		return false;
-//	}
+					stateMachineExecutor.queueEventX(Mono.just(message)).subscribe();
+					return true;
+				}
+			}
+		}
+		// if we're about to not accept event, check defer again in case
+		// state was changed between original check and now
+		if ((cs != null && cs.shouldDefer(message))) {
+			log.info("Current state " + cs + " deferred event " + message);
+			stateMachineExecutor.queueDeferredEvent(message);
+			return true;
+		}
+		return false;
+	}
 
 	private StateMachine<S, E> getRelayStateMachine() {
 		return relay != null ? relay : this;
@@ -906,41 +978,41 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return stateMachineExecutor;
 	}
 
-	protected synchronized boolean acceptEvent(Message<E> message) {
-		State<S, E> cs = currentState;
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return true;
-		}
-		if ((cs != null && cs.sendEvent(message))) {
-			return true;
-		}
-
-		if (log.isDebugEnabled()) {
-			log.debug("Queue event " + message + " " + this);
-		}
-
-		for (Transition<S,E> transition : transitions) {
-			State<S,E> source = transition.getSource();
-			Trigger<S, E> trigger = transition.getTrigger();
-
-			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-					stateMachineExecutor.queueEvent(message);
-					return true;
-				}
-			}
-		}
-		// if we're about to not accept event, check defer again in case
-		// state was changed between original check and now
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return true;
-		}
-		return false;
-	}
+//	protected synchronized boolean acceptEvent(Message<E> message) {
+//		State<S, E> cs = currentState;
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		if ((cs != null && cs.sendEvent(message))) {
+//			return true;
+//		}
+//
+//		if (log.isDebugEnabled()) {
+//			log.debug("Queue event " + message + " " + this);
+//		}
+//
+//		for (Transition<S,E> transition : transitions) {
+//			State<S,E> source = transition.getSource();
+//			Trigger<S, E> trigger = transition.getTrigger();
+//
+//			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+//					stateMachineExecutor.queueEvent(message);
+//					return true;
+//				}
+//			}
+//		}
+//		// if we're about to not accept event, check defer again in case
+//		// state was changed between original check and now
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return true;
+//		}
+//		return false;
+//	}
 
 	private boolean callPreStateChangeInterceptors(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
 		try {

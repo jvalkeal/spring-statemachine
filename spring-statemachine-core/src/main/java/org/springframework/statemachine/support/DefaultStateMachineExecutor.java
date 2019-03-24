@@ -62,7 +62,7 @@ import org.springframework.statemachine.trigger.TriggerListener;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport implements StateMachineExecutor<S, E> {
+public abstract class DefaultStateMachineExecutor<S, E> extends LifecycleObjectSupport implements StateMachineExecutor<S, E> {
 
 	private static final Log log = LogFactory.getLog(DefaultStateMachineExecutor.class);
 
