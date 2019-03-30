@@ -69,6 +69,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private final Message<E> initialEvent;
 	private final TransitionComparator<S, E> transitionComparator;
 	private final TransitionConflictPolicy transitionConflictPolicy;
+	// TODO deferList is never cleared
 	private final LinkedList<Message<E>> deferList = new LinkedList<Message<E>>();
 	private final AtomicBoolean initialHandled = new AtomicBoolean(false);
 	private final ReentrantLock lock = new ReentrantLock();
@@ -84,6 +85,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = TopicProcessor.create();
 //	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create();
 //	private EmitterProcessor<Flux<Message<E>>> eventProcessor = EmitterProcessor.create();
+
+	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor2 = TopicProcessor.create();
 
 	private Disposable triggerDisposable;
 	private Disposable messageDisposable;
@@ -160,22 +163,22 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		initialHandled.set(false);
 	}
 
-	@Override
-	public Mono<Void> queueEventX(Mono<Message<E>> message) {
-		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-		Flux<Message<E>> messageFlux = message.flux();
-		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
-
-		return flux.then().doOnSubscribe(s -> {
-			eventProcessor.onNext(flux);
-		});
-	}
+//	@Override
+//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> messageFlux = message.flux();
+//		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
+//
+//		return flux.then().doOnSubscribe(s -> {
+//			eventProcessor.onNext(flux);
+//		});
+//	}
 
 	@Override
 	public void queueEvent(Message<E> message) {
-		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-		Flux<Message<E>> messageFlux = Flux.just(message);
-		eventProcessor.onNext(Flux.merge(messageFlux, deferFlux));
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> messageFlux = Flux.just(message);
+//		eventProcessor.onNext(Flux.merge(messageFlux, deferFlux));
 	}
 
 	@Override
@@ -228,6 +231,105 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	@Override
 	public Lock getLock() {
 		return lock;
+	}
+
+	@Override
+	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+		Flux<Message<E>> messageFlux = message.flux();
+		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
+
+		return messages
+			.flatMap(m -> handleEvent2(m))
+			.next()
+			.doOnNext(i -> {
+				if (i.trigger == null) {
+					queueDeferredEvent(i.message);
+				}
+			})
+			.flatMap(i -> {
+				if (i.trigger != null) {
+					return handleTrigger2(i);
+				}
+				return Mono.empty();
+			})
+			;
+	}
+
+	private Mono<TriggerQueueItem> handleEvent2(Message<E> queuedEvent) {
+		State<S,E> currentState = stateMachine.getState();
+		if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
+			log.info("Current state " + currentState + " deferred event " + queuedEvent);
+			return Mono.just(new TriggerQueueItem(null, queuedEvent));
+		}
+		for (Transition<S,E> transition : transitions) {
+			State<S,E> source = transition.getSource();
+			Trigger<S, E> trigger = transition.getTrigger();
+
+			if (StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
+				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(queuedEvent.getPayload()))) {
+					return Mono.just(new TriggerQueueItem(trigger, queuedEvent));
+				}
+			}
+		}
+		return Mono.empty();
+	}
+
+	private Mono<Void> handleTrigger2(TriggerQueueItem queueItem) {
+		State<S,E> currentState = stateMachine.getState();
+		if (queueItem != null && currentState != null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Process trigger item " + queueItem + " " + this);
+			}
+			// queued message is kept on a class level order to let
+			// triggerless transition to receive this message if it doesn't
+			// kick in in this poll loop.
+			queuedMessage = queueItem.message;
+			E event = queuedMessage != null ? queuedMessage.getPayload() : null;
+
+			// need all transitions trigger could match, event trigger may match
+			// multiple
+			// need to go up from substates and ask if trigger transit, if not
+			// check super
+			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
+
+			if (event != null) {
+				ArrayList<S> ids = new ArrayList<S>(currentState.getIds());
+				Collections.reverse(ids);
+				for (S id : ids) {
+					for (Entry<Trigger<S, E>, Transition<S, E>> e : triggerToTransitionMap.entrySet()) {
+						Trigger<S, E> tri = e.getKey();
+						E ee = tri.getEvent();
+						Transition<S, E> tra = e.getValue();
+						if (event.equals(ee)) {
+							if (tra.getSource().getId().equals(id) && !trans.contains(tra)) {
+								trans.add(tra);
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			// most likely timer
+			if (trans.isEmpty()) {
+				trans.add(triggerToTransitionMap.get(queueItem.trigger));
+			}
+
+			// go through candidates and transit max one, sort before handling
+			trans.sort(transitionComparator);
+			handleTriggerTrans(trans, queuedMessage);
+		}
+
+		List<Transition<S, E>> transWithGuards = new ArrayList<>();
+		for (Transition<S, E> t : triggerlessTransitions) {
+			if (((AbstractTransition<S, E>)t).getGuard() != null) {
+				transWithGuards.add(t);
+			}
+		}
+
+		handleTriggerlessTransitions(queuedMessage);
+		return Mono.empty();
 	}
 
 	private void handleEvent(Message<E> queuedEvent) {
@@ -310,14 +412,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		}
 
 		handleTriggerlessTransitions(queuedMessage);
-//		if (stateMachine.getState() != null) {
-//			// loop triggerless transitions here so that
-//			// all "chained" transitions will get queue message
-//			boolean transit = false;
-//			do {
-//				transit = handleTriggerTrans(transWithGuards, queuedMessage);
-//			} while (transit);
-//		}
 	}
 
 	private void handleTriggerlessTransitions(Message<E> message) {

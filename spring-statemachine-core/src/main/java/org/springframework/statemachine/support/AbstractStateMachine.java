@@ -590,14 +590,23 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	}
 
 	// XXX
+	interface EventResult<E> {
+		Stage getResult();
+		Message<E> getMessage();
 
-//	private class Holder {
-//		Message<E> event;
-//		boolean accepted;
-//		public Holder(Message<E> event, boolean accepted) {
-//			this.event = event;
-//			this.accepted = accepted;
-//		}
+		enum Stage {
+			ACCEPTED,
+			DENIED,
+			DEFERRED
+		}
+	}
+
+	public Flux<EventResult<E>> xxx (Flux<Message<E>> events) {
+		return null;
+	}
+
+//	public Function<Flux<String>, Flux<String>> toUpperCase() {
+//	    return flux -> flux.map(value -> value.toUpperCase());
 //	}
 
 	@SuppressWarnings("serial")
