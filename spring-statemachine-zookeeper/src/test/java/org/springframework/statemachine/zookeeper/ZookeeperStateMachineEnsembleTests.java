@@ -38,6 +38,7 @@ import org.springframework.messaging.Message;
 import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineContext;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.StateMachineException;
 import org.springframework.statemachine.access.StateMachineAccessor;
 import org.springframework.statemachine.ensemble.EnsembleListener;
@@ -47,6 +48,9 @@ import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.support.DefaultExtendedState;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.statemachine.transition.Transition;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class ZookeeperStateMachineEnsembleTests extends AbstractZookeeperTests {
 
@@ -716,6 +720,16 @@ public class ZookeeperStateMachineEnsembleTests extends AbstractZookeeperTests {
 		@Override
 		public boolean sendEvent(String event) {
 			return false;
+		}
+
+		@Override
+		public Flux<StateMachineEventResult<String>> sendEvent(Mono<Message<String>> event) {
+			return null;
+		}
+
+		@Override
+		public Flux<StateMachineEventResult<String>> sendEvents(Flux<Message<String>> events) {
+			return null;
 		}
 
 		@Override

@@ -26,6 +26,7 @@ import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineContext;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.StateMachineSystemConstants;
 import org.springframework.statemachine.access.StateMachineAccess;
 import org.springframework.statemachine.access.StateMachineAccessor;
@@ -39,6 +40,9 @@ import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * {@code DistributedStateMachine} is wrapping a real {@link StateMachine} and works
@@ -112,6 +116,16 @@ public class DistributedStateMachine<S, E> extends LifecycleObjectSupport implem
 	@Override
 	public boolean sendEvent(E event) {
 		return sendEvent(MessageBuilder.withPayload(event).build());
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<E>> sendEvent(Mono<Message<E>> event) {
+		return delegate.sendEvent(event);
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<E>> sendEvents(Flux<Message<E>> events) {
+		return delegate.sendEvents(events);
 	}
 
 	@Override

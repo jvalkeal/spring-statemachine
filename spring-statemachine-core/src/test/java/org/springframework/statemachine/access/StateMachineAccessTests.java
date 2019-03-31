@@ -28,11 +28,15 @@ import org.springframework.messaging.Message;
 import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineContext;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
 import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.support.StateMachineInterceptor;
 import org.springframework.statemachine.transition.Transition;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class StateMachineAccessTests {
 
@@ -130,6 +134,16 @@ public class StateMachineAccessTests {
 		@Override
 		public boolean sendEvent(String event) {
 			return false;
+		}
+
+		@Override
+		public Flux<StateMachineEventResult<String>> sendEvent(Mono<Message<String>> event) {
+			return null;
+		}
+
+		@Override
+		public Flux<StateMachineEventResult<String>> sendEvents(Flux<Message<String>> events) {
+			return null;
 		}
 
 		@Override

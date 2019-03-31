@@ -19,9 +19,13 @@ import java.util.Collection;
 import java.util.UUID;
 
 import org.springframework.messaging.Message;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A region is an orthogonal part of either a composite state or a state
@@ -67,6 +71,9 @@ public interface Region<S, E> {
 	 * @return true if event was accepted
 	 */
 	boolean sendEvent(Message<E> event);
+
+	Flux<StateMachineEventResult<E>> sendEvents(Flux<Message<E>> events);
+	Flux<StateMachineEventResult<E>> sendEvent(Mono<Message<E>> event);
 
 	/**
 	 * Send an event {@code E} to the region.
