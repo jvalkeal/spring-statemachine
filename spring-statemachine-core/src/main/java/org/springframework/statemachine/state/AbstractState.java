@@ -32,6 +32,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.action.ActionListener;
 import org.springframework.statemachine.action.CompositeActionListener;
@@ -42,6 +43,9 @@ import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.support.LifecycleObjectSupport;
 import org.springframework.statemachine.support.StateMachineUtils;
 import org.springframework.statemachine.trigger.Trigger;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Base implementation of a {@link State}.
@@ -197,6 +201,11 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	@Override
 	public boolean sendEvent(Message<E> event) {
 		return false;
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event) {
+		return Flux.empty();
 	}
 
 	@Override

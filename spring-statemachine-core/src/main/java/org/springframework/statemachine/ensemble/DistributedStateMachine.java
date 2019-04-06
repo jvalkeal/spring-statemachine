@@ -119,12 +119,12 @@ public class DistributedStateMachine<S, E> extends LifecycleObjectSupport implem
 	}
 
 	@Override
-	public Flux<StateMachineEventResult<E>> sendEvent(Mono<Message<E>> event) {
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Mono<Message<E>> event) {
 		return delegate.sendEvent(event);
 	}
 
 	@Override
-	public Flux<StateMachineEventResult<E>> sendEvents(Flux<Message<E>> events) {
+	public Flux<StateMachineEventResult<S, E>> sendEvents(Flux<Message<E>> events) {
 		return delegate.sendEvents(events);
 	}
 

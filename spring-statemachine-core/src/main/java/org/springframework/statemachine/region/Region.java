@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,9 +72,6 @@ public interface Region<S, E> {
 	 */
 	boolean sendEvent(Message<E> event);
 
-	Flux<StateMachineEventResult<E>> sendEvents(Flux<Message<E>> events);
-	Flux<StateMachineEventResult<E>> sendEvent(Mono<Message<E>> event);
-
 	/**
 	 * Send an event {@code E} to the region.
 	 *
@@ -82,6 +79,26 @@ public interface Region<S, E> {
 	 * @return true if event was accepted
 	 */
 	boolean sendEvent(E event);
+
+	/**
+	 * Send a {@link Flux} of events and return a {@link Flux} of
+	 * {@link StateMachineEventResult}s. Events are consumed after returned results
+	 * are consumed.
+	 *
+	 * @param events the events
+	 * @return the event results
+	 */
+	Flux<StateMachineEventResult<S, E>> sendEvents(Flux<Message<E>> events);
+
+	/**
+	 * Send a {@link Mono} of event and return a {@link Flux} of
+	 * {@link StateMachineEventResult}s. Events are consumed after returned results
+	 * are consumed.
+	 *
+	 * @param event the event
+	 * @return the event results
+	 */
+	Flux<StateMachineEventResult<S, E>> sendEvent(Mono<Message<E>> event);
 
 	/**
 	 * Gets the current {@link State}.

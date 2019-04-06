@@ -186,12 +186,12 @@ public class StateContextExpressionMethodsTests {
 		}
 
 		@Override
-		public Flux<StateMachineEventResult<SpelEvents>> sendEvent(Mono<Message<SpelEvents>> event) {
+		public Flux<StateMachineEventResult<SpelStates, SpelEvents>> sendEvent(Mono<Message<SpelEvents>> event) {
 			return null;
 		}
 
 		@Override
-		public Flux<StateMachineEventResult<SpelEvents>> sendEvents(Flux<Message<SpelEvents>> events) {
+		public Flux<StateMachineEventResult<SpelStates, SpelEvents>> sendEvents(Flux<Message<SpelEvents>> events) {
 			return null;
 		}
 

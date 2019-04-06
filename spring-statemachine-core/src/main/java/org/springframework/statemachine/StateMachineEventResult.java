@@ -16,37 +16,92 @@
 package org.springframework.statemachine;
 
 import org.springframework.messaging.Message;
+import org.springframework.statemachine.region.Region;
 
 /**
  * Interface defining a result for sending an event to a statemachine.
  *
  * @author Janne Valkealahti
  *
+ * @param <S> the type of state
  * @param <E> the type of event
  */
-public interface StateMachineEventResult<E> {
+public interface StateMachineEventResult<S, E> {
 
+	/**
+	 * Gets the region.
+	 *
+	 * @return the region
+	 */
+	Region<S, E> getRegion();
+
+	/**
+	 * Gets the message.
+	 *
+	 * @return the message
+	 */
 	Message<E> getMessage();
+
+	/**
+	 * Sets the message.
+	 *
+	 * @param message the new message
+	 */
+	void setMessage(Message<E> message);
+
+	/**
+	 * Gets the result type.
+	 *
+	 * @return the result type
+	 */
 	ResultType getResultType();
 
+	/**
+	 * Sets the result type.
+	 *
+	 * @param resultType the new result type
+	 */
+	void setResultType(ResultType resultType);
+
+	/**
+	 * Enumeration of a result type indicating whether a region accepted, denied or
+	 * deferred an event.
+	 */
 	public enum ResultType {
 		ACCEPTED,
 		DENIED,
 		DEFERRED
 	}
 
-	public static <E> StateMachineEventResult<E> of(ResultType resultType) {
-		return new DefaultStateMachineEventResult<>(null, resultType);
+	/**
+	 * Create a {@link StateMachineEventResult} from a {@link Region}, {@link Message} and a {@link ResultType}.
+	 *
+	 * @param <S> the type of state
+	 * @param <E> the type of event
+	 * @param region the region
+	 * @param message the message
+	 * @param resultType the result type
+	 * @return the state machine event result
+	 */
+	public static <S, E> StateMachineEventResult<S, E> from(Region<S, E> region, Message<E> message, ResultType resultType) {
+		return new DefaultStateMachineEventResult<>(region, message, resultType);
 	}
 
-	static class DefaultStateMachineEventResult<E> implements StateMachineEventResult<E> {
+	static class DefaultStateMachineEventResult<S, E> implements StateMachineEventResult<S, E> {
 
+		private final Region<S, E> region;
 		private Message<E> message;
 		private ResultType resultType;
 
-		DefaultStateMachineEventResult(Message<E> message, ResultType resultType) {
+		DefaultStateMachineEventResult(Region<S, E> region, Message<E> message, ResultType resultType) {
+			this.region = region;
 			this.message = message;
 			this.resultType = resultType;
+		}
+
+		@Override
+		public Region<S, E> getRegion() {
+			return region;
 		}
 
 		@Override
@@ -55,8 +110,18 @@ public interface StateMachineEventResult<E> {
 		}
 
 		@Override
+		public void setMessage(Message<E> message) {
+			this.message = message;
+		}
+
+		@Override
 		public ResultType getResultType() {
 			return resultType;
+		}
+
+		@Override
+		public void setResultType(ResultType resultType) {
+			this.resultType = resultType;
 		}
 	}
 }

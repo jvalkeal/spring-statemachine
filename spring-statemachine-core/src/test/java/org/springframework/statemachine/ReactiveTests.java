@@ -57,7 +57,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		machine.start();
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
 
-		List<StateMachineEventResult<TestEvents>> results = machine
+		List<StateMachineEventResult<TestStates, TestEvents>> results = machine
 				.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E1).build())).collect(Collectors.toList())
 				.block();
 		assertThat(results.size(), is(1));
@@ -84,10 +84,82 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 		Flux<Message<TestEvents>> events = Flux.just(MessageBuilder.withPayload(TestEvents.E1).build(),
 				MessageBuilder.withPayload(TestEvents.E2).build());
-		List<StateMachineEventResult<TestEvents>> results = machine.sendEvents(events).collect(Collectors.toList()).block();
+		List<StateMachineEventResult<TestStates, TestEvents>> results = machine.sendEvents(events).collect(Collectors.toList()).block();
 		assertThat(results.size(), is(2));
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
 	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void test3() {
+		context.register(Config1.class);
+		context.refresh();
+		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		StateMachine<TestStates,TestEvents> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
+		assertThat(machine, notNullValue());
+		machine.start();
+		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
+
+		boolean accepted = machine.sendEvent(TestEvents.E1);
+		assertThat(accepted, is(true));
+		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2));
+
+		accepted = machine.sendEvent(TestEvents.E2);
+		assertThat(accepted, is(true));
+		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
+
+		accepted = machine.sendEvent(TestEvents.E3);
+		assertThat(accepted, is(false));
+	}
+
+//	@Test
+//	public void xxx1() {
+//		//Flux.just("1", "2", "3")
+//		Flux.just("1")
+//			.scan((r,s) -> {
+//				System.out.println("XXX1 " + r + " " + s);
+//				return s + "X";
+//			})
+//			.doOnNext(r -> {
+//				System.out.println("XXX2 " + r);
+//			})
+//			.subscribe();
+//	}
+
+	@Test
+	public void xxx2() {
+//		boolean a = true;
+//		a &= false;
+//		System.out.println(a);
+//
+//		a = true;
+//		a &= true;
+//		System.out.println(a);
+//
+//		a = true;
+//		a &= false;
+//		a &= true;
+//		System.out.println(a);
+
+		System.out.println("true&true = " + (true&true));
+		System.out.println("true&false = " + (true&false));
+		System.out.println("false&true = " + (false&true));
+		System.out.println("false&false = " + (false&false));
+		System.out.println("");
+
+		System.out.println("true|true = " + (true|true));
+		System.out.println("true|false = " + (true|false));
+		System.out.println("false|true = " + (false|true));
+		System.out.println("false|false = " + (false|false));
+		System.out.println("");
+
+		System.out.println("true^true = " + (true^true));
+		System.out.println("true^false = " + (true^false));
+		System.out.println("false^true = " + (false^true));
+		System.out.println("false^false = " + (false^false));
+	}
+
 
 	@Configuration
 	@EnableStateMachine

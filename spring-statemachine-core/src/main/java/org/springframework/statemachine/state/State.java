@@ -19,8 +19,12 @@ import java.util.Collection;
 
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.action.ActionListener;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * {@code State} is an interface representing possible state in a state machine.
@@ -39,6 +43,8 @@ public interface State<S, E> {
 	 * @return true if event was accepted
 	 */
 	boolean sendEvent(Message<E> event);
+
+	Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event);
 
 	/**
 	 * Checks if state wants to defer an event.

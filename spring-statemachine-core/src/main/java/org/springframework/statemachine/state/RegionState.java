@@ -20,9 +20,15 @@ import java.util.Collection;
 
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.support.StateMachineUtils;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * A {@link State} implementation where states are wrapped in a regions..
@@ -104,6 +110,19 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 			}
 		}
 		return accept;
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event) {
+
+		Flux<Region<S, E>> xxx1 = Flux.fromIterable(getRegions());
+		ParallelFlux<Region<S, E>> xxx2 = xxx1.parallel().runOn(Schedulers.parallel());
+		ParallelFlux<StateMachineEventResult<S, E>> xxx3 = xxx2.flatMap(r -> r.sendEvent(Mono.just(event)));
+		Flux<StateMachineEventResult<S, E>> xxx4 = xxx3.sequential();
+		return xxx4;
+
+//		return Flux.fromIterable(getRegions())
+//				.flatMap(r -> r.sendEvent(Mono.just(event)));
 	}
 
 	@Override

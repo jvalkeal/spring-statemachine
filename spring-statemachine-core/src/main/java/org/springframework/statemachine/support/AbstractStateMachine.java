@@ -24,9 +24,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -75,6 +78,7 @@ import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Signal;
 
 /**
  * Base implementation of a {@link StateMachine} loosely modelled from UML state
@@ -222,8 +226,30 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	@Override
 	public boolean sendEvent(Message<E> event) {
-		ResultType resultType = handleEvent3(Mono.just(event)).block();
-		return resultType == ResultType.DENIED ? false : true;
+		return sendEvent(Mono.just(event))
+			.switchIfEmpty(Flux.just(StateMachineEventResult.<S, E>from(this, event, ResultType.DENIED)))
+			.reduce(true, (a, r) -> {
+				if (a && r.getResultType() == ResultType.DENIED) {
+					a = false;
+				}
+				return a;
+			})
+			.block();
+
+//		Flux<StateMachineEventResult<S, E>> xxx1 = sendEvent(Mono.just(event));
+//		Boolean block = xxx1
+//			.switchIfEmpty(Flux.just(StateMachineEventResult.<S, E>from(this, event, ResultType.DENIED)))
+//			.reduce(true, (a, r) -> {
+////				return a & r.getResultType() == ResultType.DENIED;
+//				if (a && r.getResultType() == ResultType.DENIED) {
+//					a = false;
+//				}
+//				return a;
+//			})
+//			.block();
+//		return block;
+//		ResultType resultType = handleEvent3(Mono.just(event)).block();
+//		return resultType == ResultType.DENIED ? false : true;
 //		return handleEvent(Mono.just(event)).block();
 //		return sendEventInternal(event);
 	}
@@ -238,6 +264,16 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	@Override
 	public boolean sendEvent(E event) {
 		return sendEvent(MessageBuilder.withPayload(event).build());
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<S, E>> sendEvents(Flux<Message<E>> events) {
+		return events.flatMap(e -> handleEvent(e));
+	}
+
+	@Override
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Mono<Message<E>> event) {
+		return event.flatMapMany(e -> handleEvent(e));
 	}
 
 	@Override
@@ -595,19 +631,19 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	// XXX
 
-	@Override
-	public Flux<StateMachineEventResult<E>> sendEvents(Flux<Message<E>> events) {
-		return events.flatMap(evt -> sendEvent(Mono.just(evt)));
-	}
+//	@Override
+//	public Flux<StateMachineEventResult<S, E>> sendEvents(Flux<Message<E>> events) {
+//		return events.flatMap(evt -> sendEvent(Mono.just(evt)));
+//	}
+//
+//	@Override
+//	public Flux<StateMachineEventResult<S, E>> sendEvent(Mono<Message<E>> event) {
+//		return handleEvent3(event).map(rs -> StateMachineEventResult.<S, E>of(rs)).flux();
+//	}
 
-	@Override
-	public Flux<StateMachineEventResult<E>> sendEvent(Mono<Message<E>> event) {
-		return handleEvent3(event).map(rs -> StateMachineEventResult.<E>of(rs)).flux();
-	}
-
-	@SuppressWarnings("serial")
-	private class RequestMessageHolder extends AtomicReference<Message<E>> {
-	}
+//	@SuppressWarnings("serial")
+//	private class RequestMessageHolder extends AtomicReference<Message<E>> {
+//	}
 
 //	public Mono<Boolean> handleEvent(Mono<Message<E>> event) {
 //
@@ -654,81 +690,181 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 //
 //	}
 
-	public Mono<ResultType> handleEvent3(Mono<Message<E>> event) {
-		return event
-			.flatMap(evt -> Mono.subscriberContext().map(ctx -> {
-				RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
-				holder.set(evt);
-				return evt;
-			}))
-			.map(evt -> {
-				return hasStateMachineError() ? ResultType.DENIED : ResultType.ACCEPTED;
-			})
-			.flatMap(rs -> {
-				if (rs == ResultType.ACCEPTED) {
-					return Mono.subscriberContext().map(ctx -> {
-						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
-						Message<E> message = holder.get();
-						return acceptEvent3(message);
-					}).flatMap(x -> x);
-				}
-				return Mono.just(rs);
-			})
-			.map(rs -> {
-				if (rs == ResultType.ACCEPTED) {
-					rs = (isComplete() || !isRunning()) ? ResultType.DENIED : ResultType.ACCEPTED;
-				}
-				return rs;
-			})
-			.flatMap(rs -> {
-				if (rs == ResultType.DENIED) {
-					return Mono.subscriberContext().map(ctx -> {
-						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
-						Message<E> message = holder.get();
-						notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, message, null, getRelayStateMachine(), getState(), null));
-						return rs;
-					});
-				}
-				return Mono.just(rs);
-			})
-			.subscriberContext(ctx -> ctx.put(RequestMessageHolder.class, new RequestMessageHolder()))
-			;
+//	public Mono<ResultType> handleEvent3(Mono<Message<E>> event) {
+//		return event
+//			.flatMap(evt -> Mono.subscriberContext().map(ctx -> {
+//				RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+//				holder.set(evt);
+//				return evt;
+//			}))
+//			.map(evt -> {
+//				return hasStateMachineError() ? ResultType.DENIED : ResultType.ACCEPTED;
+//			})
+//			.flatMap(rs -> {
+//				if (rs == ResultType.ACCEPTED) {
+//					return Mono.subscriberContext().map(ctx -> {
+//						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+//						Message<E> message = holder.get();
+//						return acceptEvent3(message);
+//					}).flatMap(x -> x);
+//				}
+//				return Mono.just(rs);
+//			})
+//			.map(rs -> {
+//				if (rs == ResultType.ACCEPTED) {
+//					rs = (isComplete() || !isRunning()) ? ResultType.DENIED : ResultType.ACCEPTED;
+//				}
+//				return rs;
+//			})
+//			.flatMap(rs -> {
+//				if (rs == ResultType.DENIED) {
+//					return Mono.subscriberContext().map(ctx -> {
+//						RequestMessageHolder holder = ctx.get(RequestMessageHolder.class);
+//						Message<E> message = holder.get();
+//						notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, message, null, getRelayStateMachine(), getState(), null));
+//						return rs;
+//					});
+//				}
+//				return Mono.just(rs);
+//			})
+//			.subscriberContext(ctx -> ctx.put(RequestMessageHolder.class, new RequestMessageHolder()))
+//			;
+//	}
+
+	private Flux<StateMachineEventResult<S, E>> handleEvent(Message<E> event) {
+//		Flux<StateMachineEventResult<S, E>> xxx1 = acceptEvent33(event);
+//		Mono<List<StateMachineEventResult<S, E>>> xxx2 = xxx1.collectList();
+//		Flux<List<StateMachineEventResult<S, E>>> xxx3 = xxx2.flatMapMany(x -> Mono.just(x));
+//		Flux<StateMachineEventResult<S, E>> xxx4 = xxx2.flatMapMany(x -> Flux.fromIterable(x));
+//		Flux<StateMachineEventResult<S, E>> ddd3 = ddd2.flatMap(r -> Flux.concat(Mono.just(r), acceptEvent33(r.getMessage())));
+//		Flux<StateMachineEventResult<S, E>> ddd11 = ddd10.switchOnFirst((signal, flux) -> {
+//		if (signal.hasValue()) {
+//			StateMachineEventResult<S, E> r = signal.get();
+//			if (r.getResultType() == ResultType.DENIED) {
+//				return Flux.empty();
+//			}
+//		}
+//		return flux;
+//	});
+//		Flux<StateMachineEventResult<S, E>> ddd31 = ddd30.doOnNext(r -> {
+//		if (r.getResultType() == ResultType.DENIED) {
+//			notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, r.getMessage(), null,
+//			getRelayStateMachine(), getState(), null));
+//		}
+//	});
+
+		Flux<StateMachineEventResult<S, E>> ddd10 = Flux.just(StateMachineEventResult.<S, E>from(this, event,
+				hasStateMachineError() ? ResultType.DENIED : ResultType.ACCEPTED));
+
+		Flux<StateMachineEventResult<S, E>> ddd11 = ddd10.switchOnFirst(switchEmptyIfDenied());
+
+		Flux<StateMachineEventResult<S, E>> ddd20 = ddd11.map(r -> {
+			try {
+				Message<E> m = getStateMachineInterceptors().preEvent(event, this);
+				r.setMessage(m);
+			} catch (Exception e) {
+				r.setResultType(ResultType.DENIED);
+			}
+			return r;
+		});
+
+		Flux<StateMachineEventResult<S, E>> ddd30 = ddd20.flatMap(r -> acceptEvent(r.getMessage()));
+		Flux<StateMachineEventResult<S, E>> ddd31 = ddd30.doOnNext(notifyOnDenied());
+
+//		return ddd30;
+		return ddd31;
 	}
 
-	protected Mono<ResultType> acceptEvent3(Message<E> message) {
-		State<S, E> cs = currentState;
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return Mono.just(ResultType.DEFERRED);
-		}
-		if ((cs != null && cs.sendEvent(message))) {
-			return Mono.just(ResultType.ACCEPTED);
-		}
-
-		if (log.isDebugEnabled()) {
-			log.debug("Queue event " + message + " " + this);
-		}
-
-		for (Transition<S,E> transition : transitions) {
-			State<S,E> source = transition.getSource();
-			Trigger<S, E> trigger = transition.getTrigger();
-
-			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-					return stateMachineExecutor.queueEventX(Mono.just(message)).thenReturn(ResultType.ACCEPTED);
+	private BiFunction<Signal<? extends StateMachineEventResult<S, E>>,
+				Flux<StateMachineEventResult<S, E>>,
+				Publisher<? extends StateMachineEventResult<S, E>>> switchEmptyIfDenied() {
+		return (signal, flux) -> {
+			if (signal.hasValue()) {
+				StateMachineEventResult<S, E> r = signal.get();
+				if (r.getResultType() == ResultType.DENIED) {
+					return Flux.empty();
 				}
 			}
-		}
-		// if we're about to not accept event, check defer again in case
-		// state was changed between original check and now
-		if ((cs != null && cs.shouldDefer(message))) {
-			log.info("Current state " + cs + " deferred event " + message);
-			stateMachineExecutor.queueDeferredEvent(message);
-			return Mono.just(ResultType.ACCEPTED);
-		}
-		return Mono.just(ResultType.DENIED);
+			return flux;
+		};
 	}
+
+	private Consumer<StateMachineEventResult<S, E>> notifyOnDenied() {
+		return r -> {
+			if (r.getResultType() == ResultType.DENIED) {
+				notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, r.getMessage(), null,
+				getRelayStateMachine(), getState(), null));
+			}
+		};
+	}
+
+	private Flux<StateMachineEventResult<S, E>> acceptEvent(Message<E> message) {
+		return Flux.defer(() -> {
+			State<S, E> cs = currentState;
+			if (cs != null) {
+				if (cs.shouldDefer(message)) {
+					return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DEFERRED));
+				}
+				Flux<StateMachineEventResult<S, E>> xxx = cs.sendEventX(message);
+
+				return xxx.thenMany(Mono.defer(() -> {
+
+					for (Transition<S,E> transition : transitions) {
+						State<S,E> source = transition.getSource();
+						Trigger<S, E> trigger = transition.getTrigger();
+
+						if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+							if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+								return stateMachineExecutor.queueEventX(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
+							}
+						}
+					}
+//					return Mono.empty();
+					return Mono.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+				}));
+			}
+			return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+//					.doOnNext(r -> {
+//						notifyEventNotAccepted(buildStateContext(Stage.EVENT_NOT_ACCEPTED, r.getMessage(), null,
+//								getRelayStateMachine(), getState(), null));
+//					});
+		});
+	}
+
+//	protected Mono<ResultType> acceptEvent3(Message<E> message) {
+//		State<S, E> cs = currentState;
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return Mono.just(ResultType.DEFERRED);
+//		}
+//		if ((cs != null && cs.sendEvent(message))) {
+//			return Mono.just(ResultType.ACCEPTED);
+//		}
+//
+//		if (log.isDebugEnabled()) {
+//			log.debug("Queue event " + message + " " + this);
+//		}
+//
+//		for (Transition<S,E> transition : transitions) {
+//			State<S,E> source = transition.getSource();
+//			Trigger<S, E> trigger = transition.getTrigger();
+//
+//			if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+//					return stateMachineExecutor.queueEventX(Mono.just(message)).thenReturn(ResultType.ACCEPTED);
+//				}
+//			}
+//		}
+//		// if we're about to not accept event, check defer again in case
+//		// state was changed between original check and now
+//		if ((cs != null && cs.shouldDefer(message))) {
+//			log.info("Current state " + cs + " deferred event " + message);
+//			stateMachineExecutor.queueDeferredEvent(message);
+//			return Mono.just(ResultType.ACCEPTED);
+//		}
+//		return Mono.just(ResultType.DENIED);
+//	}
 
 //	protected Mono<Boolean> acceptEvent2(Message<E> message) {
 //		State<S, E> cs = currentState;
