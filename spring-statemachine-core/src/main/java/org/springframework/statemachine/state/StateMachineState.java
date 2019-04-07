@@ -22,12 +22,16 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.access.StateMachineAccess;
 import org.springframework.statemachine.access.StateMachineFunction;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.support.StateMachineUtils;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A {@link State} implementation where state is wrapped in a substatemachine.
@@ -256,13 +260,22 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	}
 
 	@Override
-	public boolean sendEvent(Message<E> event) {
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		StateMachine<S, E> machine = getSubmachine();
 		if (machine != null) {
-			return machine.sendEvent(event);
+			return machine.sendEvent(Mono.just(event));
 		}
 		return super.sendEvent(event);
 	}
+
+//	@Override
+//	public boolean sendEvent(Message<E> event) {
+//		StateMachine<S, E> machine = getSubmachine();
+//		if (machine != null) {
+//			return machine.sendEvent(event);
+//		}
+//		return super.sendEvent(event);
+//	}
 
 	@Override
 	public boolean shouldDefer(Message<E> event) {

@@ -198,13 +198,13 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		this.submachine = submachine;
 	}
 
-	@Override
-	public boolean sendEvent(Message<E> event) {
-		return false;
-	}
+//	@Override
+//	public boolean sendEvent(Message<E> event) {
+//		return false;
+//	}
 
 	@Override
-	public Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event) {
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		return Flux.empty();
 	}
 

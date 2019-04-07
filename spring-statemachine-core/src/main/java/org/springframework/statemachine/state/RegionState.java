@@ -101,28 +101,24 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		super(id, deferred, entryActions, exitActions, null, regions);
 	}
 
-	@Override
-	public boolean sendEvent(Message<E> event) {
-		boolean accept = false;
-		if (getRegions() != null) {
-			for (Region<S, E> r : getRegions()) {
-				accept |= r.sendEvent(event);
-			}
-		}
-		return accept;
-	}
+//	@Override
+//	public boolean sendEvent(Message<E> event) {
+//		boolean accept = false;
+//		if (getRegions() != null) {
+//			for (Region<S, E> r : getRegions()) {
+//				accept |= r.sendEvent(event);
+//			}
+//		}
+//		return accept;
+//	}
 
 	@Override
-	public Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event) {
-
-		Flux<Region<S, E>> xxx1 = Flux.fromIterable(getRegions());
-		ParallelFlux<Region<S, E>> xxx2 = xxx1.parallel().runOn(Schedulers.parallel());
-		ParallelFlux<StateMachineEventResult<S, E>> xxx3 = xxx2.flatMap(r -> r.sendEvent(Mono.just(event)));
-		Flux<StateMachineEventResult<S, E>> xxx4 = xxx3.sequential();
-		return xxx4;
-
-//		return Flux.fromIterable(getRegions())
-//				.flatMap(r -> r.sendEvent(Mono.just(event)));
+	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
+		// TODO: make paraller configurable
+		return Flux.fromIterable(getRegions())
+			.parallel().runOn(Schedulers.parallel())
+			.flatMap(r -> r.sendEvent(Mono.just(event)))
+			.sequential();
 	}
 
 	@Override

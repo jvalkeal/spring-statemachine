@@ -79,14 +79,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private volatile Message<E> queuedMessage = null;
 	private StateMachineExecutorTransit<S, E> stateMachineExecutorTransit;
 
-//	private TopicProcessor<TriggerQueueItem> triggerProcessor = TopicProcessor.create();
-//	private TopicProcessor<Flux<Message<E>>> eventProcessor = TopicProcessor.create();
 	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor = TopicProcessor.create();
 	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = TopicProcessor.create();
-//	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create();
-//	private EmitterProcessor<Flux<Message<E>>> eventProcessor = EmitterProcessor.create();
-
-	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor2 = TopicProcessor.create();
 
 	private Disposable triggerDisposable;
 	private Disposable messageDisposable;
@@ -113,27 +107,27 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 	@Override
 	protected void onInit() throws Exception {
-		messageFlux = Flux.from(eventProcessor)
-			.flatMap(messages -> messages)
-			.doOnNext(message -> {
-				handleEvent(message);
-			});
-		triggerFlux = Flux.from(triggerProcessor)
-			.doOnNext(item -> {
-				handleTrigger(item);
-			});
+//		messageFlux = Flux.from(eventProcessor)
+//			.flatMap(messages -> messages)
+//			.doOnNext(message -> {
+//				handleEvent(message);
+//			});
+//		triggerFlux = Flux.from(triggerProcessor)
+//			.doOnNext(item -> {
+//				handleTrigger(item);
+//			});
 	}
 
 	@Override
 	protected void doStart() {
 		super.doStart();
 		startTriggers();
-		if (messageDisposable == null) {
-			messageDisposable = messageFlux.subscribe();
-		}
-		if (triggerDisposable == null) {
-			triggerDisposable = triggerFlux.subscribe();
-		}
+//		if (messageDisposable == null) {
+//			messageDisposable = messageFlux.subscribe();
+//		}
+//		if (triggerDisposable == null) {
+//			triggerDisposable = triggerFlux.subscribe();
+//		}
 
 		if (!initialHandled.getAndSet(true)) {
 			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
@@ -173,6 +167,13 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 //			eventProcessor.onNext(flux);
 //		});
 //	}
+
+	public Mono<Void> xxx(Message<E> message) {
+
+
+
+		return null;
+	}
 
 	@Override
 	public void queueEvent(Message<E> message) {
@@ -240,21 +241,43 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
 
 		return messages
-			.flatMap(m -> handleEvent2(m))
-			.next()
-			.doOnNext(i -> {
-				if (i.trigger == null) {
-					queueDeferredEvent(i.message);
-				}
-			})
-			.flatMap(i -> {
-				if (i.trigger != null) {
-					return handleTrigger2(i);
-				}
-				return Mono.empty();
-			})
-			;
+				.flatMap(m -> handleEvent2(m))
+				.doOnNext(i -> {
+					if (i.trigger == null) {
+						queueDeferredEvent(i.message);
+					}
+				})
+				.flatMap(i -> {
+					if (i.trigger != null) {
+						return handleTrigger2(i);
+					}
+					return Mono.empty();
+				})
+				.then()
+				;
 	}
+
+//	public Mono<Void> queueEventXX(Mono<Message<E>> message) {
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> messageFlux = message.flux();
+//		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
+//
+//		return messages
+//			.flatMap(m -> handleEvent2(m))
+//			.next()
+//			.doOnNext(i -> {
+//				if (i.trigger == null) {
+//					queueDeferredEvent(i.message);
+//				}
+//			})
+//			.flatMap(i -> {
+//				if (i.trigger != null) {
+//					return handleTrigger2(i);
+//				}
+//				return Mono.empty();
+//			})
+//			;
+//	}
 
 	private Mono<TriggerQueueItem> handleEvent2(Message<E> queuedEvent) {
 		State<S,E> currentState = stateMachine.getState();
@@ -332,25 +355,25 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		return Mono.empty();
 	}
 
-	private void handleEvent(Message<E> queuedEvent) {
-		State<S,E> currentState = stateMachine.getState();
-		if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
-			log.info("Current state " + currentState + " deferred event " + queuedEvent);
-			queueDeferredEvent(queuedEvent);
-			return;
-		}
-		for (Transition<S,E> transition : transitions) {
-			State<S,E> source = transition.getSource();
-			Trigger<S, E> trigger = transition.getTrigger();
-
-			if (StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
-				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(queuedEvent.getPayload()))) {
-					queueTrigger(trigger, queuedEvent);
-					return;
-				}
-			}
-		}
-	}
+//	private void handleEvent(Message<E> queuedEvent) {
+//		State<S,E> currentState = stateMachine.getState();
+//		if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
+//			log.info("Current state " + currentState + " deferred event " + queuedEvent);
+//			queueDeferredEvent(queuedEvent);
+//			return;
+//		}
+//		for (Transition<S,E> transition : transitions) {
+//			State<S,E> source = transition.getSource();
+//			Trigger<S, E> trigger = transition.getTrigger();
+//
+//			if (StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
+//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(queuedEvent.getPayload()))) {
+//					queueTrigger(trigger, queuedEvent);
+//					return;
+//				}
+//			}
+//		}
+//	}
 
 	private void handleInitialTrans(Transition<S, E> tran, Message<E> queuedMessage) {
 		StateContext<S, E> stateContext = buildStateContext(queuedMessage, tran, relayStateMachine);
@@ -358,61 +381,61 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage);
 	}
 
-	private void handleTrigger(TriggerQueueItem queueItem) {
-		State<S,E> currentState = stateMachine.getState();
-		if (queueItem != null && currentState != null) {
-			if (log.isDebugEnabled()) {
-				log.debug("Process trigger item " + queueItem + " " + this);
-			}
-			// queued message is kept on a class level order to let
-			// triggerless transition to receive this message if it doesn't
-			// kick in in this poll loop.
-			queuedMessage = queueItem.message;
-			E event = queuedMessage != null ? queuedMessage.getPayload() : null;
-
-			// need all transitions trigger could match, event trigger may match
-			// multiple
-			// need to go up from substates and ask if trigger transit, if not
-			// check super
-			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
-
-			if (event != null) {
-				ArrayList<S> ids = new ArrayList<S>(currentState.getIds());
-				Collections.reverse(ids);
-				for (S id : ids) {
-					for (Entry<Trigger<S, E>, Transition<S, E>> e : triggerToTransitionMap.entrySet()) {
-						Trigger<S, E> tri = e.getKey();
-						E ee = tri.getEvent();
-						Transition<S, E> tra = e.getValue();
-						if (event.equals(ee)) {
-							if (tra.getSource().getId().equals(id) && !trans.contains(tra)) {
-								trans.add(tra);
-								continue;
-							}
-						}
-					}
-				}
-			}
-
-			// most likely timer
-			if (trans.isEmpty()) {
-				trans.add(triggerToTransitionMap.get(queueItem.trigger));
-			}
-
-			// go through candidates and transit max one, sort before handling
-			trans.sort(transitionComparator);
-			handleTriggerTrans(trans, queuedMessage);
-		}
-
-		List<Transition<S, E>> transWithGuards = new ArrayList<>();
-		for (Transition<S, E> t : triggerlessTransitions) {
-			if (((AbstractTransition<S, E>)t).getGuard() != null) {
-				transWithGuards.add(t);
-			}
-		}
-
-		handleTriggerlessTransitions(queuedMessage);
-	}
+//	private void handleTrigger(TriggerQueueItem queueItem) {
+//		State<S,E> currentState = stateMachine.getState();
+//		if (queueItem != null && currentState != null) {
+//			if (log.isDebugEnabled()) {
+//				log.debug("Process trigger item " + queueItem + " " + this);
+//			}
+//			// queued message is kept on a class level order to let
+//			// triggerless transition to receive this message if it doesn't
+//			// kick in in this poll loop.
+//			queuedMessage = queueItem.message;
+//			E event = queuedMessage != null ? queuedMessage.getPayload() : null;
+//
+//			// need all transitions trigger could match, event trigger may match
+//			// multiple
+//			// need to go up from substates and ask if trigger transit, if not
+//			// check super
+//			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
+//
+//			if (event != null) {
+//				ArrayList<S> ids = new ArrayList<S>(currentState.getIds());
+//				Collections.reverse(ids);
+//				for (S id : ids) {
+//					for (Entry<Trigger<S, E>, Transition<S, E>> e : triggerToTransitionMap.entrySet()) {
+//						Trigger<S, E> tri = e.getKey();
+//						E ee = tri.getEvent();
+//						Transition<S, E> tra = e.getValue();
+//						if (event.equals(ee)) {
+//							if (tra.getSource().getId().equals(id) && !trans.contains(tra)) {
+//								trans.add(tra);
+//								continue;
+//							}
+//						}
+//					}
+//				}
+//			}
+//
+//			// most likely timer
+//			if (trans.isEmpty()) {
+//				trans.add(triggerToTransitionMap.get(queueItem.trigger));
+//			}
+//
+//			// go through candidates and transit max one, sort before handling
+//			trans.sort(transitionComparator);
+//			handleTriggerTrans(trans, queuedMessage);
+//		}
+//
+//		List<Transition<S, E>> transWithGuards = new ArrayList<>();
+//		for (Transition<S, E> t : triggerlessTransitions) {
+//			if (((AbstractTransition<S, E>)t).getGuard() != null) {
+//				transWithGuards.add(t);
+//			}
+//		}
+//
+//		handleTriggerlessTransitions(queuedMessage);
+//	}
 
 	private void handleTriggerlessTransitions(Message<E> message) {
 		if (stateMachine.getState() != null) {

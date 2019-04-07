@@ -160,6 +160,23 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		System.out.println("false^false = " + (false^false));
 	}
 
+	@Test
+	public void xxx3() {
+
+		Flux.just(1, 2, 3)
+			.flatMap(x -> {
+				if (x == 2) {
+					return Flux.empty();
+				}
+				return Flux.just(x);
+			})
+			.doOnNext(x -> {
+				System.out.println(x);
+			})
+			.subscribe();
+
+	}
+
 
 	@Configuration
 	@EnableStateMachine

@@ -767,12 +767,29 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			}
 			return r;
 		});
+		Flux<StateMachineEventResult<S, E>> ddd21 = ddd11.switchOnFirst(handlePreEventInterceptors());
 
-		Flux<StateMachineEventResult<S, E>> ddd30 = ddd20.flatMap(r -> acceptEvent(r.getMessage()));
+		Flux<StateMachineEventResult<S, E>> ddd30 = ddd21.flatMap(r -> acceptEvent(r.getMessage()));
 		Flux<StateMachineEventResult<S, E>> ddd31 = ddd30.doOnNext(notifyOnDenied());
 
-//		return ddd30;
 		return ddd31;
+	}
+
+	private BiFunction<Signal<? extends StateMachineEventResult<S, E>>,
+				Flux<StateMachineEventResult<S, E>>,
+				Publisher<? extends StateMachineEventResult<S, E>>> handlePreEventInterceptors() {
+		return (signal, flux) -> {
+			if (signal.hasValue()) {
+				StateMachineEventResult<S, E> r = signal.get();
+				try {
+					Message<E> m = getStateMachineInterceptors().preEvent(r.getMessage(), this);
+					r.setMessage(m);
+					return Flux.just(r);
+				} catch (Exception e) {
+					return Flux.empty();				}
+			}
+			return flux;
+		};
 	}
 
 	private BiFunction<Signal<? extends StateMachineEventResult<S, E>>,
@@ -803,9 +820,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> cs = currentState;
 			if (cs != null) {
 				if (cs.shouldDefer(message)) {
+					stateMachineExecutor.queueDeferredEvent(message);
 					return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DEFERRED));
 				}
-				Flux<StateMachineEventResult<S, E>> xxx = cs.sendEventX(message);
+				Flux<StateMachineEventResult<S, E>> xxx = cs.sendEvent(message);
 
 				return xxx.thenMany(Mono.defer(() -> {
 

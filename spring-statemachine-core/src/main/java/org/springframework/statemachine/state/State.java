@@ -36,15 +36,22 @@ import reactor.core.publisher.Mono;
  */
 public interface State<S, E> {
 
+//	/**
+//	 * Send an event {@code E} wrapped with a {@link Message} to the state.
+//	 *
+//	 * @param event the wrapped event to send
+//	 * @return true if event was accepted
+//	 */
+//	boolean sendEvent(Message<E> event);
+
 	/**
-	 * Send an event {@code E} wrapped with a {@link Message} to the state.
+	 * Send an event {@code E} wrapped with a {@link Message} to the state and
+	 * return a {@link StateMachineEventResult} for results.
 	 *
 	 * @param event the wrapped event to send
-	 * @return true if event was accepted
+	 * @return the state machine event results
 	 */
-	boolean sendEvent(Message<E> event);
-
-	Flux<StateMachineEventResult<S, E>> sendEventX(Message<E> event);
+	Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event);
 
 	/**
 	 * Checks if state wants to defer an event.

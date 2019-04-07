@@ -66,18 +66,26 @@ public interface Region<S, E> {
 
 	/**
 	 * Send an event {@code E} wrapped with a {@link Message} to the region.
+	 * <p>
+	 * NOTE: this method is now deprecated in favour of a reactive methods.
 	 *
 	 * @param event the wrapped event to send
 	 * @return true if event was accepted
+	 * @deprecated in favor of {@link #sendEvent(Mono)}
 	 */
+	@Deprecated
 	boolean sendEvent(Message<E> event);
 
 	/**
 	 * Send an event {@code E} to the region.
+	 * <p>
+	 * NOTE: this method is now deprecated in favour of a reactive methods.
 	 *
 	 * @param event the event to send
 	 * @return true if event was accepted
+	 * @deprecated in favor of {@link #sendEvent(Mono)}
 	 */
+	@Deprecated
 	boolean sendEvent(E event);
 
 	/**
