@@ -54,6 +54,7 @@ import org.springframework.statemachine.trigger.TriggerListener;
 import reactor.core.Disposable;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.TopicProcessor;
 
@@ -79,13 +80,15 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private volatile Message<E> queuedMessage = null;
 	private StateMachineExecutorTransit<S, E> stateMachineExecutorTransit;
 
-	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor = TopicProcessor.create();
-	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = TopicProcessor.create();
+//	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor = TopicProcessor.create();
+//	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = TopicProcessor.create();
+//	private Disposable triggerDisposable;
+//	private Disposable messageDisposable;
+//	private Flux<Message<E>> messageFlux;
+//	private Flux<TriggerQueueItem> triggerFlux;
 
-	private Disposable triggerDisposable;
-	private Disposable messageDisposable;
-	private Flux<Message<E>> messageFlux;
-	private Flux<TriggerQueueItem> triggerFlux;
+	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create();
+	private FluxSink<TriggerQueueItem> triggerSink;
 
 	public ReactiveStateMachineExecutor(StateMachine<S, E> stateMachine, StateMachine<S, E> relayStateMachine,
 			Collection<Transition<S, E>> transitions, Map<Trigger<S, E>, Transition<S, E>> triggerToTransitionMap,
@@ -107,6 +110,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 	@Override
 	protected void onInit() throws Exception {
+		triggerSink = triggerProcessor.sink();
 //		messageFlux = Flux.from(eventProcessor)
 //			.flatMap(messages -> messages)
 //			.doOnNext(message -> {
@@ -146,14 +150,14 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	protected void doStop() {
 		stopTriggers();
 		super.doStop();
-		if (messageDisposable != null) {
-			messageDisposable.dispose();
-			messageDisposable = null;
-		}
-		if (triggerDisposable != null) {
-			triggerDisposable.dispose();
-			triggerDisposable = null;
-		}
+//		if (messageDisposable != null) {
+//			messageDisposable.dispose();
+//			messageDisposable = null;
+//		}
+//		if (triggerDisposable != null) {
+//			triggerDisposable.dispose();
+//			triggerDisposable = null;
+//		}
 		initialHandled.set(false);
 	}
 
@@ -170,6 +174,13 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 	public Mono<Void> xxx(Message<E> message) {
 
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> flux = Flux.merge(Mono.just(message), deferFlux);
+//
+//		Mono.just(flux).doOnNext(x -> {
+//			eventProcessor.onNext(x);
+//		})
+//		.empty();
 
 
 		return null;
@@ -187,7 +198,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		if (log.isDebugEnabled()) {
 			log.debug("Queue trigger " + trigger);
 		}
-		triggerProcessor.onNext(new TriggerQueueItem(trigger, message));
+//		triggerProcessor.onNext(new TriggerQueueItem(trigger, message));
 	}
 
 	@Override

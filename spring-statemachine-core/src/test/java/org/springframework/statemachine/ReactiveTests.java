@@ -35,6 +35,7 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -162,18 +163,6 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 	@Test
 	public void xxx3() {
-
-		Flux.just(1, 2, 3)
-			.flatMap(x -> {
-				if (x == 2) {
-					return Flux.empty();
-				}
-				return Flux.just(x);
-			})
-			.doOnNext(x -> {
-				System.out.println(x);
-			})
-			.subscribe();
 
 	}
 
