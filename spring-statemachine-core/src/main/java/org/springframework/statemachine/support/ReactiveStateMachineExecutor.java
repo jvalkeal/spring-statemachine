@@ -87,8 +87,10 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 //	private Flux<Message<E>> messageFlux;
 //	private Flux<TriggerQueueItem> triggerFlux;
 
-	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create();
+	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create(false);
 	private FluxSink<TriggerQueueItem> triggerSink;
+	private Flux<Void> triggerFlux;
+	private Disposable triggerDisposable;
 
 	public ReactiveStateMachineExecutor(StateMachine<S, E> stateMachine, StateMachine<S, E> relayStateMachine,
 			Collection<Transition<S, E>> transitions, Map<Trigger<S, E>, Transition<S, E>> triggerToTransitionMap,
@@ -111,6 +113,11 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	@Override
 	protected void onInit() throws Exception {
 		triggerSink = triggerProcessor.sink();
+
+		triggerFlux = Flux.from(triggerProcessor)
+			.flatMap(trigger -> handleTrigger2(trigger));
+
+
 //		messageFlux = Flux.from(eventProcessor)
 //			.flatMap(messages -> messages)
 //			.doOnNext(message -> {
@@ -126,6 +133,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	protected void doStart() {
 		super.doStart();
 		startTriggers();
+
+		if (triggerDisposable == null) {
+			triggerDisposable = triggerFlux.subscribe();
+		}
+
+
 //		if (messageDisposable == null) {
 //			messageDisposable = messageFlux.subscribe();
 //		}
@@ -150,6 +163,13 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	protected void doStop() {
 		stopTriggers();
 		super.doStop();
+
+		if (triggerDisposable != null) {
+			triggerDisposable.dispose();
+			triggerDisposable = null;
+		}
+
+
 //		if (messageDisposable != null) {
 //			messageDisposable.dispose();
 //			messageDisposable = null;
@@ -160,17 +180,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 //		}
 		initialHandled.set(false);
 	}
-
-//	@Override
-//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
-//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-//		Flux<Message<E>> messageFlux = message.flux();
-//		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
-//
-//		return flux.then().doOnSubscribe(s -> {
-//			eventProcessor.onNext(flux);
-//		});
-//	}
 
 	public Mono<Void> xxx(Message<E> message) {
 
@@ -198,6 +207,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		if (log.isDebugEnabled()) {
 			log.debug("Queue trigger " + trigger);
 		}
+		triggerSink.next(new TriggerQueueItem(trigger, message));
 //		triggerProcessor.onNext(new TriggerQueueItem(trigger, message));
 	}
 
@@ -245,28 +255,52 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		return lock;
 	}
 
+//	@Override
+//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> messageFlux = message.flux();
+//		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
+//
+//		return messages
+//				.flatMap(m -> handleEvent2(m))
+//				.doOnNext(i -> {
+//					if (i.trigger == null) {
+//						queueDeferredEvent(i.message);
+//					}
+//				})
+//				.flatMap(i -> {
+//					if (i.trigger != null) {
+//						return handleTrigger2(i);
+//					}
+//					return Mono.empty();
+//				})
+//				.then()
+//				;
+//	}
+
 	@Override
 	public Mono<Void> queueEventX(Mono<Message<E>> message) {
-		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-		Flux<Message<E>> messageFlux = message.flux();
-		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
+		Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
 
 		return messages
-				.flatMap(m -> handleEvent2(m))
-				.doOnNext(i -> {
-					if (i.trigger == null) {
-						queueDeferredEvent(i.message);
-					}
-				})
-				.flatMap(i -> {
-					if (i.trigger != null) {
-						return handleTrigger2(i);
-					}
-					return Mono.empty();
-				})
-				.then()
-				;
+			.flatMap(m -> handleEvent2(m))
+			.doOnNext(i -> {
+				triggerSink.next(i);
+			})
+			.then()
+			;
 	}
+
+//	@Override
+//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
+//		Flux<Message<E>> messageFlux = message.flux();
+//		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
+//
+//		return flux.then().doOnSubscribe(s -> {
+//			eventProcessor.onNext(flux);
+//		});
+//	}
 
 //	public Mono<Void> queueEventXX(Mono<Message<E>> message) {
 //		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);

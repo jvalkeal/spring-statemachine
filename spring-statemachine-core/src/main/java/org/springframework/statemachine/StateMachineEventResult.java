@@ -123,5 +123,11 @@ public interface StateMachineEventResult<S, E> {
 		public void setResultType(ResultType resultType) {
 			this.resultType = resultType;
 		}
+
+		@Override
+		public String toString() {
+			return "DefaultStateMachineEventResult [region=" + region + ", message=" + message + ", resultType="
+					+ resultType + "]";
+		}
 	}
 }

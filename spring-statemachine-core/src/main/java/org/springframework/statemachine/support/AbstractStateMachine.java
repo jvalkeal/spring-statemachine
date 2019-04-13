@@ -758,15 +758,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		Flux<StateMachineEventResult<S, E>> ddd11 = ddd10.switchOnFirst(switchEmptyIfDenied());
 
-		Flux<StateMachineEventResult<S, E>> ddd20 = ddd11.map(r -> {
-			try {
-				Message<E> m = getStateMachineInterceptors().preEvent(event, this);
-				r.setMessage(m);
-			} catch (Exception e) {
-				r.setResultType(ResultType.DENIED);
-			}
-			return r;
-		});
+//		Flux<StateMachineEventResult<S, E>> ddd20 = ddd11.map(r -> {
+//			try {
+//				Message<E> m = getStateMachineInterceptors().preEvent(event, this);
+//				r.setMessage(m);
+//			} catch (Exception e) {
+//				r.setResultType(ResultType.DENIED);
+//			}
+//			return r;
+//		});
 		Flux<StateMachineEventResult<S, E>> ddd21 = ddd11.switchOnFirst(handlePreEventInterceptors());
 
 		Flux<StateMachineEventResult<S, E>> ddd30 = ddd21.flatMap(r -> acceptEvent(r.getMessage()));
