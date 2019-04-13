@@ -169,7 +169,15 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 	@Test
 	public void xxx3() {
-
+		Mono<Void> mono1 = Mono.defer(() -> {
+			System.out.println("hi1");
+			return Mono.empty();
+		});
+		Mono<Void> mono2 = Mono.defer(() -> {
+			System.out.println("hi2");
+			return Mono.empty();
+		});
+		mono1.and(mono2).block();
 	}
 
 

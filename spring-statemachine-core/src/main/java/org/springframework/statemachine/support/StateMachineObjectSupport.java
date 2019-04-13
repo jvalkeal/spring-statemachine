@@ -136,6 +136,7 @@ public abstract class StateMachineObjectSupport<S, E> extends LifecycleObjectSup
 	}
 
 	protected void notifyStateChanged(StateContext<S, E> stateContext) {
+		System.out.println("DDD");
 		try {
 			stateMachineHandlerCallHelper.callOnStateChanged(getBeanName(), stateContext);
 			stateMachineHandlerCallHelper.callOnStateChanged(stateContext.getStateMachine().getId(), stateContext);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,6 @@ import reactor.core.publisher.Mono;
  */
 public interface State<S, E> {
 
-//	/**
-//	 * Send an event {@code E} wrapped with a {@link Message} to the state.
-//	 *
-//	 * @param event the wrapped event to send
-//	 * @return true if event was accepted
-//	 */
-//	boolean sendEvent(Message<E> event);
-
 	/**
 	 * Send an event {@code E} wrapped with a {@link Message} to the state and
 	 * return a {@link StateMachineEventResult} for results.
@@ -65,15 +57,17 @@ public interface State<S, E> {
 	 * Initiate an exit sequence for the state.
 	 *
 	 * @param context the state context
+	 * @return Mono for completion
 	 */
-	void exit(StateContext<S, E> context);
+	Mono<Void> exit(StateContext<S, E> context);
 
 	/**
 	 * Initiate an entry sequence for the state.
 	 *
 	 * @param context the state context
+	 * @return Mono for completion
 	 */
-	void entry(StateContext<S, E> context);
+	Mono<Void> entry(StateContext<S, E> context);
 
 	/**
 	 * Gets the state identifier.

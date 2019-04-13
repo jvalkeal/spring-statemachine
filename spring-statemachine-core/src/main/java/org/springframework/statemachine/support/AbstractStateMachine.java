@@ -1609,7 +1609,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (log.isDebugEnabled()) {
 			log.debug("Exit state=[" + state + "]");
 		}
-		state.exit(stateContext);
+		state.exit(stateContext).subscribe();
 
 		notifyStateExited(buildStateContext(Stage.STATE_EXIT, message, null, getRelayStateMachine(), state, null));
 	}
@@ -1683,7 +1683,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (log.isDebugEnabled()) {
 			log.debug("Enter state=[" + state + "]");
 		}
-		state.entry(stateContext);
+		state.entry(stateContext).subscribe();
 	}
 
 	private static <S, E> boolean isInitial(State<S, E> state) {

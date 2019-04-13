@@ -24,6 +24,8 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.region.Region;
 
+import reactor.core.publisher.Mono;
+
 /**
  * A {@link State} implementation where state and event is object based.
  *
@@ -140,27 +142,31 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 	}
 
 	@Override
-	public void exit(StateContext<S, E> context) {
-		super.exit(context);
-		for (Action<S, E> action : getExitActions()) {
-			try {
-				executeAction(action, context);
-			} catch (Exception e) {
-				log.error("Action execution resulted error", e);
+	public Mono<Void> exit(StateContext<S, E> context) {
+		return super.exit(context).and(Mono.defer(() -> {
+			for (Action<S, E> action : getExitActions()) {
+				try {
+					executeAction(action, context);
+				} catch (Exception e) {
+					log.error("Action execution resulted error", e);
+				}
 			}
-		}
+			return Mono.empty();
+		}));
 	}
 
 	@Override
-	public void entry(StateContext<S, E> context) {
-		for (Action<S, E> action : getEntryActions()) {
-			try {
-				executeAction(action, context);
-			} catch (Exception e) {
-				log.error("Action execution resulted error", e);
+	public Mono<Void> entry(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			for (Action<S, E> action : getEntryActions()) {
+				try {
+					executeAction(action, context);
+				} catch (Exception e) {
+					log.error("Action execution resulted error", e);
+				}
 			}
-		}
-		super.entry(context);
+			return Mono.empty();
+		}).and(super.entry(context));
 	}
 
 	@Override

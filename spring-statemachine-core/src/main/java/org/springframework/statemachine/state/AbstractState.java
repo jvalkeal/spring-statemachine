@@ -214,53 +214,39 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	}
 
 	@Override
-	public void exit(StateContext<S, E> context) {
-		if (submachine != null) {
-			for (StateMachineListener<S, E> l : completionListeners) {
-				submachine.removeStateListener(l);
-			}
-		} else if (!regions.isEmpty()) {
-			for (Region<S, E> region : regions) {
+	public Mono<Void> exit(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			if (submachine != null) {
 				for (StateMachineListener<S, E> l : completionListeners) {
-					region.removeStateListener(l);
+					submachine.removeStateListener(l);
+				}
+			} else if (!regions.isEmpty()) {
+				for (Region<S, E> region : regions) {
+					for (StateMachineListener<S, E> l : completionListeners) {
+						region.removeStateListener(l);
+					}
 				}
 			}
-		}
-		completionListeners.clear();
-		cancelStateActions();
-		stateListener.onExit(context);
-		disarmTriggers();
+			completionListeners.clear();
+			cancelStateActions();
+			stateListener.onExit(context);
+			disarmTriggers();
+			return Mono.empty();
+		});
 	}
 
 	@Override
-	public void entry(StateContext<S, E> context) {
-		if (submachine != null) {
-			final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
-
-				@Override
-				public void stateContext(StateContext<S, E> stateContext) {
-					if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-						if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
-							completionListeners.remove(this);
-							submachine.removeStateListener(this);
-							if (completionListeners.isEmpty()) {
-								notifyStateOnComplete(stateContext);
-							}
-						}
-					}
-				}
-			};
-			submachine.addStateListener(l);
-		} else if (!regions.isEmpty()) {
-			for (final Region<S, E> region : regions) {
+	public Mono<Void> entry(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			if (submachine != null) {
 				final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 
 					@Override
 					public void stateContext(StateContext<S, E> stateContext) {
 						if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-							if (stateContext.getStateMachine() == region && region.isComplete()) {
+							if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
 								completionListeners.remove(this);
-								region.removeStateListener(this);
+								submachine.removeStateListener(this);
 								if (completionListeners.isEmpty()) {
 									notifyStateOnComplete(stateContext);
 								}
@@ -268,14 +254,34 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 						}
 					}
 				};
-				completionListeners.add(l);
-				region.addStateListener(l);
-			}
-		}
+				submachine.addStateListener(l);
+			} else if (!regions.isEmpty()) {
+				for (final Region<S, E> region : regions) {
+					final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 
-		stateListener.onEntry(context);
-		armTriggers();
-		scheduleStateActions(context);
+						@Override
+						public void stateContext(StateContext<S, E> stateContext) {
+							if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+								if (stateContext.getStateMachine() == region && region.isComplete()) {
+									completionListeners.remove(this);
+									region.removeStateListener(this);
+									if (completionListeners.isEmpty()) {
+										notifyStateOnComplete(stateContext);
+									}
+								}
+							}
+						}
+					};
+					completionListeners.add(l);
+					region.addStateListener(l);
+				}
+			}
+
+			stateListener.onEntry(context);
+			armTriggers();
+			scheduleStateActions(context);
+			return Mono.empty();
+		});
 	}
 
 	@Override

@@ -140,43 +140,47 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 	}
 
 	@Override
-	public void exit(StateContext<S, E> context) {
-		super.exit(context);
-		for (Region<S, E> region : getRegions()) {
-			if (region.getState() != null) {
-				region.getState().exit(context);
+	public Mono<Void> exit(StateContext<S, E> context) {
+		return super.exit(context).and(Mono.defer(() -> {
+			for (Region<S, E> region : getRegions()) {
+				if (region.getState() != null) {
+					region.getState().exit(context);
+				}
+				region.stop();
 			}
-			region.stop();
-		}
-		for (Action<S, E> action : getExitActions()) {
-			executeAction(action, context);
-		}
+			for (Action<S, E> action : getExitActions()) {
+				executeAction(action, context);
+			}
+			return Mono.empty();
+		}));
 	}
 
 	@Override
-	public void entry(StateContext<S, E> context) {
-		super.entry(context);
-		for (Action<S, E> action : getEntryActions()) {
-			executeAction(action, context);
-		}
+	public Mono<Void> entry(StateContext<S, E> context) {
+		return super.entry(context).and(Mono.defer(() -> {
+			for (Action<S, E> action : getEntryActions()) {
+				executeAction(action, context);
+			}
 
-		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
-			for (Region<S, E> region : getRegions()) {
-				boolean start = true;
-				if (StateMachineUtils.containsAtleastOne(region.getStates(), context.getTargets())) {
-					start = false;
+			if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
+				for (Region<S, E> region : getRegions()) {
+					boolean start = true;
+					if (StateMachineUtils.containsAtleastOne(region.getStates(), context.getTargets())) {
+						start = false;
+					}
+					if (start) {
+						region.start();
+					}
 				}
-				if (start) {
-					region.start();
+			} else {
+				for (Region<S, E> region : getRegions()) {
+					if (region.getState() != null) {
+						region.getState().entry(context);
+					}
 				}
 			}
-		} else {
-			for (Region<S, E> region : getRegions()) {
-				if (region.getState() != null) {
-					region.getState().entry(context);
-				}
-			}
-		}
+			return Mono.empty();
+		}));
 	}
 
 	@Override
