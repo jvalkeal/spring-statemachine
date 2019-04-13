@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.AbstractStateMachineTests.TestStates;
+import org.springframework.statemachine.StateMachineEventResult.ResultType;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
@@ -38,6 +39,7 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 public class ReactiveTests extends AbstractStateMachineTests {
 
@@ -58,16 +60,20 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		machine.start();
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
 
-		List<StateMachineEventResult<TestStates, TestEvents>> results = machine
-				.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E1).build())).collect(Collectors.toList())
-				.block();
-		assertThat(results.size(), is(1));
+		StepVerifier.create(machine.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E1).build())))
+			.expectNextMatches(r -> {
+				return r.getResultType() == ResultType.ACCEPTED;
+			})
+			.expectComplete()
+			.verify();
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2));
 
-		results = machine
-				.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E2).build())).collect(Collectors.toList())
-				.block();
-		assertThat(results.size(), is(1));
+		StepVerifier.create(machine.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E2).build())))
+			.expectNextMatches(r -> {
+				return r.getResultType() == ResultType.ACCEPTED;
+			})
+			.expectComplete()
+			.verify();
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
 	}
 
