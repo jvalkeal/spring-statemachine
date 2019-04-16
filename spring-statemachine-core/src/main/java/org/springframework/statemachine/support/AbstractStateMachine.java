@@ -1437,7 +1437,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			return s;
 		};
 
-		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayExit = s -> {
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleExit = s -> {
 			if (exit) {
 				return exitCurrentState(state, message, transition, stateMachine, sources, targets)
 						.then(Mono.just(s));
@@ -1445,7 +1445,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			return Mono.just(s);
 		};
 
-		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayEntry = s -> {
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleEntry = s -> {
 			State<S, E> notifyFrom = currentState;
 			currentState = s;
 			return entryToState(s, message, transition, stateMachine)
@@ -1458,23 +1458,40 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				});
 		};
 
-		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayStart = s -> {
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStart = s -> {
 			if (!isRunning() && !isComplete()) {
 				return startReactively().then(Mono.just(s));
 			}
 			return Mono.just(s);
 		};
 
-		return Mono.defer(() -> {
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStop = s -> {
+			if (stateMachine != this && isComplete()) {
+				return stopReactively().then(Mono.just(s));
+			}
+			return Mono.just(s);
+		};
 
+		return Mono.defer(() -> {
+			State<S, E> findDeep = findDeepParent(state);
 			// we start from a given state
 			return Mono.just(state)
 				// transform to deep state if needed
 				.map(mapFromTargetSub)
 				.filter(s -> states.contains(state))
-				.flatMap(mayExit)
-				.flatMap(mayEntry)
-				.flatMap(mayStart)
+
+				.map(s -> {
+					// TODO notifyStateChanged do have a check against original state
+					if (currentState == null && StateMachineUtils.isSubstate(findDeep, state)) {
+						return findDeep;
+					}
+					return s;
+				})
+
+				.flatMap(handleExit)
+				.flatMap(handleEntry)
+				.flatMap(handleStart)
+				.flatMap(handleStop)
 				.then()
 				;
 		});

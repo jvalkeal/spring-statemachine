@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 public class ReactiveTests extends AbstractStateMachineTests {
@@ -184,11 +186,30 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 	@Test
 	public void xxx4() {
-		Mono<Void> mono1 = Mono.defer(() -> {
-			System.out.println("hi1" + test);
-			return Mono.empty();
-		});
+		Flux.fromIterable(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+			.groupBy(i -> i % 2 == 0)
+			.flatMap(group -> group
+				.flatMap(ReactiveTests::check)
+				.doOnNext(System.out::println)
+				.count()
+				.doOnNext(c -> {
+					if (group.key()) {
+						System.out.println("total evens " + c);
+					} else {
+						System.out.println("total odds " + c);
+					}
+				}))
+			.blockLast();
+	}
 
+	private static Mono<String> check(int i) {
+		return Mono.fromSupplier(() -> {
+			if (i % 2 == 0) {
+				return i + " is even";
+			} else {
+				return i + " is odd";
+			}
+		}).subscribeOn(Schedulers.parallel());
 	}
 
 	@Configuration

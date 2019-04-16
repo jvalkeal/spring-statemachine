@@ -140,6 +140,12 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 		}
 	}
 
+	public Mono<Void> stopReactively() {
+		return Mono.fromRunnable(() -> {
+			stop();
+		}).then();
+	}
+
 	@Override
 	public final void stop() {
 		if (!this.lifecycleLock.tryLock()) {
