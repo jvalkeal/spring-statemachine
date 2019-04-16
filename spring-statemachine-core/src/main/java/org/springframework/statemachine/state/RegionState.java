@@ -18,11 +18,14 @@ package org.springframework.statemachine.state;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.region.Region;
+import org.springframework.statemachine.support.AbstractStateMachine;
 import org.springframework.statemachine.support.StateMachineUtils;
 
 import reactor.core.publisher.Flux;
@@ -155,32 +158,59 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		}));
 	}
 
+	private static final Log log = LogFactory.getLog(RegionState.class);
+
+	private Mono<Void> startOrEntry(StateContext<S, E> context) {
+		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
+			return Flux.fromIterable(getRegions())
+				.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+				.parallel().runOn(Schedulers.parallel())
+//				.doOnNext(r -> r.start())
+				.flatMap(r -> r.startReactively())
+				.sequential()
+				.then();
+		} else {
+			return Flux.fromIterable(getRegions())
+				.filter(r -> r.getState() != null)
+				.doOnNext(r -> r.getState().entry(context))
+				.then();
+		}
+	}
+
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
-		return super.entry(context).and(Mono.defer(() -> {
-			for (Action<S, E> action : getEntryActions()) {
-				executeAction(action, context);
-			}
 
-			if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
-				for (Region<S, E> region : getRegions()) {
-					boolean start = true;
-					if (StateMachineUtils.containsAtleastOne(region.getStates(), context.getTargets())) {
-						start = false;
-					}
-					if (start) {
-						region.start();
-					}
-				}
-			} else {
-				for (Region<S, E> region : getRegions()) {
-					if (region.getState() != null) {
-						region.getState().entry(context);
-					}
-				}
-			}
-			return Mono.empty();
-		}));
+		return super.entry(context).and(
+			Flux.fromIterable(getEntryActions())
+			.doOnNext(ea -> {
+				executeAction(ea, context);
+			})
+			.then(startOrEntry(context)));
+
+//		return super.entry(context).and(Mono.defer(() -> {
+//			for (Action<S, E> action : getEntryActions()) {
+//				executeAction(action, context);
+//			}
+//
+//			if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
+//				for (Region<S, E> region : getRegions()) {
+//					boolean start = true;
+//					if (StateMachineUtils.containsAtleastOne(region.getStates(), context.getTargets())) {
+//						start = false;
+//					}
+//					if (start) {
+//						region.start();
+//					}
+//				}
+//			} else {
+//				for (Region<S, E> region : getRegions()) {
+//					if (region.getState() != null) {
+//						region.getState().entry(context);
+//					}
+//				}
+//			}
+//			return Mono.empty();
+//		}));
 	}
 
 	@Override

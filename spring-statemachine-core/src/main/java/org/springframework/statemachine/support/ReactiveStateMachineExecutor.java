@@ -115,7 +115,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		triggerSink = triggerProcessor.sink();
 
 		triggerFlux = Flux.from(triggerProcessor)
-			.flatMap(trigger -> handleTrigger2(trigger));
+			.flatMap(trigger -> handleTrigger3(trigger));
 	}
 
 	@Override
@@ -242,7 +242,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
 
 		return messages
-			.flatMap(m -> handleEvent2(m))
+			.flatMap(m -> handleEvent3(m))
 			.doOnNext(i -> {
 				triggerSink.next(i);
 			})
@@ -283,6 +283,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 //			;
 //	}
 
+	private Mono<TriggerQueueItem> handleEvent3(Message<E> queuedEvent) {
+		return Mono.defer(() -> {
+			return handleEvent2(queuedEvent);
+		});
+	}
+
 	private Mono<TriggerQueueItem> handleEvent2(Message<E> queuedEvent) {
 		State<S,E> currentState = stateMachine.getState();
 		if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
@@ -300,6 +306,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			}
 		}
 		return Mono.empty();
+	}
+
+	private Mono<Void> handleTrigger3(TriggerQueueItem queueItem) {
+		return Mono.defer(() -> {
+			return handleTrigger2(queueItem);
+		});
 	}
 
 	private Mono<Void> handleTrigger2(TriggerQueueItem queueItem) {

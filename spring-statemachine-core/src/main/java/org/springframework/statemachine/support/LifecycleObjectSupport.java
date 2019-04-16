@@ -31,6 +31,8 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Convenient base class for object which needs spring task scheduler, task
  * executor and life cycle handling.
@@ -109,6 +111,13 @@ public abstract class LifecycleObjectSupport implements InitializingBean, Dispos
 		} finally {
 			this.lifecycleLock.unlock();
 		}
+	}
+
+	public Mono<Void> startReactively() {
+		return Mono.defer(() -> {
+			start();
+			return Mono.empty();
+		});
 	}
 
 	@Override

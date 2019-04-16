@@ -167,6 +167,11 @@ public class StateContextExpressionMethodsTests {
 		}
 
 		@Override
+		public Mono<Void> startReactively() {
+			return null;
+		}
+
+		@Override
 		public void start() {
 		}
 

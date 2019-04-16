@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -378,10 +379,12 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					exitFromState(t.getSource(), message, t, getRelayStateMachine());
 				} else {
 					if (t.getKind() == TransitionKind.INITIAL) {
-						switchToState(t.getTarget(), message, t, getRelayStateMachine());
+//						switchToState(t.getTarget(), message, t, getRelayStateMachine());
+						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
 						notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
 					} else if (t.getKind() != TransitionKind.INTERNAL) {
-						switchToState(t.getTarget(), message, t, getRelayStateMachine());
+//						switchToState(t.getTarget(), message, t, getRelayStateMachine());
+						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
 					}
 				}
 				// TODO: looks like events should be called here and anno processing earlier
@@ -1273,7 +1276,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return transition != null && transition.getKind() == TransitionKind.INITIAL;
 	}
 
-	private void switchToState(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
+	private void switchToStateX(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
 		if (!isInitialTransition(transition) && !StateMachineUtils.isTransientPseudoState(state)
 				&& !callPreStateChangeInterceptors(state, message, transition, stateMachine)) {
 			return;
@@ -1309,6 +1312,16 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		callPostStateChangeInterceptors(toState, message, transition, stateMachine);
 	}
 
+	private Mono<Void> switchToState2(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
+		return Mono.defer(() -> {
+			StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
+			State<S,E> toState = followLinkedPseudoStates(state, stateContext);
+			Collection<State<S, E>> targets = new ArrayList<>();
+			targets.add(toState);
+			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
+		});
+	}
+
 	private State<S,E> followLinkedPseudoStates(State<S,E> state, StateContext<S, E> stateContext) {
 		PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
 		if (kind == PseudoStateKind.INITIAL ||  kind == PseudoStateKind.FORK) {
@@ -1340,7 +1353,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 						// TODO: try to find matching transition based on direct link.
 						// should make this built-in in pseudostates
 						Transition<S, E> transition = findTransition(toStateOrig, toState);
-						switchToState(toState, null, transition, getRelayStateMachine());
+//						switchToState(toState, null, transition, getRelayStateMachine());
+						switchToState2(toState, null, transition, getRelayStateMachine()).subscribe();
 						pseudoState.exit(stateContext);
 					}
 				});
@@ -1401,13 +1415,70 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return null;
 	}
 
-	void setCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit, StateMachine<S, E> stateMachine) {
-		setCurrentState(state, message, transition, exit, stateMachine, null, null);
+	Mono<Void> setCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit, StateMachine<S, E> stateMachine) {
+		return setCurrentState(state, message, transition, exit, stateMachine, null, null);
 	}
 
-	void setCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
+	Mono<Void> setCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
 			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
-		setCurrentStateInternal(state, message, transition, exit, stateMachine, sources, targets);
+		return setCurrentStateInternal2(state, message, transition, exit, stateMachine, sources, targets);
+	}
+
+	private Mono<Void> setCurrentStateInternal2(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
+			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
+
+		java.util.function.Function<State<S, E>, State<S, E>> mapFromTargetSub = s -> {
+			if (transition != null) {
+				boolean isTargetSubOf = StateMachineUtils.isSubstate(state, transition.getSource());
+				if (isTargetSubOf && currentState == transition.getTarget()) {
+					return transition.getSource();
+				}
+			}
+			return s;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayExit = s -> {
+			if (exit) {
+				return exitCurrentState(state, message, transition, stateMachine, sources, targets)
+						.then(Mono.just(s));
+			}
+			return Mono.just(s);
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayEntry = s -> {
+			State<S, E> notifyFrom = currentState;
+			currentState = s;
+			return entryToState(s, message, transition, stateMachine)
+				.then(Mono.just(s))
+				.doOnNext(ss -> {
+					if (!StateMachineUtils.isPseudoState(ss, PseudoStateKind.JOIN)) {
+						State<S, E> findDeep = findDeepParent(state);
+						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+					}
+				});
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> mayStart = s -> {
+			if (!isRunning() && !isComplete()) {
+				return startReactively().then(Mono.just(s));
+			}
+			return Mono.just(s);
+		};
+
+		return Mono.defer(() -> {
+
+			// we start from a given state
+			return Mono.just(state)
+				// transform to deep state if needed
+				.map(mapFromTargetSub)
+				.filter(s -> states.contains(state))
+				.flatMap(mayExit)
+				.flatMap(mayEntry)
+				.flatMap(mayStart)
+				.then()
+				;
+		});
+
 	}
 
 	private void setCurrentStateInternal(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
@@ -1532,41 +1603,45 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		}
 	}
 
-	void exitCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
-		exitCurrentState(state, message, transition, stateMachine, null, null);
+	Mono<Void> exitCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+		return exitCurrentState(state, message, transition, stateMachine, null, null);
 	}
 
-	void exitCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine,
+	Mono<Void> exitCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine,
 			Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
 		if (currentState == null) {
-			return;
+			return Mono.empty();
 		}
 		if (currentState.isSubmachineState()) {
 			StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
 			((AbstractStateMachine<S, E>)submachine).exitCurrentState(state, message, transition, stateMachine);
-			exitFromState(currentState, message, transition, stateMachine, sources, targets);
+			return exitFromState(currentState, message, transition, stateMachine, sources, targets);
 		} else if (currentState.isOrthogonal()) {
 			Collection<Region<S,E>> regions = ((AbstractState<S, E>)currentState).getRegions();
-			for (Region<S,E> r : regions) {
-				if (r.getStates().contains(state)) {
-					exitFromState(r.getState(), message, transition, stateMachine, sources, targets);
-				}
-			}
-			exitFromState(currentState, message, transition, stateMachine, sources, targets);
+			return Flux.fromIterable(regions)
+				.flatMap(r -> exitFromState(r.getState(), message, transition, stateMachine, sources, targets))
+				.then()
+				.and(exitFromState(currentState, message, transition, stateMachine, sources, targets));
+//			for (Region<S,E> r : regions) {
+//				if (r.getStates().contains(state)) {
+//					exitFromState(r.getState(), message, transition, stateMachine, sources, targets);
+//				}
+//			}
+//			return exitFromState(currentState, message, transition, stateMachine, sources, targets);
 		} else {
-			exitFromState(currentState, message, transition, stateMachine, sources, targets);
+			return exitFromState(currentState, message, transition, stateMachine, sources, targets);
 		}
 	}
 
-	private void exitFromState(State<S, E> state, Message<E> message, Transition<S, E> transition,
+	private Mono<Void> exitFromState(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine) {
-		exitFromState(state, message, transition, stateMachine, null, null);
+		return exitFromState(state, message, transition, stateMachine, null, null);
 	}
 
-	private void exitFromState(State<S, E> state, Message<E> message, Transition<S, E> transition,
+	private Mono<Void> exitFromState(State<S, E> state, Message<E> message, Transition<S, E> transition,
 			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
 		if (state == null) {
-			return;
+			return Mono.empty();
 		}
 		if (log.isTraceEnabled()) {
 			log.trace("Trying Exit state=[" + state + "]");
@@ -1581,9 +1656,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			boolean isSubOfTarget = StateMachineUtils.isSubstate(transition.getTarget(), currentState);
 
 			if (transition.getKind() == TransitionKind.LOCAL && StateMachineUtils.isSubstate(transition.getSource(), transition.getTarget()) && transition.getSource() == currentState) {
-				return;
+				return Mono.empty();
 			} else if (transition.getKind() == TransitionKind.LOCAL && StateMachineUtils.isSubstate(transition.getTarget(), transition.getSource()) && transition.getTarget() == currentState) {
-				return;
+				return Mono.empty();
 			}
 
 			// TODO: this and entry below should be done via a separate
@@ -1597,11 +1672,11 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			} else if (!isSubOfSource && !isSubOfTarget && (transition.getSource() == currentState && StateMachineUtils.isSubstate(currentState, transition.getTarget()))) {
 			} else if (StateMachineUtils.isNormalPseudoState(transition.getTarget())) {
 				if (isPseudoStateSubstate(findDeep, targets)) {
-					return;
+					return Mono.empty();
 				}
 			} else if (findDeep != null && findDeep != state && findDeep.getStates().contains(state)) {
 			} else if (!isSubOfSource && !isSubOfTarget) {
-				return;
+				return Mono.empty();
 			}
 
 		}
@@ -1609,9 +1684,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (log.isDebugEnabled()) {
 			log.debug("Exit state=[" + state + "]");
 		}
-		state.exit(stateContext).subscribe();
-
 		notifyStateExited(buildStateContext(Stage.STATE_EXIT, message, null, getRelayStateMachine(), state, null));
+		return state.exit(stateContext);
+
+//		notifyStateExited(buildStateContext(Stage.STATE_EXIT, message, null, getRelayStateMachine(), state, null));
 	}
 
 	private boolean isPseudoStateSubstate(State<S, E> left, Collection<State<S, E>> rights) {
@@ -1626,14 +1702,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return false;
 	}
 
-	private void entryToState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
-		entryToState(state, message, transition, stateMachine, null, null);
+	private Mono<Void> entryToState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine) {
+		return entryToState(state, message, transition, stateMachine, null, null);
 	}
 
-	private void entryToState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine,
+	private Mono<Void> entryToState(State<S, E> state, Message<E> message, Transition<S, E> transition, StateMachine<S, E> stateMachine,
 			Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
 		if (state == null) {
-			return;
+			return Mono.empty();
 		}
 		log.debug("Trying Enter state=[" + state + "]");
 		if (log.isTraceEnabled()) {
@@ -1651,10 +1727,10 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 			if (transition.getKind() == TransitionKind.LOCAL && StateMachineUtils.isSubstate(transition.getSource(), transition.getTarget())
 					&& transition.getSource() == currentState) {
-				return;
+				return Mono.empty();
 			} else if (transition.getKind() == TransitionKind.LOCAL && StateMachineUtils.isSubstate(transition.getTarget(), transition.getSource())
 					&& transition.getTarget() == currentState) {
-				return;
+				return Mono.empty();
 			}
 
 			if (currentState == transition.getSource() && currentState == transition.getTarget()) {
@@ -1664,13 +1740,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			} else if (isSubOfSource && !isSubOfTarget && currentState == transition.getTarget()) {
 				if (isDirectSubstate(transition.getSource(), transition.getTarget()) && transition.getKind() != TransitionKind.LOCAL
 						&& isInitial(transition.getTarget())) {
-					return;
+					return Mono.empty();
 				}
 			} else if (!isSubOfSource && !isSubOfTarget
 					&& (transition.getSource() == currentState && StateMachineUtils.isSubstate(currentState, transition.getTarget()))) {
 			} else if (!isSubOfSource && !isSubOfTarget) {
 				if (!StateMachineUtils.isTransientPseudoState(transition.getTarget())) {
-					return;
+					return Mono.empty();
 				}
 			}
 		}
@@ -1683,7 +1759,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (log.isDebugEnabled()) {
 			log.debug("Enter state=[" + state + "]");
 		}
-		state.entry(stateContext).subscribe();
+		return state.entry(stateContext);
 	}
 
 	private static <S, E> boolean isInitial(State<S, E> state) {

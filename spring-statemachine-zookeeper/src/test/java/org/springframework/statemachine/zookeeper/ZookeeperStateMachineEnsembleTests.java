@@ -705,6 +705,11 @@ public class ZookeeperStateMachineEnsembleTests extends AbstractZookeeperTests {
 		}
 
 		@Override
+		public Mono<Void> startReactively() {
+			return null;
+		}
+
+		@Override
 		public void start() {
 		}
 
