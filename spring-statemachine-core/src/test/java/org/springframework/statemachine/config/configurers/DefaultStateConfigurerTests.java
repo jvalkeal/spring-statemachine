@@ -19,11 +19,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.junit.Test;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.AbstractStateMachineTests.TestEntryAction;
 import org.springframework.statemachine.AbstractStateMachineTests.TestEvents;
 import org.springframework.statemachine.AbstractStateMachineTests.TestExitAction;
@@ -169,6 +171,20 @@ public class DefaultStateConfigurerTests {
 		assertThat(builder.data.size(), is(1));
 		assertThat(builder.data.iterator().next().getState(), is(TestStates.S1));
 		assertThat(builder.data.iterator().next().getPseudoStateKind(), is(PseudoStateKind.CHOICE));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testInitialStateIsSubmachineRef() throws Exception {
+		DefaultStateConfigurer<TestStates, TestEvents> configurer = new DefaultStateConfigurer<TestStates, TestEvents>();
+		TestStateMachineStateBuilder builder = new TestStateMachineStateBuilder();
+		configurer.initial(TestStates.SI);
+		configurer.state(TestStates.SI, mock(StateMachine.class));
+		configurer.configure(builder);
+		assertThat(builder.data, notNullValue());
+		assertThat(builder.data.size(), is(1));
+		assertThat(builder.data.iterator().next().getState(), is(TestStates.SI));
+		assertThat(builder.data.iterator().next().getSubmachine(), notNullValue());
 	}
 
 	private static class TestStateMachineStateBuilder extends StateMachineStateBuilder<TestStates, TestEvents> {
