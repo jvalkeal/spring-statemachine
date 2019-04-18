@@ -206,7 +206,7 @@ public abstract class AbstractImportingAnnotationConfiguration<B extends Annotat
 			return true;
 		}
 
-//		@Autowired(required = false)
+		@Autowired(required = false)
 		public void setConfigurers(List<AnnotationConfigurer<O, B>> configurers) {
 			this.configurers = configurers;
 		}

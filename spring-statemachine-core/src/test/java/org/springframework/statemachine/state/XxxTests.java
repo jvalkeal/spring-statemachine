@@ -46,21 +46,19 @@ public class XxxTests extends AbstractStateMachineTests {
 		assertThat(machine.getState().getIds(), contains("S2", "S20", "S2012"));
 	}
 
-	@Test
-	@SuppressWarnings("unchecked")
-	public void testXxx2() throws Exception {
-		context.register(BaseConfig.class, Config12.class, Config11.class, Config10.class);
-//		context.register(BaseConfig.class, Config12.class, Config10.class);
-		context.refresh();
-		ObjectStateMachine<String, String> machine =
-				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
-		assertThat(machine, notNullValue());
-		machine.start();
-		machine.sendEvent("E1");
-
-		assertThat(machine.getState().getIds(), contains("S2", "S20", "S2012"));
-//		assertThat(machine.getState().getIds(), contains("S2", "S2012"));
-	}
+//	@Test
+//	@SuppressWarnings("unchecked")
+//	public void testXxx2() throws Exception {
+//		context.register(BaseConfig.class, Config12.class, Config11.class, Config10.class);
+//		context.refresh();
+//		ObjectStateMachine<String, String> machine =
+//				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
+//		assertThat(machine, notNullValue());
+//		machine.start();
+//		machine.sendEvent("E1");
+//
+//		assertThat(machine.getState().getIds(), contains("S2", "S20", "S2012"));
+//	}
 
 	@Configuration
 	@EnableStateMachine

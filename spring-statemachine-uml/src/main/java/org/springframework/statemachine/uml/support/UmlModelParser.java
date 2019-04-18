@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.uml2.uml.Activity;
 import org.eclipse.uml2.uml.ConnectionPointReference;
 import org.eclipse.uml2.uml.Constraint;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Event;
 import org.eclipse.uml2.uml.Model;
 import org.eclipse.uml2.uml.NamedElement;
@@ -239,6 +240,8 @@ public class UmlModelParser {
 				String regionId = null;
 				if (state.getContainer().getOwner() instanceof State) {
 					parent = ((State)state.getContainer().getOwner()).getName();
+				} else if (state.getContainer().getOwner() instanceof StateMachine) {
+					parent = ((StateMachine)state.getContainer().getOwner()).getName();
 				}
 				if (state.getOwner() instanceof Region) {
 					regionId = ((Region)state.getOwner()).getName();

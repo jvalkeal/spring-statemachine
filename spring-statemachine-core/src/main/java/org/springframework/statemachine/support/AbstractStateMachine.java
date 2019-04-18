@@ -1223,6 +1223,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				if (isPseudoStateSubstate(findDeep, targets)) {
 					return;
 				}
+				if (StateMachineUtils.isSubstate(findDeep, transition.getTarget())) {
+					return;
+				}
 			} else if (findDeep != null && findDeep != state && findDeep.getStates().contains(state)) {
 			} else if (!isSubOfSource && !isSubOfTarget) {
 				return;
