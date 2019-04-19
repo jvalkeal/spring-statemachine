@@ -23,26 +23,24 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Processor;
 import org.springframework.context.Lifecycle;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineSystemConstants;
-import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.state.JoinPseudoState;
 import org.springframework.statemachine.state.PseudoStateKind;
 import org.springframework.statemachine.state.State;
-import org.springframework.statemachine.support.StateMachineExecutor.StateMachineExecutorTransit;
 import org.springframework.statemachine.transition.AbstractTransition;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionConflictPolicy;
@@ -56,7 +54,6 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.TopicProcessor;
 
 public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport implements StateMachineExecutor<S, E> {
 
@@ -214,28 +211,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		return lock;
 	}
 
-//	@Override
-//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
-//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-//		Flux<Message<E>> messageFlux = message.flux();
-//		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
-//
-//		return messages
-//				.flatMap(m -> handleEvent2(m))
-//				.doOnNext(i -> {
-//					if (i.trigger == null) {
-//						queueDeferredEvent(i.message);
-//					}
-//				})
-//				.flatMap(i -> {
-//					if (i.trigger != null) {
-//						return handleTrigger2(i);
-//					}
-//					return Mono.empty();
-//				})
-//				.then()
-//				;
-//	}
 
 	@Override
 	public Mono<Void> queueEventX(Mono<Message<E>> message) {
@@ -249,39 +224,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			.then()
 			;
 	}
-
-//	@Override
-//	public Mono<Void> queueEventX(Mono<Message<E>> message) {
-//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-//		Flux<Message<E>> messageFlux = message.flux();
-//		Flux<Message<E>> flux = Flux.merge(messageFlux, deferFlux);
-//
-//		return flux.then().doOnSubscribe(s -> {
-//			eventProcessor.onNext(flux);
-//		});
-//	}
-
-//	public Mono<Void> queueEventXX(Mono<Message<E>> message) {
-//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-//		Flux<Message<E>> messageFlux = message.flux();
-//		Flux<Message<E>> messages = Flux.merge(messageFlux, deferFlux);
-//
-//		return messages
-//			.flatMap(m -> handleEvent2(m))
-//			.next()
-//			.doOnNext(i -> {
-//				if (i.trigger == null) {
-//					queueDeferredEvent(i.message);
-//				}
-//			})
-//			.flatMap(i -> {
-//				if (i.trigger != null) {
-//					return handleTrigger2(i);
-//				}
-//				return Mono.empty();
-//			})
-//			;
-//	}
 
 	private Mono<TriggerQueueItem> handleEvent3(Message<E> queuedEvent) {
 		return Mono.defer(() -> {
@@ -371,87 +313,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		return Mono.empty();
 	}
 
-//	private void handleEvent(Message<E> queuedEvent) {
-//		State<S,E> currentState = stateMachine.getState();
-//		if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
-//			log.info("Current state " + currentState + " deferred event " + queuedEvent);
-//			queueDeferredEvent(queuedEvent);
-//			return;
-//		}
-//		for (Transition<S,E> transition : transitions) {
-//			State<S,E> source = transition.getSource();
-//			Trigger<S, E> trigger = transition.getTrigger();
-//
-//			if (StateMachineUtils.containsAtleastOne(source.getIds(), currentState.getIds())) {
-//				if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(queuedEvent.getPayload()))) {
-//					queueTrigger(trigger, queuedEvent);
-//					return;
-//				}
-//			}
-//		}
-//	}
 
 	private void handleInitialTrans(Transition<S, E> tran, Message<E> queuedMessage) {
 		StateContext<S, E> stateContext = buildStateContext(queuedMessage, tran, relayStateMachine);
 		tran.transit(stateContext);
-		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage);
+		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage).block();
 	}
-
-//	private void handleTrigger(TriggerQueueItem queueItem) {
-//		State<S,E> currentState = stateMachine.getState();
-//		if (queueItem != null && currentState != null) {
-//			if (log.isDebugEnabled()) {
-//				log.debug("Process trigger item " + queueItem + " " + this);
-//			}
-//			// queued message is kept on a class level order to let
-//			// triggerless transition to receive this message if it doesn't
-//			// kick in in this poll loop.
-//			queuedMessage = queueItem.message;
-//			E event = queuedMessage != null ? queuedMessage.getPayload() : null;
-//
-//			// need all transitions trigger could match, event trigger may match
-//			// multiple
-//			// need to go up from substates and ask if trigger transit, if not
-//			// check super
-//			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
-//
-//			if (event != null) {
-//				ArrayList<S> ids = new ArrayList<S>(currentState.getIds());
-//				Collections.reverse(ids);
-//				for (S id : ids) {
-//					for (Entry<Trigger<S, E>, Transition<S, E>> e : triggerToTransitionMap.entrySet()) {
-//						Trigger<S, E> tri = e.getKey();
-//						E ee = tri.getEvent();
-//						Transition<S, E> tra = e.getValue();
-//						if (event.equals(ee)) {
-//							if (tra.getSource().getId().equals(id) && !trans.contains(tra)) {
-//								trans.add(tra);
-//								continue;
-//							}
-//						}
-//					}
-//				}
-//			}
-//
-//			// most likely timer
-//			if (trans.isEmpty()) {
-//				trans.add(triggerToTransitionMap.get(queueItem.trigger));
-//			}
-//
-//			// go through candidates and transit max one, sort before handling
-//			trans.sort(transitionComparator);
-//			handleTriggerTrans(trans, queuedMessage);
-//		}
-//
-//		List<Transition<S, E>> transWithGuards = new ArrayList<>();
-//		for (Transition<S, E> t : triggerlessTransitions) {
-//			if (((AbstractTransition<S, E>)t).getGuard() != null) {
-//				transWithGuards.add(t);
-//			}
-//		}
-//
-//		handleTriggerlessTransitions(queuedMessage);
-//	}
 
 	private void handleTriggerlessTransitions(Message<E> message) {
 		if (stateMachine.getState() != null) {
@@ -514,7 +381,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 					for (Transition<S, E> tt : joinSyncTransitions) {
 						StateContext<S, E> stateContext = buildStateContext(queuedMessage, tt, relayStateMachine);
 						tt.transit(stateContext);
-						stateMachineExecutorTransit.transit(tt, stateContext, queuedMessage);
+						stateMachineExecutorTransit.transit(tt, stateContext, queuedMessage).block();
 					}
 					joinSyncTransitions.clear();
 					break;
@@ -545,7 +412,9 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			if (transit) {
 				// if executor transit is raising exception, stop here
 				try {
-					stateMachineExecutorTransit.transit(t, stateContext, queuedMessage);
+					System.out.println("before block");
+					stateMachineExecutorTransit.transit(t, stateContext, queuedMessage).block();
+					System.out.println("after block");
 				} catch (Exception e) {
 					interceptors.postTransition(stateContext);
 					return false;

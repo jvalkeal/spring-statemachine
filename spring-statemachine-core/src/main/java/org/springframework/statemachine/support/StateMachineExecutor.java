@@ -136,7 +136,7 @@ public interface StateMachineExecutor<S, E> {
 		 * @param stateContext the state context
 		 * @param message the message
 		 */
-		void transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
+		Mono<Void> transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
 
 	}
 

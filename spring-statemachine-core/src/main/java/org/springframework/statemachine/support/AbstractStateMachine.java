@@ -347,7 +347,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		executor.setStateMachineExecutorTransit(new StateMachineExecutorTransit<S, E>() {
 
 			@Override
-			public void transit(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
+			public Mono<Void> transit(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
+				Mono<Void> mono = Mono.empty();
 				if (currentState != null && currentState.isSubmachineState()) {
 					// this is a naive attempt to check from submachine's executor if it is
 					// currently executing. allows submachine to complete its execution logic
@@ -378,16 +379,30 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				} else {
 					if (t.getKind() == TransitionKind.INITIAL) {
 //						switchToState(t.getTarget(), message, t, getRelayStateMachine());
-						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
-						notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
+
+						mono = switchToState2(t.getTarget(), message, t, getRelayStateMachine()).thenEmpty(Mono.defer(() -> {
+							notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
+							return Mono.empty();
+						}));
+
+//						mono = switchToState2(t.getTarget(), message, t, getRelayStateMachine()).doOnNext(x -> {
+//							notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
+//						});
+
+//						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
+//						notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
 					} else if (t.getKind() != TransitionKind.INTERNAL) {
 //						switchToState(t.getTarget(), message, t, getRelayStateMachine());
-						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
+
+						mono = switchToState2(t.getTarget(), message, t, getRelayStateMachine());
+
+//						switchToState2(t.getTarget(), message, t, getRelayStateMachine()).subscribe();
 					}
 				}
 				// TODO: looks like events should be called here and anno processing earlier
 				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
 				notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
+				return mono;
 			}
 		});
 		stateMachineExecutor = executor;
