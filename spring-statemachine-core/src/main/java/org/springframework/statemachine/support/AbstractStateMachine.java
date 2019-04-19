@@ -22,11 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1421,7 +1419,178 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	Mono<Void> setCurrentState(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
 			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
-		return setCurrentStateInternal2(state, message, transition, exit, stateMachine, sources, targets);
+		return setCurrentStateInternal3(state, message, transition, exit, stateMachine, sources, targets);
+	}
+
+	private Mono<Void> setCurrentStateInternal3(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,
+			StateMachine<S, E> stateMachine, Collection<State<S, E>> sources, Collection<State<S, E>> targets) {
+
+		java.util.function.Function<State<S, E>, State<S, E>> mapFromTargetSub = in -> {
+			if (transition != null) {
+				boolean isTargetSubOf = StateMachineUtils.isSubstate(state, transition.getSource());
+				if (isTargetSubOf && currentState == transition.getTarget()) {
+					return transition.getSource();
+				}
+			}
+			return in;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleExit = s -> {
+			if (exit) {
+				return exitCurrentState(state, message, transition, stateMachine, sources, targets)
+						.then(Mono.just(s));
+			}
+			return Mono.just(s);
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStart = in -> {
+			if (!isRunning() && !isComplete()) {
+				return startReactively().then(Mono.just(in));
+			}
+			return Mono.just(in);
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleEntry1 = in -> {
+			State<S, E> notifyFrom = currentState;
+			currentState = in;
+			return entryToState(in, message, transition, stateMachine)
+				.then(Mono.just(in))
+				.doOnNext(s -> {
+					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
+						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, s));
+					}
+				});
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleEntry2 = in -> {
+			State<S, E> notifyFrom = currentState;
+			currentState = in;
+			return entryToState(in, message, transition, stateMachine)
+				.then(Mono.just(in))
+				.doOnNext(s -> {
+					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
+						State<S, E> findDeep = findDeepParent(s);
+						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
+					}
+				});
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStop = s -> {
+			if (stateMachine != this && isComplete()) {
+				return stopReactively().then(Mono.just(s));
+			}
+			return Mono.just(s);
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleSubmachineOrRegions = in -> {
+			return Mono.just(in)
+				.filter(s -> currentState == findDeepParent(s))
+				.flatMap(s -> {
+					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(state, transition.getSource());
+					if (currentState.isSubmachineState()) {
+						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+						// need to check complete as submachine may now return non null
+						if (!submachine.isComplete() && submachine.getState() == state) {
+							State<S, E> findDeep = findDeepParent(s);
+							if (currentState == findDeep) {
+								Mono<State<S, E>> mono = Mono.just(s);
+								if (isTargetSubOf) {
+									mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine).then(Mono.just(ss)));
+								}
+								currentState = findDeep;
+								mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(ss, message, transition, false, stateMachine)).then(Mono.empty());
+								return mono;
+							}
+						}
+					} else if (currentState.isOrthogonal()) {
+						Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+						State<S, E> findDeep = findDeepParent(s);
+						for (Region<S, E> region : regions) {
+							if (region.getState() == state) {
+								if (currentState == findDeep) {
+									Mono<State<S, E>> mono = Mono.just(s);
+									if (isTargetSubOf) {
+										mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine).then(Mono.just(ss)));
+									}
+									currentState = findDeep;
+									mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(state, message, transition, false, stateMachine)).then(Mono.empty());
+									return mono;
+								}
+							}
+						}
+					}
+					return Mono.just(s);
+				})
+				.flatMap(s -> {
+					Mono<State<S, E>> mono = Mono.just(s);
+
+
+					boolean shouldTryEntry = findDeepParent(s) != currentState;
+					if (!shouldTryEntry && (transition.getSource() == currentState && StateMachineUtils.isSubstate(currentState, transition.getTarget()))) {
+						shouldTryEntry = true;
+					}
+					currentState = findDeepParent(s);
+					if (shouldTryEntry) {
+						mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine, sources, targets)).then(Mono.just(s));
+					}
+
+					if (currentState.isSubmachineState()) {
+						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+						mono = mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(state, message, transition, false, stateMachine).then(Mono.just(ss)));
+					} else if (currentState.isOrthogonal()) {
+						Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+						for (Region<S, E> region : regions) {
+							mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(state, message, transition, false, stateMachine)).then(Mono.empty());
+						}
+					}
+
+					return Mono.just(s);
+				})
+				;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage1 = in -> {
+			return Mono.just(in)
+				.filter(s -> states.contains(s))
+				.flatMap(handleExit)
+				.flatMap(handleEntry1)
+				.flatMap(handleStart)
+				.then(Mono.just(in))
+				;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage2 = in -> {
+			return Mono.just(in)
+				.filter(s -> currentState == null && !states.contains(s) && StateMachineUtils.isSubstate(findDeepParent(s), state))
+				.map(mapFromTargetSub)
+				.flatMap(handleExit)
+				.flatMap(handleEntry2)
+				.flatMap(handleStart)
+				.then(Mono.just(in))
+				;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage3 = in -> {
+			return Mono.just(in)
+				.filter(s -> currentState != null && !states.contains(s) && findDeepParent(s) != null)
+				.flatMap(handleExit)
+				.then(Mono.just(in))
+				;
+		};
+
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage5 = in -> {
+			return Mono.just(in)
+				.flatMap(handleStop)
+				;
+		};
+
+		return Mono.just(state)
+			.flatMap(handleStage1)
+			.flatMap(handleStage2)
+			.flatMap(handleStage3)
+			.flatMap(handleStage5)
+			.then()
+			;
 	}
 
 	private Mono<Void> setCurrentStateInternal2(State<S, E> state, Message<E> message, Transition<S, E> transition, boolean exit,

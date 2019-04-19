@@ -30,14 +30,12 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.statemachine.AbstractStateMachineTests.TestStates;
 import org.springframework.statemachine.StateMachineEventResult.ResultType;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
-import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -136,7 +134,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 //			.subscribe();
 //	}
 
-	@Test
+//	@Test
 	public void xxx2() {
 //		boolean a = true;
 //		a &= false;
@@ -169,7 +167,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		System.out.println("false^false = " + (false^false));
 	}
 
-	@Test
+//	@Test
 	public void xxx3() {
 		Mono<Void> mono1 = Mono.defer(() -> {
 			System.out.println("hi1");
@@ -184,7 +182,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 	private boolean test;
 
-	@Test
+//	@Test
 	public void xxx4() {
 		Flux.fromIterable(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 			.groupBy(i -> i % 2 == 0)
@@ -210,6 +208,16 @@ public class ReactiveTests extends AbstractStateMachineTests {
 				return i + " is odd";
 			}
 		}).subscribeOn(Schedulers.parallel());
+	}
+
+	@Test
+	public void xxx5() {
+		Mono<String> mono1 = Mono.just("xxx");
+		Mono<Void> mono2 = Mono.empty();
+		Mono<Void> mono3 = Mono.empty();
+
+		mono1 = mono1.then(mono2).then(mono1);
+		mono1 = mono1.then(mono3).then(mono1).then(Mono.empty());
 	}
 
 	@Configuration
