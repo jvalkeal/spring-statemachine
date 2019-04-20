@@ -1284,8 +1284,12 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleSubmachineOrRegions = in -> {
 			return Mono.just(in)
-				.filter(s -> currentState == findDeepParent(s))
+//				.filter(s -> currentState == findDeepParent(s))
 				.flatMap(s -> {
+
+					if (currentState == findDeepParent(s)) {
+
+
 					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(s, transition.getSource());
 					if (currentState.isSubmachineState()) {
 						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
@@ -1318,6 +1322,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 								}
 							}
 						}
+					}
 					}
 					return Mono.just(s);
 				})
