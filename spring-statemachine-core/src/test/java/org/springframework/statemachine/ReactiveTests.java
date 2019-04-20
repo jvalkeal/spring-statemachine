@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -212,12 +213,25 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 	@Test
 	public void xxx5() {
-		Mono<String> mono1 = Mono.just("xxx");
-		Mono<Void> mono2 = Mono.empty();
-		Mono<Void> mono3 = Mono.empty();
+		Flux<Mono<Boolean>> randomMonoFlux = Flux.generate((sink) -> {
+			sink.next(random());
+		});
 
-		mono1 = mono1.then(mono2).then(mono1);
-		mono1 = mono1.then(mono3).then(mono1).then(Mono.empty());
+		Flux<Boolean> randomFlux = Flux.concat(randomMonoFlux);
+
+		randomFlux.doOnNext(b -> {
+			System.out.println("XXX2 "+ b);
+		}).takeUntil(b -> b).blockLast();
+	}
+
+
+	private Mono<Boolean> random() {
+		return Mono.defer(() -> {
+			Random r = new Random();
+			return Mono.just(r.nextInt(10)).doOnNext(i -> {
+				System.out.println("XXX1 "+ i);
+			}).map(i -> i > 8);
+		});
 	}
 
 	@Configuration

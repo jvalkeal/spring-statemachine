@@ -257,6 +257,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	}
 
 	private Mono<Void> handleTrigger2(TriggerQueueItem queueItem) {
+		Mono<Void> ret = null;
 		State<S,E> currentState = stateMachine.getState();
 		if (queueItem != null && currentState != null) {
 			if (log.isDebugEnabled()) {
@@ -299,7 +300,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 			// go through candidates and transit max one, sort before handling
 			trans.sort(transitionComparator);
-			handleTriggerTrans(trans, queuedMessage);
+			ret = handleTriggerTrans(trans, queuedMessage).then();
 		}
 
 		List<Transition<S, E>> transWithGuards = new ArrayList<>();
@@ -309,8 +310,14 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			}
 		}
 
-		handleTriggerlessTransitions(queuedMessage);
-		return Mono.empty();
+		if (ret == null) {
+			ret = handleTriggerlessTransitions(queuedMessage);
+		} else {
+			ret = ret.and(handleTriggerlessTransitions(queuedMessage));
+		}
+		return ret;
+//		return handleTriggerlessTransitions(queuedMessage);
+//		return Mono.empty();
 	}
 
 
@@ -320,25 +327,39 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage).block();
 	}
 
-	private void handleTriggerlessTransitions(Message<E> message) {
-		if (stateMachine.getState() != null) {
-			// loop triggerless transitions here so that
-			// all "chained" transitions will get queue message
-			boolean transit = false;
-			do {
-				transit = handleTriggerTrans(triggerlessTransitions, message);
-			} while (transit);
-		}
+	private Mono<Void> handleTriggerlessTransitions(Message<E> message) {
+
+		Flux<Mono<Boolean>> monoFlux = Flux.generate((sink) -> {
+			sink.next(handleTriggerTrans(triggerlessTransitions, message));
+		});
+
+		Flux<Boolean> flux = Flux.concat(monoFlux);
+
+		return flux.takeUntil(b -> !b).then();
+
+//		return null;
+//		if (stateMachine.getState() != null) {
+//			// loop triggerless transitions here so that
+//			// all "chained" transitions will get queue message
+//			boolean transit = false;
+//			do {
+//				transit = handleTriggerTrans(triggerlessTransitions, message);
+//			} while (transit);
+//		}
 	}
 
 	private final Set<Transition<S, E>> joinSyncTransitions = new HashSet<>();
 	private final Set<State<S, E>> joinSyncStates = new HashSet<>();
 
-	private boolean handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage) {
+	private Mono<Boolean> handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage) {
 		return handleTriggerTrans(trans, queuedMessage, null);
 	}
 
-	private boolean handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage, State<S, E> completion) {
+	private Mono<Boolean> handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage, State<S, E> completion) {
+
+		return Mono.defer(() -> {
+		Mono<Boolean> mono = Mono.just(false);
+
 		boolean transit = false;
 		for (Transition<S, E> t : trans) {
 			if (t == null) {
@@ -412,18 +433,18 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			if (transit) {
 				// if executor transit is raising exception, stop here
 				try {
-					System.out.println("before block");
-					stateMachineExecutorTransit.transit(t, stateContext, queuedMessage).block();
-					System.out.println("after block");
+					mono = stateMachineExecutorTransit.transit(t, stateContext, queuedMessage).then(Mono.just(true));
 				} catch (Exception e) {
 					interceptors.postTransition(stateContext);
-					return false;
+//					return false;
 				}
 				interceptors.postTransition(stateContext);
 				break;
 			}
 		}
-		return transit;
+//		return transit;
+		return mono;
+		});
 	}
 
 	private StateContext<S, E> buildStateContext(Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {

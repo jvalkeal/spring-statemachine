@@ -1220,7 +1220,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleExit = s -> {
 			if (exit) {
 				return exitCurrentState(state, message, transition, stateMachine, sources, targets)
-						.then(Mono.just(s));
+						.doOnEach(x -> {
+							System.out.println("XXX1 " + x);
+						})
+						.then(Mono.just(s))
+						.doOnNext(x -> {
+							System.out.println("XXX2 " + x);
+						});
 			}
 			return Mono.just(s);
 		};
@@ -1236,7 +1242,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = in;
 			return entryToState(in, message, transition, stateMachine)
+					.doOnEach(x -> {
+						System.out.println("XXX5 " + x);
+					})
 				.then(Mono.just(in))
+				.doOnEach(x -> {
+					System.out.println("XXX6 " + x);
+				})
 				.doOnNext(s -> {
 					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
 						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, s));
@@ -1248,7 +1260,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = in;
 			return entryToState(in, message, transition, stateMachine)
+					.doOnEach(x -> {
+						System.out.println("XXX3 " + x);
+					})
 				.then(Mono.just(in))
+				.doOnEach(x -> {
+					System.out.println("XXX4 " + x);
+				})
 				.doOnNext(s -> {
 					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
 						State<S, E> findDeep = findDeepParent(s);
@@ -1268,11 +1286,11 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			return Mono.just(in)
 				.filter(s -> currentState == findDeepParent(s))
 				.flatMap(s -> {
-					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(state, transition.getSource());
+					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(s, transition.getSource());
 					if (currentState.isSubmachineState()) {
 						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
 						// need to check complete as submachine may now return non null
-						if (!submachine.isComplete() && submachine.getState() == state) {
+						if (!submachine.isComplete() && submachine.getState() == s) {
 							State<S, E> findDeep = findDeepParent(s);
 							if (currentState == findDeep) {
 								Mono<State<S, E>> mono = Mono.just(s);
@@ -1288,14 +1306,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 						Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
 						State<S, E> findDeep = findDeepParent(s);
 						for (Region<S, E> region : regions) {
-							if (region.getState() == state) {
+							if (region.getState() == s) {
 								if (currentState == findDeep) {
 									Mono<State<S, E>> mono = Mono.just(s);
 									if (isTargetSubOf) {
 										mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine).then(Mono.just(ss)));
 									}
 									currentState = findDeep;
-									mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(state, message, transition, false, stateMachine)).then(Mono.empty());
+									mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(s, message, transition, false, stateMachine)).then(Mono.empty());
 									return mono;
 								}
 							}
@@ -1318,15 +1336,20 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 					if (currentState.isSubmachineState()) {
 						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
-						mono = mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(state, message, transition, false, stateMachine).then(Mono.just(ss)));
+						mono = mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(s, message, transition, false, stateMachine).then(Mono.just(ss)));
 					} else if (currentState.isOrthogonal()) {
 						Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
-						for (Region<S, E> region : regions) {
-							mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(state, message, transition, false, stateMachine)).then(Mono.empty());
-						}
+						Mono<State<S, E>> xxx = Flux.fromIterable(regions)
+							.flatMap(region -> ((AbstractStateMachine<S, E>)region).setCurrentState(s, message, transition, false, stateMachine))
+							.then(Mono.just(s))
+							;
+						mono = mono.then(xxx);
+//						for (Region<S, E> region : regions) {
+//							mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(s, message, transition, false, stateMachine)).then(Mono.empty());
+//						}
 					}
-
-					return Mono.just(s);
+					return mono;
+//					return Mono.just(s);
 				})
 				;
 		};
@@ -1355,6 +1378,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage3 = in -> {
 			return Mono.just(in)
 				.filter(s -> currentState != null && !states.contains(s) && findDeepParent(s) != null)
+				.map(mapFromTargetSub)
 				.flatMap(handleExit)
 				.flatMap(handleSubmachineOrRegions)
 				.then(Mono.just(in))
