@@ -22,6 +22,7 @@ import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.support.StateMachineReactiveLifecycle;
 import org.springframework.statemachine.transition.Transition;
 
 import reactor.core.publisher.Flux;
@@ -36,7 +37,7 @@ import reactor.core.publisher.Mono;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public interface Region<S, E> {
+public interface Region<S, E> extends StateMachineReactiveLifecycle {
 
 	/**
 	 * Gets the region and state machine unique id.
@@ -53,9 +54,6 @@ public interface Region<S, E> {
 	 * @return the region and state machine id
 	 */
 	String getId();
-
-	Mono<Void> startReactively();
-	Mono<Void> stopReactively();
 
 	/**
 	 * Start the region.

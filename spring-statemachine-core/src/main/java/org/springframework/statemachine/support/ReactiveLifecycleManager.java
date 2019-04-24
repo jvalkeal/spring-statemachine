@@ -17,6 +17,7 @@ package org.springframework.statemachine.support;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,7 +26,7 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public abstract class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
+public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	private static final Log log = LogFactory.getLog(ReactiveLifecycleManager.class);
 	private final AtomicEnum state = new AtomicEnum(LifecycleState.STOPPED);
@@ -33,6 +34,8 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 	private EmitterProcessor<Mono<Void>> stopRequestsProcessor;
 	private Flux<Mono<Void>> startRequests;
 	private Flux<Mono<Void>> stopRequests;
+	private Supplier<Mono<Void>> startRequest;
+	private Supplier<Mono<Void>> stopRequest;
 
 	public enum LifecycleState {
 		STOPPED,
@@ -41,7 +44,9 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 		STOPPING;
 	}
 
-	public ReactiveLifecycleManager() {
+	public ReactiveLifecycleManager(Supplier<Mono<Void>> startRequest, Supplier<Mono<Void>> stopRequest) {
+		this.startRequest = startRequest;
+		this.stopRequest = stopRequest;
 		this.startRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.stopRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.startRequests = this.startRequestsProcessor.cache();
@@ -50,14 +55,14 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 
 	@Override
 	public Mono<Void> startReactively() {
-		log.info("startReactively " + this);
+		log.debug("Request startReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STOPPED, LifecycleState.STARTING))
-				.flatMap(x -> this.startRequests.next().flatMap(Function.identity()))
-				.then()
-				.doOnSuccess(aVoid -> {
+				.filter(owns -> owns)
+				.flatMap(owns -> this.startRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STARTED);
-				})
+				}))
+				.then()
 				;
 		})
 		;
@@ -65,14 +70,14 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 
 	@Override
 	public Mono<Void> stopReactively() {
-		log.info("stopReactively " + this);
+		log.debug("Request stopReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
-				.flatMap(x -> this.stopRequests.next().flatMap(Function.identity()))
-				.then()
-				.doOnSuccess(aVoid -> {
+				.filter(owns -> owns)
+				.flatMap(owns -> this.stopRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STOPPED);
-				})
+				}))
+				.then()
 				;
 		})
 		;
@@ -86,18 +91,6 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 		return state.get() == LifecycleState.STARTED;
 	}
 
-//	protected final Mono<Void> doStartInternal() {
-//		return doStartReactively().doOnSuccess(x -> {
-//			state.set(LifecycleState.STARTED);
-//		}).then();
-//	}
-//
-//	protected final Mono<Void> doStopInternal() {
-//		return doStopReactively().doOnSuccess(x -> {
-//			state.set(LifecycleState.STOPPED);
-//		}).then();
-//	}
-
 	protected Mono<Void> doStartReactively() {
 		return Mono.empty();
 	}
@@ -105,21 +98,6 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 	protected Mono<Void> doStopReactively() {
 		return Mono.empty();
 	}
-
-//	private Mono<Void> waitState(LifecycleState match) {
-//		log.info("waitState " + this);
-////		return processor
-////				.doOnEach(s -> {
-////					log.info(s);
-////				})
-////				.takeWhile(state -> state != match)
-////				.then()
-////				;
-//		return Mono.empty();
-////		return stateFlux
-////			.takeWhile(state -> state != match)
-////			.then();
-//	}
 
 	private class AtomicEnum {
 
@@ -130,6 +108,7 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 		}
 
 		public void set(final LifecycleState newValue) {
+			log.info("Setting state to " + newValue + " in " + ReactiveLifecycleManager.this);
 			this.ref.set(newValue);
 		}
 
@@ -140,11 +119,12 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 		public boolean compareAndSet(final LifecycleState expect, final LifecycleState update) {
 			boolean set = this.ref.compareAndSet(expect, update);
 			if (set) {
+				log.info("Set state from " + expect + " to " + update + " in " + ReactiveLifecycleManager.this);
 				if (update == LifecycleState.STARTING) {
 					log.info("Posting on next doStartReactively(");
-					startRequestsProcessor.onNext(doStartReactively());
+					startRequestsProcessor.onNext(startRequest.get());
 				} else if (update == LifecycleState.STOPPING) {
-					stopRequestsProcessor.onNext(doStopReactively());
+					stopRequestsProcessor.onNext(stopRequest.get());
 				}
 			}
 			return set;

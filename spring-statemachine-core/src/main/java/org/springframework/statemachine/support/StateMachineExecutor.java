@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public interface StateMachineExecutor<S, E> {
+public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycle {
 
 	Mono<Void> queueEventX(Mono<Message<E>> message);
 
@@ -87,9 +87,6 @@ public interface StateMachineExecutor<S, E> {
 	 * @see LifecycleObjectSupport#start()
 	 */
 	void start();
-
-	Mono<Void> startReactively();
-	Mono<Void> stopReactively();
 
 	/**
 	 * Stop executor.

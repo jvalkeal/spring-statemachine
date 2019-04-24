@@ -30,6 +30,8 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Convenient base class for object which needs spring task scheduler, task
  * executor and life cycle handling.
@@ -38,15 +40,15 @@ import org.springframework.util.Assert;
  *
  */
 public abstract class LifecycleObjectSupport
-		extends ReactiveLifecycleManager
-		implements InitializingBean, DisposableBean, SmartLifecycle, BeanFactoryAware {
+		/*extends ReactiveLifecycleManager*/
+		implements InitializingBean, DisposableBean, SmartLifecycle, BeanFactoryAware, StateMachineReactiveLifecycle {
 
 	private static final Log log = LogFactory.getLog(LifecycleObjectSupport.class);
 
 	// fields for lifecycle
 	private volatile boolean autoStartup = false;
 	private volatile int phase = 0;
-	private volatile boolean running;
+//	private volatile boolean running;
 
 	// lock to protect lifycycle methods
 //	private final ReentrantLock lifecycleLock = new ReentrantLock();
@@ -60,6 +62,13 @@ public abstract class LifecycleObjectSupport
 
 	// protect InitializingBean for single call
 	private final AtomicBoolean afterPropertiesSetCalled = new AtomicBoolean(false);
+
+	private final ReactiveLifecycleManager reactiveLifecycleManager;
+
+	public LifecycleObjectSupport() {
+		this.reactiveLifecycleManager = new ReactiveLifecycleManager(() -> doStartReactively(),
+				() -> doStopReactively());
+	}
 
 	@Override
 	public final void afterPropertiesSet() {
@@ -110,6 +119,30 @@ public abstract class LifecycleObjectSupport
 	@Override
 	public void stop() {
 		stopReactively().block();
+	}
+
+	@Override
+	public Mono<Void> startReactively() {
+		log.debug("startReactively " + this + " with rlm " + this.reactiveLifecycleManager);
+		return this.reactiveLifecycleManager.startReactively();
+	}
+
+	@Override
+	public Mono<Void> stopReactively() {
+		log.debug("stopReactively " + this + " with rlm " + this.reactiveLifecycleManager);
+		return this.reactiveLifecycleManager.stopReactively();
+	}
+
+	protected Mono<Void> doStartReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doStopReactively() {
+		return Mono.empty();
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.reactiveLifecycleManager.isRunning();
 	}
 
 	//	@Override

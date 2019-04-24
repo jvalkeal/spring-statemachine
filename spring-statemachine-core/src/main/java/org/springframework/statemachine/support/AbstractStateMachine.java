@@ -1170,7 +1170,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			Collection<State<S, E>> targets = new ArrayList<>();
 			targets.add(toState);
 			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
-		});
+		})
+//		.then(!isComplete() ? Mono.empty() : stopReactively())
+		;
 	}
 
 	private State<S,E> followLinkedPseudoStates(State<S,E> state, StateContext<S, E> stateContext) {

@@ -18,8 +18,8 @@ package org.springframework.statemachine.support;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.springframework.statemachine.support.ReactiveLifecycleManager.LifecycleState;
@@ -31,7 +31,7 @@ public class ReactiveLifecycleManagerTests {
 
 	@Test
 	public void testStartStop() {
-		ReactiveLifecycleManager manager = new NoopReactiveLifecycleManager();
+		ReactiveLifecycleManager manager = new ReactiveLifecycleManager(() -> Mono.empty(), () -> Mono.empty());
 
 		assertThat(manager.isRunning(), is(false));
 		assertThat(manager.getLifecycleState(), is(LifecycleState.STOPPED));
@@ -55,39 +55,59 @@ public class ReactiveLifecycleManagerTests {
 
 	@Test
 	public void testStartRecursive() {
-		ReactiveLifecycleManager manager = new RecursiveStartReactiveLifecycleManager();
+		RecursiveStartRequestSupplier startSupplier = new RecursiveStartRequestSupplier();
+		ReactiveLifecycleManager manager = new ReactiveLifecycleManager(startSupplier, () -> Mono.empty());
+		startSupplier.setManager(manager);
 		StepVerifier.create(manager.startReactively()).expectComplete().verify();
 		assertThat(manager.isRunning(), is(true));
 		assertThat(manager.getLifecycleState(), is(LifecycleState.STARTED));
 	}
 
-	private static class NoopReactiveLifecycleManager extends ReactiveLifecycleManager {
-
-		@Override
-		protected Mono<Void> doStartReactively() {
-			return Mono.<Void>empty().doOnEach(System.out::println);
-		}
+	@Test
+	public void testStartStops() {
+		StartStopsRequestSupplier startSupplier = new StartStopsRequestSupplier();
+		ReactiveLifecycleManager manager = new ReactiveLifecycleManager(startSupplier, () -> Mono.empty());
+		startSupplier.setManager(manager);
+		StepVerifier.create(manager.startReactively()).expectComplete().verify();
+		assertThat(manager.isRunning(), is(false));
+		assertThat(manager.getLifecycleState(), is(LifecycleState.STOPPED));
 	}
 
-	private static class RecursiveStartReactiveLifecycleManager extends ReactiveLifecycleManager {
+	private static class RecursiveStartRequestSupplier implements Supplier<Mono<Void>> {
 
+		private ReactiveLifecycleManager manager;
 		private final AtomicBoolean recursive = new AtomicBoolean(true);
 
 		@Override
-		protected Mono<Void> doStartReactively() {
+		public Mono<Void> get() {
 			if (recursive.compareAndSet(true, false)) {
-				return startReactively();
+				return manager.startReactively();
 			} else {
 				return Mono.empty();
 			}
 		}
+
+		public void setManager(ReactiveLifecycleManager manager) {
+			this.manager = manager;
+		}
 	}
 
-	private static class SlowStartReactiveLifecycleManager extends ReactiveLifecycleManager {
+	private static class StartStopsRequestSupplier implements Supplier<Mono<Void>> {
+
+		private ReactiveLifecycleManager manager;
+		private final AtomicBoolean stop = new AtomicBoolean(true);
 
 		@Override
-		protected Mono<Void> doStartReactively() {
-			return Mono.delay(Duration.ofSeconds(2)).then();
+		public Mono<Void> get() {
+			if (stop.compareAndSet(true, false)) {
+				return manager.stopReactively();
+			} else {
+				return Mono.empty();
+			}
+		}
+
+		public void setManager(ReactiveLifecycleManager manager) {
+			this.manager = manager;
 		}
 	}
 }
