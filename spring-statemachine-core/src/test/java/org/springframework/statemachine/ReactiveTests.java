@@ -37,6 +37,7 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -251,6 +252,16 @@ public class ReactiveTests extends AbstractStateMachineTests {
 				System.out.println("XXX1 "+ i);
 			}).map(i -> i > 8);
 		});
+	}
+
+//	@Test
+	public void xxx8() {
+		EmitterProcessor<String> xxx1 = EmitterProcessor.<String>create(false);
+		Flux<String> xxx2 = xxx1.cache(1);
+		xxx1.onNext("hi1");
+		xxx2.doOnNext(System.out::println).next().block();
+		xxx1.onNext("hi2");
+		xxx2.doOnNext(System.out::println).next().block();
 	}
 
 	@Configuration

@@ -66,7 +66,8 @@ public abstract class LifecycleObjectSupport
 	private final ReactiveLifecycleManager reactiveLifecycleManager;
 
 	public LifecycleObjectSupport() {
-		this.reactiveLifecycleManager = new ReactiveLifecycleManager(() -> doStartReactively(),
+		this.reactiveLifecycleManager = new ReactiveLifecycleManager(
+				() -> doStartReactively(),
 				() -> doStopReactively());
 	}
 

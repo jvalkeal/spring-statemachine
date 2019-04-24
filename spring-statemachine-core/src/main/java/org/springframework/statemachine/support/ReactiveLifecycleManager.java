@@ -49,8 +49,8 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		this.stopRequest = stopRequest;
 		this.startRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.stopRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
-		this.startRequests = this.startRequestsProcessor.cache();
-		this.stopRequests = this.stopRequestsProcessor.cache();
+		this.startRequests = this.startRequestsProcessor.cache(1);
+		this.stopRequests = this.stopRequestsProcessor.cache(1);
 	}
 
 	@Override
@@ -108,7 +108,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		}
 
 		public void set(final LifecycleState newValue) {
-			log.info("Setting state to " + newValue + " in " + ReactiveLifecycleManager.this);
+			log.info("Lifecycle to " + newValue + " in " + ReactiveLifecycleManager.this);
 			this.ref.set(newValue);
 		}
 
@@ -119,7 +119,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		public boolean compareAndSet(final LifecycleState expect, final LifecycleState update) {
 			boolean set = this.ref.compareAndSet(expect, update);
 			if (set) {
-				log.info("Set state from " + expect + " to " + update + " in " + ReactiveLifecycleManager.this);
+				log.info("Lifecycle from " + expect + " to " + update + " in " + ReactiveLifecycleManager.this);
 				if (update == LifecycleState.STARTING) {
 					log.info("Posting on next doStartReactively(");
 					startRequestsProcessor.onNext(startRequest.get());
