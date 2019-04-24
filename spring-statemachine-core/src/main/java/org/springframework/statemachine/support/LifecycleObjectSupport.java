@@ -104,7 +104,6 @@ public abstract class LifecycleObjectSupport
 
 	@Override
 	public void start() {
-		System.out.println("WWW start " + this);
 		startReactively().block();
 	}
 

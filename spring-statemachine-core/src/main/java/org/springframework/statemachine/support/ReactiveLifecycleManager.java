@@ -29,9 +29,6 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 
 	private static final Log log = LogFactory.getLog(ReactiveLifecycleManager.class);
 	private final AtomicEnum state = new AtomicEnum(LifecycleState.STOPPED);
-//	private final EmitterProcessor<LifecycleState> processor;
-//	private final Flux<LifecycleState> stateFlux;
-//	private final TopicProcessor<LifecycleState> processor;
 	private EmitterProcessor<Mono<Void>> startRequestsProcessor;
 	private EmitterProcessor<Mono<Void>> stopRequestsProcessor;
 	private Flux<Mono<Void>> startRequests;
@@ -45,9 +42,6 @@ public abstract class ReactiveLifecycleManager implements StateMachineReactiveLi
 	}
 
 	public ReactiveLifecycleManager() {
-//		this.processor = EmitterProcessor.create(false);
-//		this.processor = TopicProcessor.create();
-//		this.stateFlux = processor.cache();
 		this.startRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.stopRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.startRequests = this.startRequestsProcessor.cache();
