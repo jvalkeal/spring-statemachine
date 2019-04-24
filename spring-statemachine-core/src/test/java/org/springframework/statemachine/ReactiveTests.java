@@ -211,7 +211,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		}).subscribeOn(Schedulers.parallel());
 	}
 
-	@Test
+//	@Test
 	public void xxx5() {
 		Flux<Mono<Boolean>> randomMonoFlux = Flux.generate((sink) -> {
 			sink.next(random());
@@ -224,6 +224,25 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		}).takeUntil(b -> b).blockLast();
 	}
 
+//	@Test
+	public void xxx6() {
+		Mono<String> mono1 = Mono.just("HI 1").doOnNext(System.out::println);
+		Mono<String> mono2 = Mono.just("HI 2").doOnNext(System.out::println);
+		Mono<String> mono3 = Mono.just("HI 3").doOnNext(System.out::println);
+		Mono.empty().and(mono1).and(mono2).and(mono3).block();
+	}
+
+//	@Test
+	public void xxx7() {
+		Flux<String> flux = Flux.generate(
+			() -> 0,
+			(state, sink) -> {
+				sink.next("3 x " + state + " = " + 3 * state);
+				if (state == 10)
+					sink.complete();
+				return state + 1;
+		});
+	}
 
 	private Mono<Boolean> random() {
 		return Mono.defer(() -> {

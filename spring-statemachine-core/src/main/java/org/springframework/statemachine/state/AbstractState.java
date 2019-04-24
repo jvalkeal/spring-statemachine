@@ -369,15 +369,25 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
+//	@Override
+//	protected void doStart() {
+//		armTriggers();
+//	}
+
 	@Override
-	protected void doStart() {
-		armTriggers();
+	protected Mono<Void> doStartReactively() {
+		return Mono.fromRunnable(() -> armTriggers());
 	}
 
 	@Override
-	protected void doStop() {
-		disarmTriggers();
+	protected Mono<Void> doStopReactively() {
+		return Mono.fromRunnable(() -> disarmTriggers());
 	}
+
+//	@Override
+//	protected void doStop() {
+//		disarmTriggers();
+//	}
 
 	/**
 	 * Gets the submachine.

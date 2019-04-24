@@ -55,6 +55,7 @@ public interface Region<S, E> {
 	String getId();
 
 	Mono<Void> startReactively();
+	Mono<Void> stopReactively();
 
 	/**
 	 * Start the region.

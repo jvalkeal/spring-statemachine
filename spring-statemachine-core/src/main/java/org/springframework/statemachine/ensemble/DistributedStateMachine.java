@@ -92,17 +92,21 @@ public class DistributedStateMachine<S, E> extends LifecycleObjectSupport implem
 	}
 
 	@Override
-	protected void doStart() {
-		ensemble.addEnsembleListener(listener);
-		ensemble.join(this);
-		super.doStart();
+	protected Mono<Void> doStartReactively() {
+		return Mono.defer(() -> {
+			ensemble.addEnsembleListener(listener);
+			ensemble.join(this);
+			return Mono.empty();
+		});
 	}
 
 	@Override
-	protected void doStop() {
-		ensemble.removeEnsembleListener(listener);
-		ensemble.leave(this);
-		super.doStop();
+	protected Mono<Void> doStopReactively() {
+		return Mono.defer(() -> {
+			ensemble.removeEnsembleListener(listener);
+			ensemble.leave(this);
+			return Mono.empty();
+		});
 	}
 
 	@Override

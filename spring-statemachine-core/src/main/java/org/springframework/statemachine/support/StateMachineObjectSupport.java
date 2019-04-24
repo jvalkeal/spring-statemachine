@@ -61,9 +61,9 @@ public abstract class StateMachineObjectSupport<S, E> extends LifecycleObjectSup
 	private volatile boolean handlersInitialized;
 	private final StateMachineHandlerCallHelper<S, E> stateMachineHandlerCallHelper = new StateMachineHandlerCallHelper<S, E>();
 
-	@Override
+//	@Override
 	protected void doStart() {
-		super.doStart();
+//		super.doStartReactively();
 		if (!handlersInitialized) {
 			try {
 				stateMachineHandlerCallHelper.setBeanFactory(getBeanFactory());

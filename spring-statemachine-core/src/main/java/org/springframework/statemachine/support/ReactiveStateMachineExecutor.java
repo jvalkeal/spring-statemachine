@@ -115,40 +115,79 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			.flatMap(trigger -> handleTrigger3(trigger));
 	}
 
+//	@Override
+//	protected void doStartReactively() {
+//		doStartReactively().block();
+//		super.doStart();
+//		startTriggers();
+//
+//		if (triggerDisposable == null) {
+//			triggerDisposable = triggerFlux.subscribe();
+//		}
+//
+//		if (!initialHandled.getAndSet(true)) {
+//			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
+//			trans.add(initialTransition);
+//			// TODO: should we merge if initial event is actually used?
+//			if (initialEvent != null) {
+//				handleInitialTrans(initialTransition, initialEvent).block();
+//			} else {
+//				handleInitialTrans(initialTransition, forwardedInitialEvent).block();
+//			}
+//		}
+//		handleTriggerlessTransitions(null).block();
+//	}
+
 	@Override
-	protected void doStart() {
-		super.doStart();
-		startTriggers();
+	protected Mono<Void> doStartReactively() {
+		return Mono.defer(() -> {
+			Mono<Void> mono = Mono.empty();
+			startTriggers();
 
-		if (triggerDisposable == null) {
-			triggerDisposable = triggerFlux.subscribe();
-		}
-
-		if (!initialHandled.getAndSet(true)) {
-			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
-			trans.add(initialTransition);
-			// TODO: should we merge if initial event is actually used?
-			if (initialEvent != null) {
-				handleInitialTrans(initialTransition, initialEvent);
-			} else {
-				handleInitialTrans(initialTransition, forwardedInitialEvent);
+			if (triggerDisposable == null) {
+				triggerDisposable = triggerFlux.subscribe();
 			}
-		}
-		handleTriggerlessTransitions(null);
+
+			if (!initialHandled.getAndSet(true)) {
+				ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
+				trans.add(initialTransition);
+				// TODO: should we merge if initial event is actually used?
+				if (initialEvent != null) {
+					mono = mono.then(handleInitialTrans(initialTransition, initialEvent));
+				} else {
+					mono = mono.then(handleInitialTrans(initialTransition, forwardedInitialEvent));
+				}
+			}
+			mono = mono.then(handleTriggerlessTransitions(null));
+			return mono;
+		});
 	}
 
 	@Override
-	protected void doStop() {
-		stopTriggers();
-		super.doStop();
-
-		if (triggerDisposable != null) {
-			triggerDisposable.dispose();
-			triggerDisposable = null;
-		}
-
-		initialHandled.set(false);
+	protected Mono<Void> doStopReactively() {
+		return Mono.fromRunnable(() -> {
+			stopTriggers();
+			if (triggerDisposable != null) {
+				triggerDisposable.dispose();
+				triggerDisposable = null;
+			}
+			initialHandled.set(false);
+		});
 	}
+
+//	@Override
+//	protected void doStopReactively() {
+//		doStopReactively().block();
+//		stopTriggers();
+//		super.doStop();
+//
+//		if (triggerDisposable != null) {
+//			triggerDisposable.dispose();
+//			triggerDisposable = null;
+//		}
+//
+//		initialHandled.set(false);
+//	}
 
 
 	@Override
@@ -321,10 +360,10 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	}
 
 
-	private void handleInitialTrans(Transition<S, E> tran, Message<E> queuedMessage) {
+	private Mono<Void> handleInitialTrans(Transition<S, E> tran, Message<E> queuedMessage) {
 		StateContext<S, E> stateContext = buildStateContext(queuedMessage, tran, relayStateMachine);
 		tran.transit(stateContext);
-		stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage).block();
+		return stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage);
 	}
 
 	private Mono<Void> handleTriggerlessTransitions(Message<E> message) {

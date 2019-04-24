@@ -88,6 +88,9 @@ public interface StateMachineExecutor<S, E> {
 	 */
 	void start();
 
+	Mono<Void> startReactively();
+	Mono<Void> stopReactively();
+
 	/**
 	 * Stop executor.
 	 *

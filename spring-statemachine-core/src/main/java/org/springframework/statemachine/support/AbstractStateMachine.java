@@ -440,58 +440,129 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	}
 
 	@Override
-	protected void doStart() {
-		super.doStart();
-		// if state is set assume nothing to do
-		if (currentState != null) {
-			if (log.isDebugEnabled()) {
-				log.debug("State already set, disabling initial");
-			}
-			registerPseudoStateListener();
-			stateMachineExecutor.setInitialEnabled(false);
-			stateMachineExecutor.start();
-			// assume that state was set/reseted so we need to
-			// dispatch started event which would net getting
-			// dispatched via executor
-			StateContext<S, E> stateContext = buildStateContext(Stage.STATEMACHINE_START, null, null, getRelayStateMachine());
-			notifyStateMachineStarted(stateContext);
-			if (currentState != null && currentState.isSubmachineState()) {
-				StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
-				submachine.start();
-			} else if (currentState != null && currentState.isOrthogonal()) {
-				Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
-				for (Region<S, E> region : regions) {
-					region.start();
-				}
-			}
-			return;
-		}
-		registerPseudoStateListener();
+	protected Mono<Void> doStartReactively() {
+		return Mono.defer(() -> {
+			if (currentState != null) {
+				return Mono.fromRunnable(() -> {
+					super.doStart();
+					if (log.isDebugEnabled()) {
+						log.debug("State already set, disabling initial");
+					}
+					registerPseudoStateListener();
+					stateMachineExecutor.setInitialEnabled(false);
+//					stateMachineExecutor.start();
+					// assume that state was set/reseted so we need to
+					// dispatch started event which would net getting
+					// dispatched via executor
+//					StateContext<S, E> stateContext = buildStateContext(Stage.STATEMACHINE_START, null, null, getRelayStateMachine());
+//					notifyStateMachineStarted(stateContext);
+				})
+				.and(stateMachineExecutor.startReactively())
+				.doOnSuccess(x -> {
+					StateContext<S, E> stateContext = buildStateContext(Stage.STATEMACHINE_START, null, null, getRelayStateMachine());
+					notifyStateMachineStarted(stateContext);
+				})
+				.and(Mono.defer(() -> {
+					if (currentState != null && currentState.isSubmachineState()) {
+						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+						return submachine.startReactively();
+					} else if (currentState != null && currentState.isOrthogonal()) {
+						Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+						return Flux.fromIterable(regions).flatMap(r -> r.startReactively()).then();
+					}
+					return Mono.empty();
+				}))
+				;
+			} else {
+				return Mono.fromRunnable(() -> {
+					super.doStart();
+					registerPseudoStateListener();
 
-		if (initialEnabled != null && !initialEnabled) {
-			if (log.isDebugEnabled()) {
-				log.debug("Initial disable asked, disabling initial");
+					if (initialEnabled != null && !initialEnabled) {
+						if (log.isDebugEnabled()) {
+							log.debug("Initial disable asked, disabling initial");
+						}
+						stateMachineExecutor.setInitialEnabled(false);
+					} else {
+						stateMachineExecutor.setForwardedInitialEvent(forwardedInitialEvent);
+					}
+				})
+				.and(stateMachineExecutor.startReactively())
+				;
 			}
-			stateMachineExecutor.setInitialEnabled(false);
-		} else {
-			stateMachineExecutor.setForwardedInitialEvent(forwardedInitialEvent);
-		}
-
-		// start fires first execution which should execute initial transition
-		stateMachineExecutor.start();
+		});
 	}
+
+//	@Override
+//	protected void doStartReactively() {
+//		doStartReactively().block();
+////		doStartReactively().subscribe();
+//	}
+//	protected void doStartx() {
+//		super.doStartReactively();
+//		// if state is set assume nothing to do
+//		if (currentState != null) {
+//			if (log.isDebugEnabled()) {
+//				log.debug("State already set, disabling initial");
+//			}
+//			registerPseudoStateListener();
+//			stateMachineExecutor.setInitialEnabled(false);
+//			stateMachineExecutor.start();
+//			// assume that state was set/reseted so we need to
+//			// dispatch started event which would net getting
+//			// dispatched via executor
+//			StateContext<S, E> stateContext = buildStateContext(Stage.STATEMACHINE_START, null, null, getRelayStateMachine());
+//			notifyStateMachineStarted(stateContext);
+//			if (currentState != null && currentState.isSubmachineState()) {
+//				StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
+//				submachine.start();
+//			} else if (currentState != null && currentState.isOrthogonal()) {
+//				Collection<Region<S, E>> regions = ((AbstractState<S, E>)currentState).getRegions();
+//				for (Region<S, E> region : regions) {
+//					region.start();
+//				}
+//			}
+//			return;
+//		}
+//		registerPseudoStateListener();
+//
+//		if (initialEnabled != null && !initialEnabled) {
+//			if (log.isDebugEnabled()) {
+//				log.debug("Initial disable asked, disabling initial");
+//			}
+//			stateMachineExecutor.setInitialEnabled(false);
+//		} else {
+//			stateMachineExecutor.setForwardedInitialEvent(forwardedInitialEvent);
+//		}
+//
+//		// start fires first execution which should execute initial transition
+//		stateMachineExecutor.start();
+//	}
 
 	@Override
-	protected void doStop() {
-		stateMachineExecutor.stop();
-		notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
-		// stash current state before we null it so that
-		// we can still return where we 'were' when machine is stopped
-		lastState = currentState;
-		currentState = null;
-		initialEnabled = null;
-		log.debug("Stop complete " + this);
+	protected Mono<Void> doStopReactively() {
+		return stateMachineExecutor.startReactively().and(Mono.fromRunnable(() -> {
+			notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
+			// stash current state before we null it so that
+			// we can still return where we 'were' when machine is stopped
+			lastState = currentState;
+			currentState = null;
+			initialEnabled = null;
+			log.debug("Stop complete " + this);
+		}));
 	}
+
+//	@Override
+//	protected void doStopReactively() {
+//		stateMachineExecutor.stop();
+//		notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
+//		// stash current state before we null it so that
+//		// we can still return where we 'were' when machine is stopped
+//		lastState = currentState;
+//		currentState = null;
+//		initialEnabled = null;
+//		log.debug("Stop complete " + this);
+//	}
 
 	@Override
 	protected void doDestroy() {
