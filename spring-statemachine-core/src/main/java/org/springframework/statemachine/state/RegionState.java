@@ -25,12 +25,10 @@ import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.region.Region;
-import org.springframework.statemachine.support.AbstractStateMachine;
 import org.springframework.statemachine.support.StateMachineUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.ParallelFlux;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -145,16 +143,13 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 	@Override
 	public Mono<Void> exit(StateContext<S, E> context) {
 		return super.exit(context).and(Mono.defer(() -> {
-			for (Region<S, E> region : getRegions()) {
-				if (region.getState() != null) {
-					region.getState().exit(context);
-				}
-				region.stop();
-			}
-			for (Action<S, E> action : getExitActions()) {
-				executeAction(action, context);
-			}
-			return Mono.empty();
+			return Flux.fromIterable(getRegions())
+				.flatMap(r -> r.stopReactively())
+				.then(Flux.fromIterable(getExitActions())
+					.doOnNext(ea -> {
+						executeAction(ea, context);
+					})
+					.then());
 		}));
 	}
 

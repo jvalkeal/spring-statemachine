@@ -1320,13 +1320,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = in;
 			return entryToState(in, message, transition, stateMachine)
-//					.doOnEach(x -> {
-//						System.out.println("XXX5 " + x);
-//					})
 				.then(Mono.just(in))
-//				.doOnEach(x -> {
-//					System.out.println("XXX6 " + x);
-//				})
 				.doOnNext(s -> {
 					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
 						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, s));
@@ -1338,13 +1332,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			State<S, E> notifyFrom = currentState;
 			currentState = in;
 			return entryToState(in, message, transition, stateMachine)
-//					.doOnEach(x -> {
-//						System.out.println("XXX3 " + x);
-//					})
 				.then(Mono.just(in))
-//				.doOnEach(x -> {
-//					System.out.println("XXX4 " + x);
-//				})
 				.doOnNext(s -> {
 					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
 						State<S, E> findDeep = findDeepParent(s);
