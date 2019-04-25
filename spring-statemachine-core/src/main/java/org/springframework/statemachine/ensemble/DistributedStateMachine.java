@@ -92,7 +92,7 @@ public class DistributedStateMachine<S, E> extends LifecycleObjectSupport implem
 	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.defer(() -> {
 			ensemble.addEnsembleListener(listener);
 			ensemble.join(this);
@@ -101,7 +101,7 @@ public class DistributedStateMachine<S, E> extends LifecycleObjectSupport implem
 	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return Mono.defer(() -> {
 			ensemble.removeEnsembleListener(listener);
 			ensemble.leave(this);

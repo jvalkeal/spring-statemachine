@@ -139,7 +139,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 //	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.defer(() -> {
 			Mono<Void> mono = Mono.empty();
 			startTriggers();
@@ -164,7 +164,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return Mono.fromRunnable(() -> {
 			stopTriggers();
 			if (triggerDisposable != null) {

@@ -67,8 +67,11 @@ public abstract class LifecycleObjectSupport
 
 	public LifecycleObjectSupport() {
 		this.reactiveLifecycleManager = new ReactiveLifecycleManager(
-				() -> doStartReactively(),
-				() -> doStopReactively());
+				() -> doPreStartReactively(),
+				() -> doPreStopReactively(),
+				() -> doPostStartReactively(),
+				() -> doPostStopReactively()
+				);
 	}
 
 	@Override
@@ -134,10 +137,16 @@ public abstract class LifecycleObjectSupport
 		return this.reactiveLifecycleManager.stopReactively();
 	}
 
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.empty();
 	}
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doPostStartReactively() {
+		return Mono.empty();
+	}
+	protected Mono<Void> doPostStopReactively() {
 		return Mono.empty();
 	}
 

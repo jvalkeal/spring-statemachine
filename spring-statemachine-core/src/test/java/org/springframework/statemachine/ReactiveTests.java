@@ -254,13 +254,17 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		});
 	}
 
-//	@Test
+	@Test
 	public void xxx8() {
 		EmitterProcessor<String> xxx1 = EmitterProcessor.<String>create(false);
 		Flux<String> xxx2 = xxx1.cache(1);
-		xxx1.onNext("hi1");
+		System.out.println("Post start1");
+		xxx1.onNext("start1");
+		System.out.println("flux block");
 		xxx2.doOnNext(System.out::println).next().block();
-		xxx1.onNext("hi2");
+		System.out.println("Post stop1");
+		xxx1.onNext("stop1");
+		System.out.println("flux block");
 		xxx2.doOnNext(System.out::println).next().block();
 	}
 

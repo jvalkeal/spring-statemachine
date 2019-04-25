@@ -91,7 +91,7 @@ public class TimerTrigger<S, E> extends LifecycleObjectSupport implements Trigge
 //	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.defer(() -> {
 			if (count > 0) {
 				return Mono.empty();
@@ -101,7 +101,7 @@ public class TimerTrigger<S, E> extends LifecycleObjectSupport implements Trigge
 	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return Mono.defer(() -> {
 			cancel();
 			return Mono.empty();

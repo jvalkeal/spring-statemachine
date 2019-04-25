@@ -375,12 +375,12 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 //	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.fromRunnable(() -> armTriggers());
 	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return Mono.fromRunnable(() -> disarmTriggers());
 	}
 

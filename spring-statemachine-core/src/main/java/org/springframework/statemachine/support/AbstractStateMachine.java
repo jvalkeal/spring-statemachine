@@ -439,7 +439,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.defer(() -> {
 			if (currentState != null) {
 				return Mono.fromRunnable(() -> {
@@ -492,6 +492,11 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		});
 	}
 
+	@Override
+	protected Mono<Void> doPostStartReactively() {
+		return isComplete() ? stopReactively() : super.doPostStartReactively();
+	}
+
 //	@Override
 //	protected void doStartReactively() {
 //		doStartReactively().block();
@@ -539,7 +544,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 //	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return stateMachineExecutor.startReactively().and(Mono.fromRunnable(() -> {
 			notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
 			// stash current state before we null it so that

@@ -120,7 +120,7 @@ public class ZookeeperStateMachineEnsemble<S, E> extends StateMachineEnsembleObj
 	}
 
 	@Override
-	protected Mono<Void> doStartReactively() {
+	protected Mono<Void> doPreStartReactively() {
 		return Mono.fromRunnable(() -> doStart());
 	}
 
@@ -148,7 +148,7 @@ public class ZookeeperStateMachineEnsemble<S, E> extends StateMachineEnsembleObj
 	}
 
 	@Override
-	protected Mono<Void> doStopReactively() {
+	protected Mono<Void> doPreStopReactively() {
 		return Mono.fromRunnable(() -> doStop());
 	}
 

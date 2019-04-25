@@ -34,8 +34,10 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 	private EmitterProcessor<Mono<Void>> stopRequestsProcessor;
 	private Flux<Mono<Void>> startRequests;
 	private Flux<Mono<Void>> stopRequests;
-	private Supplier<Mono<Void>> startRequest;
-	private Supplier<Mono<Void>> stopRequest;
+	private Supplier<Mono<Void>> preStartRequest;
+	private Supplier<Mono<Void>> preStopRequest;
+	private Supplier<Mono<Void>> postStartRequest;
+	private Supplier<Mono<Void>> postStopRequest;
 
 	public enum LifecycleState {
 		STOPPED,
@@ -44,9 +46,12 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		STOPPING;
 	}
 
-	public ReactiveLifecycleManager(Supplier<Mono<Void>> startRequest, Supplier<Mono<Void>> stopRequest) {
-		this.startRequest = startRequest;
-		this.stopRequest = stopRequest;
+	public ReactiveLifecycleManager(Supplier<Mono<Void>> preStartRequest, Supplier<Mono<Void>> preStopRequest,
+			Supplier<Mono<Void>> postStartRequest, Supplier<Mono<Void>> postStopRequest) {
+		this.preStartRequest = preStartRequest;
+		this.preStopRequest = preStopRequest;
+		this.postStartRequest = postStartRequest;
+		this.postStopRequest = postStopRequest;
 		this.startRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.stopRequestsProcessor = EmitterProcessor.<Mono<Void>>create(false);
 		this.startRequests = this.startRequestsProcessor.cache(1);
@@ -62,9 +67,9 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 				.flatMap(owns -> this.startRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STARTED);
 				}))
-				.then()
 				;
 		})
+		.then(Mono.defer(postStartRequest))
 		;
 	}
 
@@ -73,13 +78,14 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		log.debug("Request stopReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
+				.log()
 				.filter(owns -> owns)
 				.flatMap(owns -> this.stopRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STOPPED);
 				}))
-				.then()
 				;
 		})
+		.then(Mono.defer(postStopRequest))
 		;
 	}
 
@@ -89,14 +95,6 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	public boolean isRunning() {
 		return state.get() == LifecycleState.STARTED;
-	}
-
-	protected Mono<Void> doStartReactively() {
-		return Mono.empty();
-	}
-
-	protected Mono<Void> doStopReactively() {
-		return Mono.empty();
 	}
 
 	private class AtomicEnum {
@@ -119,12 +117,13 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		public boolean compareAndSet(final LifecycleState expect, final LifecycleState update) {
 			boolean set = this.ref.compareAndSet(expect, update);
 			if (set) {
-				log.info("Lifecycle from " + expect + " to " + update + " in " + ReactiveLifecycleManager.this);
+				log.debug("Lifecycle from " + expect + " to " + update + " in " + ReactiveLifecycleManager.this);
 				if (update == LifecycleState.STARTING) {
-					log.info("Posting on next doStartReactively(");
-					startRequestsProcessor.onNext(startRequest.get());
+					log.debug("Next start request with doStartReactively in " + ReactiveLifecycleManager.this);
+					startRequestsProcessor.onNext(preStartRequest.get());
 				} else if (update == LifecycleState.STOPPING) {
-					stopRequestsProcessor.onNext(stopRequest.get());
+					log.debug("Next stop request with doStopReactively in " + ReactiveLifecycleManager.this);
+					stopRequestsProcessor.onNext(preStopRequest.get());
 				}
 			}
 			return set;
