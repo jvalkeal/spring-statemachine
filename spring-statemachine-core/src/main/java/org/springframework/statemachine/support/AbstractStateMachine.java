@@ -1295,19 +1295,13 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			return in;
 		};
 
-		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleExit = s -> {
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleExit = in -> {
 			if (exit) {
-				return exitCurrentState(state, message, transition, stateMachine, sources, targets)
-//						.doOnEach(x -> {
-//							System.out.println("XXX1 " + x);
-//						})
-						.then(Mono.just(s))
-//						.doOnNext(x -> {
-//							System.out.println("XXX2 " + x);
-//						})
+				return exitCurrentState(in, message, transition, stateMachine, sources, targets)
+						.then(Mono.just(in))
 						;
 			}
-			return Mono.just(s);
+			return Mono.just(in);
 		};
 
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStart = in -> {
@@ -1631,9 +1625,14 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (currentState.isSubmachineState()) {
 			StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
 
-			return Mono.just(state)
-				.flatMap(s -> ((AbstractStateMachine<S, E>)submachine).exitCurrentState(s, message, transition, stateMachine))
-				.and(exitFromState(currentState, message, transition, stateMachine, sources, targets));
+			Mono<Void> xxx1 = ((AbstractStateMachine<S, E>)submachine).exitCurrentState(state, message, transition, stateMachine);
+			Mono<Void> xxx2 = exitFromState(currentState, message, transition, stateMachine, sources, targets);
+
+			return xxx1.then(xxx2);
+
+//			return Mono.just(state)
+//				.flatMap(s -> ((AbstractStateMachine<S, E>)submachine).exitCurrentState(s, message, transition, stateMachine))
+//				.and(exitFromState(currentState, message, transition, stateMachine, sources, targets));
 
 //			((AbstractStateMachine<S, E>)submachine).exitCurrentState(state, message, transition, stateMachine);
 //			return exitFromState(currentState, message, transition, stateMachine, sources, targets);

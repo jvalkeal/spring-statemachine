@@ -157,7 +157,7 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 				ret = Mono.empty();
 			}
 			if (!isLocal(context)) {
-				ret = ret.and(Flux.fromIterable(getEntryActions()).doOnNext(ea -> executeAction(ea, context)).then());
+				ret = ret.and(Flux.fromIterable(getExitActions()).doOnNext(ea -> executeAction(ea, context)).then());
 //				for (Action<S, E> action : getExitActions()) {
 //					executeAction(action, context);
 //				}

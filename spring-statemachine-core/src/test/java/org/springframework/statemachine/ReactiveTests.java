@@ -302,7 +302,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		});
 	}
 
-	@Test
+//	@Test
 	public void xxx8() {
 		EmitterProcessor<String> xxx1 = EmitterProcessor.<String>create(false);
 		Flux<String> xxx2 = xxx1.cache(1);
@@ -315,6 +315,17 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		System.out.println("flux block");
 		xxx2.doOnNext(System.out::println).next().block();
 	}
+
+	@Test
+	public void xxx9() {
+
+	}
+
+//	private Mono<Void> recursive(String message) {
+//		if ("level1".equals(message)) {
+//
+//		}
+//	}
 
 	@Configuration
 	@EnableStateMachine
