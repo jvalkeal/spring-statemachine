@@ -55,6 +55,7 @@ import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
 import org.springframework.statemachine.region.Region;
 import org.springframework.statemachine.state.AbstractState;
+import org.springframework.statemachine.state.ForkPseudoState;
 import org.springframework.statemachine.state.HistoryPseudoState;
 import org.springframework.statemachine.state.JoinPseudoState;
 import org.springframework.statemachine.state.PseudoState;
@@ -1171,10 +1172,34 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return Mono.defer(() -> {
 			StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
 			State<S,E> toState = followLinkedPseudoStates(state, stateContext);
+
+			PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
+			kind = toState.getPseudoState() != null ? toState.getPseudoState().getKind() : null;
+
+			if (kind == PseudoStateKind.FORK) {
+
+				Mono<Void> xxx1 = exitCurrentState(toState, message, transition, stateMachine);
+				ForkPseudoState<S, E> fps = (ForkPseudoState<S, E>) toState.getPseudoState();
+				Mono<Void> xxx2 = Flux.fromIterable(fps.getForks())
+					.flatMap(f -> setCurrentState(f, message, transition, false, stateMachine, null, fps.getForks()))
+					.then()
+					;
+				return xxx1.then(xxx2);
+//				for (State<S, E> ss : fps.getForks()) {
+//					callPreStateChangeInterceptors(ss, message, transition, stateMachine);
+//					setCurrentState(ss, message, transition, false, stateMachine, null, fps.getForks());
+//				}
+
+			} else {
+				Collection<State<S, E>> targets = new ArrayList<>();
+				targets.add(toState);
+				return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
+			}
+
 			// TODO: check orig, needs thing for interceptor / fork
-			Collection<State<S, E>> targets = new ArrayList<>();
-			targets.add(toState);
-			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
+//			Collection<State<S, E>> targets = new ArrayList<>();
+//			targets.add(toState);
+//			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
 		})
 //		.then(!isComplete() ? Mono.empty() : stopReactively())
 		;
