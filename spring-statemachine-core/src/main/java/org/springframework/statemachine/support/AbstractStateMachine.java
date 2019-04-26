@@ -1357,7 +1357,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					if (currentState == findDeepParent(s)) {
 
 
-					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(s, transition.getSource());
+					boolean isTargetSubOf = transition != null && StateMachineUtils.isSubstate(state, transition.getSource());
 					if (currentState.isSubmachineState()) {
 						StateMachine<S, E> submachine = ((AbstractState<S, E>)currentState).getSubmachine();
 						// need to check complete as submachine may now return non null
@@ -1369,7 +1369,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 									mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine).then(Mono.just(ss)));
 								}
 								currentState = findDeep;
-								mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(ss, message, transition, false, stateMachine)).then(Mono.empty());
+								mono = mono.flatMap(ss -> ((AbstractStateMachine<S, E>)submachine).setCurrentState(ss, message, transition, false, stateMachine)).then(Mono.empty());
 								return mono;
 							}
 						}
@@ -1384,7 +1384,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 										mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine).then(Mono.just(ss)));
 									}
 									currentState = findDeep;
-									mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(s, message, transition, false, stateMachine)).then(Mono.empty());
+									mono = mono.flatMap(ss -> ((AbstractStateMachine<S, E>)region).setCurrentState(s, message, transition, false, stateMachine)).then(Mono.empty());
 									return mono;
 								}
 							}
@@ -1429,6 +1429,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage1 = in -> {
 			return Mono.just(in)
+				.map(mapFromTargetSub)
 				.filter(s -> states.contains(s))
 				.flatMap(handleExit)
 				.flatMap(handleEntry1)
@@ -1450,8 +1451,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage3 = in -> {
 			return Mono.just(in)
-				.filter(s -> currentState != null && !states.contains(s) && findDeepParent(s) != null)
 				.map(mapFromTargetSub)
+				.filter(s -> currentState != null && !states.contains(s) && findDeepParent(state) != null)
+//				.map(mapFromTargetSub)
 				.flatMap(handleExit)
 				.flatMap(handleSubmachineOrRegions)
 				.then(Mono.just(in))
