@@ -1171,6 +1171,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		return Mono.defer(() -> {
 			StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
 			State<S,E> toState = followLinkedPseudoStates(state, stateContext);
+			// TODO: check orig, needs thing for interceptor / fork
 			Collection<State<S, E>> targets = new ArrayList<>();
 			targets.add(toState);
 			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
@@ -1330,12 +1331,12 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleEntry2 = in -> {
 			State<S, E> notifyFrom = currentState;
-			currentState = in;
-			return entryToState(in, message, transition, stateMachine)
+			State<S, E> findDeep = findDeepParent(in);
+			currentState = findDeep;
+			return entryToState(findDeep, message, transition, stateMachine)
 				.then(Mono.just(in))
 				.doOnNext(s -> {
 					if (!StateMachineUtils.isPseudoState(s, PseudoStateKind.JOIN)) {
-						State<S, E> findDeep = findDeepParent(s);
 						notifyStateChanged(buildStateContext(Stage.STATE_CHANGED, message, null, getRelayStateMachine(), notifyFrom, findDeep));
 					}
 				});
@@ -1402,7 +1403,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					}
 					currentState = findDeepParent(s);
 					if (shouldTryEntry) {
-						mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine, sources, targets)).then(Mono.just(s));
+//						mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine, sources, targets)).then(Mono.just(s));
+						mono = mono.flatMap(ss -> entryToState(currentState, message, transition, stateMachine, sources, targets)).then(Mono.just(s));
 					}
 
 					if (currentState.isSubmachineState()) {
