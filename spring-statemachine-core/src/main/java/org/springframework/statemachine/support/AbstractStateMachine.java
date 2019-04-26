@@ -1458,6 +1458,27 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 				;
 		};
 
+		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage4 = in -> {
+			return Mono.just(in)
+				.filter(s -> history != null && transition.getKind() != TransitionKind.INITIAL)
+				.map(mapFromTargetSub)
+				.doOnNext(s -> {
+					// do not set history if this is initial transition as
+					// it would break history state set via reset as
+					// we get here i.e. when machine is started in reset.
+					// and it really doesn't make sense to set initial state for history
+					// if we get here via initial transition
+					if (history.getKind() == PseudoStateKind.HISTORY_SHALLOW) {
+						State<S, E> findDeep = findDeepParent(state);
+						((HistoryPseudoState<S, E>)history).setState(findDeep);
+					} else if (history.getKind() == PseudoStateKind.HISTORY_DEEP){
+						((HistoryPseudoState<S, E>)history).setState(s);
+					}
+				})
+				.then(Mono.just(in))
+				;
+		};
+
 		java.util.function.Function<State<S, E>, ? extends Mono<State<S, E>>> handleStage5 = in -> {
 			return Mono.just(in)
 				.flatMap(handleStop)
@@ -1468,6 +1489,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			.flatMap(handleStage1)
 			.flatMap(handleStage2)
 			.flatMap(handleStage3)
+			.flatMap(handleStage4)
 			.flatMap(handleStage5)
 			.then()
 			;
