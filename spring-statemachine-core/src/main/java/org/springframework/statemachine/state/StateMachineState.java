@@ -144,19 +144,26 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 			// don't stop if it looks like we're coming back
 			// stop would cause start with entry which would
 			// enable default transition and state
+			Mono<Void> ret = null;
 			if (getSubmachine().getState() != null && context.getTransition() != null
 					&& context.getTransition().getSource().getId() != getSubmachine().getState().getId()) {
-				getSubmachine().stop();
+//				getSubmachine().stop();
+				ret = getSubmachine().stopReactively();
 			} else if (context.getTransition() != null && !StateMachineUtils.isSubstate(context.getTransition().getTarget(), context.getTransition()
 					.getSource())) {
-				getSubmachine().stop();
+//				getSubmachine().stop();
+				ret = getSubmachine().stopReactively();
+			} else {
+				ret = Mono.empty();
 			}
 			if (!isLocal(context)) {
-				for (Action<S, E> action : getExitActions()) {
-					executeAction(action, context);
-				}
+				ret = ret.and(Flux.fromIterable(getEntryActions()).doOnNext(ea -> executeAction(ea, context)).then());
+//				for (Action<S, E> action : getExitActions()) {
+//					executeAction(action, context);
+//				}
 			}
-			return Mono.empty();
+//			return Mono.empty();
+			return ret;
 		}));
 	}
 
@@ -240,8 +247,9 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 							});
 				}
 			}
-			getSubmachine().start();
-			return Mono.empty();
+//			getSubmachine().start();
+//			return Mono.empty();
+			return getSubmachine().startReactively();
 		}));
 	}
 
