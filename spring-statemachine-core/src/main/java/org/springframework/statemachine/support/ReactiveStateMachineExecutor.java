@@ -148,6 +148,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 				triggerDisposable = triggerFlux.subscribe();
 			}
 
+			log.info("XXXXXXXXXXXXXXX " + initialHandled.get());
 			if (!initialHandled.getAndSet(true)) {
 				ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
 				trans.add(initialTransition);

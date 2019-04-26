@@ -545,7 +545,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	@Override
 	protected Mono<Void> doPreStopReactively() {
-		return stateMachineExecutor.startReactively().and(Mono.fromRunnable(() -> {
+		return stateMachineExecutor.stopReactively().and(Mono.fromRunnable(() -> {
 			notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
 			// stash current state before we null it so that
 			// we can still return where we 'were' when machine is stopped

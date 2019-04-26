@@ -78,7 +78,6 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		log.debug("Request stopReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
-				.log()
 				.filter(owns -> owns)
 				.flatMap(owns -> this.stopRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STOPPED);

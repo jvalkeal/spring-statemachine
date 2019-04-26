@@ -13,6 +13,7 @@ buildscript {
 		eclipseEmfEcoreVersion = '2.11.1-v20150805-0538'
 		eclipseUml2UmlVersion = '5.0.0-v20140602-0749'
 		curatorVersion = '2.11.1'
+		awaitilityVersion = '3.1.6'
 	}
 	repositories {
 		maven { url 'https://repo.springsource.org/libs-release'}
@@ -100,6 +101,7 @@ configure(allprojects) {
 			dependency "org.eclipse.emf:org.eclipse.emf.common:$eclipseEmfCommonVersion"
 			dependency "org.apache.curator:curator-recipes:$curatorVersion"
 			dependency "org.apache.curator:curator-test:$curatorVersion"
+			dependency "org.awaitility:awaitility:$awaitilityVersion"
 		}
 	}
 
@@ -187,7 +189,7 @@ project('spring-statemachine-core') {
 		testCompile "org.springframework.security:spring-security-config"
 		testCompile "org.springframework.security:spring-security-test"
 		testCompile "javax.servlet:javax.servlet-api"
-		//testCompile "org.awaitility:awaitility:3.1.6"
+		testCompile "org.awaitility:awaitility"
 		testRuntime "org.apache.logging.log4j:log4j-core"
 	}
 }

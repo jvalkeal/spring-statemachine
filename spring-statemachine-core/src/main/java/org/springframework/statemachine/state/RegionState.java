@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package org.springframework.statemachine.state;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachineEventResult;
@@ -102,24 +100,17 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		super(id, deferred, entryActions, exitActions, null, regions);
 	}
 
-//	@Override
-//	public boolean sendEvent(Message<E> event) {
-//		boolean accept = false;
-//		if (getRegions() != null) {
-//			for (Region<S, E> r : getRegions()) {
-//				accept |= r.sendEvent(event);
-//			}
-//		}
-//		return accept;
-//	}
-
 	@Override
 	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		// TODO: make paraller configurable
 		return Flux.fromIterable(getRegions())
-			.parallel().runOn(Schedulers.parallel())
+			.parallel()
+			.runOn(Schedulers.parallel())
 			.flatMap(r -> r.sendEvent(Mono.just(event)))
-			.sequential();
+//			.subscribeOn(Schedulers.parallel())
+//			.publishOn(Schedulers.parallel())
+			.sequential()
+			;
 	}
 
 	@Override
@@ -153,16 +144,15 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		}));
 	}
 
-	private static final Log log = LogFactory.getLog(RegionState.class);
-
 	private Mono<Void> startOrEntry(StateContext<S, E> context) {
 		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
 			return Flux.fromIterable(getRegions())
 				.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-				.parallel().runOn(Schedulers.parallel())
-//				.doOnNext(r -> r.start())
+//				.parallel()
+//				.runOn(Schedulers.parallel())
 				.flatMap(r -> r.startReactively())
-				.sequential()
+				.publishOn(Schedulers.parallel())
+//				.sequential()
 				.then();
 		} else {
 			return Flux.fromIterable(getRegions())
@@ -174,38 +164,12 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
-
 		return super.entry(context).and(
 			Flux.fromIterable(getEntryActions())
 			.doOnNext(ea -> {
 				executeAction(ea, context);
 			})
 			.then(startOrEntry(context)));
-
-//		return super.entry(context).and(Mono.defer(() -> {
-//			for (Action<S, E> action : getEntryActions()) {
-//				executeAction(action, context);
-//			}
-//
-//			if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
-//				for (Region<S, E> region : getRegions()) {
-//					boolean start = true;
-//					if (StateMachineUtils.containsAtleastOne(region.getStates(), context.getTargets())) {
-//						start = false;
-//					}
-//					if (start) {
-//						region.start();
-//					}
-//				}
-//			} else {
-//				for (Region<S, E> region : getRegions()) {
-//					if (region.getState() != null) {
-//						region.getState().entry(context);
-//					}
-//				}
-//			}
-//			return Mono.empty();
-//		}));
 	}
 
 	@Override

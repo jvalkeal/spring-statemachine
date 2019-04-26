@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -120,6 +122,52 @@ public class ReactiveTests extends AbstractStateMachineTests {
 
 		accepted = machine.sendEvent(TestEvents.E3);
 		assertThat(accepted, is(false));
+	}
+
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testJoin() throws Exception {
+		context.register(BaseConfig.class, Config2.class);
+		context.refresh();
+		ObjectStateMachine<TestStates,TestEvents> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
+		assertThat(machine, notNullValue());
+		machine.start();
+		assertThat(machine.getState().getIds(), contains(TestStates.SI));
+
+//		machine.sendEvent(TestEvents.E1);
+//		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S20, TestStates.S30));
+
+		StepVerifier.create(machine.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E1).build())))
+			.expectNextMatches(r -> {
+				return r.getResultType() == ResultType.ACCEPTED;
+			})
+			.expectComplete()
+			.verify();
+		Awaitility
+			.await()
+			.until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S20, TestStates.S30));
+
+//		StepVerifier.create(machine.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E2).build())))
+//			.expectNextMatches(r -> {
+//				return r.getResultType() == ResultType.ACCEPTED;
+//			})
+//			.expectComplete()
+//			.verify();
+//		Awaitility
+//			.await()
+//			.until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S21, TestStates.S30));
+//
+//		StepVerifier.create(machine.sendEvent(Mono.just(MessageBuilder.withPayload(TestEvents.E3).build())))
+//			.expectNextMatches(r -> {
+//				return r.getResultType() == ResultType.ACCEPTED;
+//			})
+//			.expectComplete()
+//			.verify();
+//		Awaitility
+//			.await()
+//			.until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S4));
 	}
 
 //	@Test
@@ -295,5 +343,66 @@ public class ReactiveTests extends AbstractStateMachineTests {
 					.target(TestStates.S3)
 					.event(TestEvents.E2);
 		}
+	}
+
+	@Configuration
+	@EnableStateMachine
+	static class Config2 extends EnumStateMachineConfigurerAdapter<TestStates, TestEvents> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<TestStates, TestEvents> states) throws Exception {
+			states
+				.withStates()
+					.initial(TestStates.SI)
+					.state(TestStates.S2)
+					.join(TestStates.S3)
+					.state(TestStates.S4)
+					.and()
+					.withStates()
+						.parent(TestStates.S2)
+						.initial(TestStates.S20)
+						.state(TestStates.S20)
+						.state(TestStates.S21)
+						.and()
+					.withStates()
+						.parent(TestStates.S2)
+						.initial(TestStates.S30)
+						.state(TestStates.S30)
+						.state(TestStates.S31);
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<TestStates, TestEvents> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source(TestStates.SI)
+					.target(TestStates.S2)
+					.event(TestEvents.E1)
+					.and()
+				.withExternal()
+					.source(TestStates.S20)
+					.target(TestStates.S21)
+					.event(TestEvents.E2)
+					.and()
+				.withExternal()
+					.source(TestStates.S30)
+					.target(TestStates.S31)
+					.event(TestEvents.E3)
+					.and()
+				.withJoin()
+					.source(TestStates.S21)
+					.source(TestStates.S31)
+					.target(TestStates.S3)
+					.and()
+				.withExternal()
+					.source(TestStates.S3)
+					.target(TestStates.S4)
+					.and()
+				.withExternal()
+					.source(TestStates.S4)
+					.target(TestStates.SI)
+					.event(TestEvents.E4);
+		}
+
 	}
 }
