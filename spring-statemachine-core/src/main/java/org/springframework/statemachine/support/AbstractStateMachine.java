@@ -306,7 +306,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			state.addStateListener(new StateListenerAdapter<S, E>() {
 				@Override
 				public void onComplete(StateContext<S, E> context) {
-					((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state);
+					log.debug("XXXXXXXXXXXXXXXXXXX onComplete " + context);
+					((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state).subscribe();
 				};
 			});
 
@@ -826,7 +827,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 						if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
 							if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-								return stateMachineExecutor.queueEventX(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
+								return stateMachineExecutor.queueEvent(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
 							}
 						}
 					}
@@ -1056,18 +1057,25 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		this.id = id;
 	}
 
-	protected void executeTriggerlessTransitions(StateMachine<S, E> stateMachine, StateContext<S, E> stateContext, State<S, E> state) {
-		this.stateMachineExecutor.executeTriggerlessTransitions(stateContext, state);
+	protected Mono<Void> executeTriggerlessTransitions(StateMachine<S, E> stateMachine, StateContext<S, E> stateContext, State<S, E> state) {
+		Mono<Void> xxx1 = this.stateMachineExecutor.executeTriggerlessTransitions(stateContext, state);
 		State<S, E> cs = currentState;
 		if (cs != null && cs.isOrthogonal()) {
 			Collection<Region<S, E>> regions = ((AbstractState<S, E>)cs).getRegions();
-			for (Region<S, E> region : regions) {
-				((AbstractStateMachine<S, E>)region).executeTriggerlessTransitions(this, stateContext, state);
-			}
+			Mono<Void> xxx2 = Flux.fromIterable(regions)
+				.flatMap(r -> ((AbstractStateMachine<S, E>)r).executeTriggerlessTransitions(this, stateContext, state))
+				.then()
+				;
+			xxx1 = xxx1.then(xxx2);
+//			for (Region<S, E> region : regions) {
+//				((AbstractStateMachine<S, E>)region).executeTriggerlessTransitions(this, stateContext, state);
+//			}
 		} else if (cs != null && cs.isSubmachineState()) {
 			StateMachine<S, E> submachine = ((AbstractState<S, E>)cs).getSubmachine();
-			((AbstractStateMachine<S, E>)submachine).executeTriggerlessTransitions(this, stateContext, state);
+			Mono<Void> xxx2 = ((AbstractStateMachine<S, E>)submachine).executeTriggerlessTransitions(this, stateContext, state);
+			xxx1 = xxx1.then(xxx2);
 		}
+		return xxx1;
 	}
 
 	protected StateMachineExecutor<S, E> getStateMachineExecutor() {

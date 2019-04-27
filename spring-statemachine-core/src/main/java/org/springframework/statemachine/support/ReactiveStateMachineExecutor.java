@@ -77,13 +77,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private volatile Message<E> queuedMessage = null;
 	private StateMachineExecutorTransit<S, E> stateMachineExecutorTransit;
 
-//	private Processor<TriggerQueueItem, TriggerQueueItem> triggerProcessor = TopicProcessor.create();
-//	private Processor<Flux<Message<E>>, Flux<Message<E>>> eventProcessor = TopicProcessor.create();
-//	private Disposable triggerDisposable;
-//	private Disposable messageDisposable;
-//	private Flux<Message<E>> messageFlux;
-//	private Flux<TriggerQueueItem> triggerFlux;
-
 	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create(false);
 	private FluxSink<TriggerQueueItem> triggerSink;
 	private Flux<Void> triggerFlux;
@@ -115,29 +108,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			.flatMap(trigger -> handleTrigger3(trigger));
 	}
 
-//	@Override
-//	protected void doStartReactively() {
-//		doStartReactively().block();
-//		super.doStart();
-//		startTriggers();
-//
-//		if (triggerDisposable == null) {
-//			triggerDisposable = triggerFlux.subscribe();
-//		}
-//
-//		if (!initialHandled.getAndSet(true)) {
-//			ArrayList<Transition<S, E>> trans = new ArrayList<Transition<S, E>>();
-//			trans.add(initialTransition);
-//			// TODO: should we merge if initial event is actually used?
-//			if (initialEvent != null) {
-//				handleInitialTrans(initialTransition, initialEvent).block();
-//			} else {
-//				handleInitialTrans(initialTransition, forwardedInitialEvent).block();
-//			}
-//		}
-//		handleTriggerlessTransitions(null).block();
-//	}
-
 	@Override
 	protected Mono<Void> doPreStartReactively() {
 		return Mono.defer(() -> {
@@ -158,7 +128,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 					mono = mono.then(handleInitialTrans(initialTransition, forwardedInitialEvent));
 				}
 			}
-			mono = mono.then(handleTriggerlessTransitions(null));
+			mono = mono.then(handleTriggerlessTransitions(null, null));
 			return mono;
 		});
 	}
@@ -175,35 +145,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		});
 	}
 
-//	@Override
-//	protected void doStopReactively() {
-//		doStopReactively().block();
-//		stopTriggers();
-//		super.doStop();
-//
-//		if (triggerDisposable != null) {
-//			triggerDisposable.dispose();
-//			triggerDisposable = null;
-//		}
-//
-//		initialHandled.set(false);
-//	}
-
-
-	@Override
-	public void queueEvent(Message<E> message) {
-//		Flux<Message<E>> deferFlux = Flux.fromIterable(deferList);
-//		Flux<Message<E>> messageFlux = Flux.just(message);
-//		eventProcessor.onNext(Flux.merge(messageFlux, deferFlux));
-	}
-
 	@Override
 	public void queueTrigger(Trigger<S, E> trigger, Message<E> message) {
 		if (log.isDebugEnabled()) {
 			log.debug("Queue trigger " + trigger);
 		}
 		triggerSink.next(new TriggerQueueItem(trigger, message));
-//		triggerProcessor.onNext(new TriggerQueueItem(trigger, message));
 	}
 
 	@Override
@@ -216,8 +163,12 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	}
 
 	@Override
-	public void executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state) {
-		// TODO Auto-generated method stub
+	public Mono<Void> executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state) {
+		if (stateMachine.getState() != null) {
+//			handleTriggerTrans(triggerlessTransitions, context.getMessage(), state);
+			return handleTriggerlessTransitions(context, state);
+		}
+		return Mono.empty();
 	}
 
 	@Override
@@ -252,7 +203,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 
 
 	@Override
-	public Mono<Void> queueEventX(Mono<Message<E>> message) {
+	public Mono<Void> queueEvent(Mono<Message<E>> message) {
 		Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
 
 		return messages
@@ -350,10 +301,14 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		}
 
 		if (ret == null) {
-			ret = handleTriggerlessTransitions(queuedMessage);
-		} else {
-			ret = ret.and(handleTriggerlessTransitions(queuedMessage));
+			ret = Mono.empty();
 		}
+
+//		if (ret == null) {
+//			ret = handleTriggerlessTransitions(queuedMessage);
+//		} else {
+//			ret = ret.and(handleTriggerlessTransitions(queuedMessage));
+//		}
 		return ret;
 //		return handleTriggerlessTransitions(queuedMessage);
 //		return Mono.empty();
@@ -366,10 +321,10 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		return stateMachineExecutorTransit.transit(tran, stateContext, queuedMessage);
 	}
 
-	private Mono<Void> handleTriggerlessTransitions(Message<E> message) {
+	private Mono<Void> handleTriggerlessTransitions(StateContext<S, E> context, State<S, E> state) {
 
 		Flux<Mono<Boolean>> monoFlux = Flux.generate((sink) -> {
-			sink.next(handleTriggerTrans(triggerlessTransitions, message));
+			sink.next(handleTriggerTrans(triggerlessTransitions, context != null ? context.getMessage() : null, state));
 		});
 
 		Flux<Boolean> flux = Flux.concat(monoFlux);

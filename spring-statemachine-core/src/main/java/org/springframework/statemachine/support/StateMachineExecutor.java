@@ -37,14 +37,12 @@ import reactor.core.publisher.Mono;
  */
 public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycle {
 
-	Mono<Void> queueEventX(Mono<Message<E>> message);
-
 	/**
 	 * Queue event.
 	 *
 	 * @param message the message
 	 */
-	void queueEvent(Message<E> message);
+	Mono<Void> queueEvent(Mono<Message<E>> message);
 
 	/**
 	 * Queue trigger.
@@ -67,7 +65,7 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 	 * @param context the state context
 	 * @param state the state
 	 */
-	void executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
+	Mono<Void> executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
 
 	/**
 	 * Execute {@code StateMachineExecutor} logic.
