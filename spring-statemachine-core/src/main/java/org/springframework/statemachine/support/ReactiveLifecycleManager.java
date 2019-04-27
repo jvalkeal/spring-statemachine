@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.support;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -38,6 +39,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 	private Supplier<Mono<Void>> preStopRequest;
 	private Supplier<Mono<Void>> postStartRequest;
 	private Supplier<Mono<Void>> postStopRequest;
+	private AtomicBoolean stopRequested = new AtomicBoolean();
 
 	public enum LifecycleState {
 		STOPPED,
@@ -70,6 +72,12 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 				;
 		})
 		.then(Mono.defer(postStartRequest))
+		.then(Mono.defer(() -> {
+			if (stopRequested.compareAndSet(true, false)) {
+				return stopReactively();
+			}
+			return Mono.empty();
+		}))
 		;
 	}
 
@@ -78,6 +86,11 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		log.debug("Request stopReactively " + this + " " + state.get());
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
+				.doOnNext(owns -> {
+					if (!owns) {
+						stopRequested.compareAndSet(false, true);
+					}
+				})
 				.filter(owns -> owns)
 				.flatMap(owns -> this.stopRequests.next().flatMap(Function.identity()).doOnSuccess(aVoid -> {
 					state.set(LifecycleState.STOPPED);

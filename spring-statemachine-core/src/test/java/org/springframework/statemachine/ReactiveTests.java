@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.awaitility.Awaitility;
@@ -316,9 +317,23 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		xxx2.doOnNext(System.out::println).next().block();
 	}
 
-	@Test
+//	@Test
 	public void xxx9() {
+		AtomicReference<TestEnum> ref = new AtomicReference<>(TestEnum.STARTING);
+		TestEnum xxx = ref.getAndAccumulate(TestEnum.STOPPING, (t, u) -> {
+			System.out.println("T " + t);
+			System.out.println("U " + u);
+			return t;
+		});
+		System.out.println("X1 " + xxx);
+		System.out.println("X2 " + ref.get());
+	}
 
+	enum TestEnum {
+		STOPPED,
+		STARTING,
+		STARTED,
+		STOPPING;
 	}
 
 //	private Mono<Void> recursive(String message) {

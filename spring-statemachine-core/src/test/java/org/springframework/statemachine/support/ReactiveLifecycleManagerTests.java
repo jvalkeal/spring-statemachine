@@ -76,6 +76,17 @@ public class ReactiveLifecycleManagerTests {
 		assertThat(manager.getLifecycleState(), is(LifecycleState.STOPPED));
 	}
 
+	@Test
+	public void testStartStops2() {
+		StartStopsRequestSupplier startSupplier = new StartStopsRequestSupplier();
+		ReactiveLifecycleManager manager = new ReactiveLifecycleManager(startSupplier, () -> Mono.empty(),
+				() -> Mono.empty(), () -> Mono.empty());
+		startSupplier.setManager(manager);
+		StepVerifier.create(manager.startReactively()).expectComplete().verify();
+//		assertThat(manager.isRunning(), is(false));
+		assertThat(manager.getLifecycleState(), is(LifecycleState.STOPPED));
+	}
+
 	private static class RecursiveStartRequestSupplier implements Supplier<Mono<Void>> {
 
 		private ReactiveLifecycleManager manager;
