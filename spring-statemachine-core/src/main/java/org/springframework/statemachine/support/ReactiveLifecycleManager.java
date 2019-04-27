@@ -60,7 +60,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	@Override
 	public Mono<Void> startReactively() {
-		log.debug("Request startReactively " + this);
+		log.debug("Request startReactively " + this + " " + state.get());
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STOPPED, LifecycleState.STARTING))
 				.filter(owns -> owns)
@@ -75,7 +75,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	@Override
 	public Mono<Void> stopReactively() {
-		log.debug("Request stopReactively " + this);
+		log.debug("Request stopReactively " + this + " " + state.get());
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
 				.filter(owns -> owns)
