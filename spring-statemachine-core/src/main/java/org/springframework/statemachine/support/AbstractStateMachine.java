@@ -1178,18 +1178,39 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	private Mono<Void> switchToState(State<S,E> state, Message<E> message, Transition<S,E> transition, StateMachine<S, E> stateMachine) {
 		return Mono.defer(() -> {
+
+			if (!isInitialTransition(transition) && !StateMachineUtils.isTransientPseudoState(state)
+					&& !callPreStateChangeInterceptors(state, message, transition, stateMachine)) {
+				return Mono.empty();
+			}
+
+
 			StateContext<S, E> stateContext = buildStateContext(Stage.STATE_CHANGED, message, transition, stateMachine);
 			State<S,E> toState = followLinkedPseudoStates(state, stateContext);
 
-			PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
-			kind = toState.getPseudoState() != null ? toState.getPseudoState().getKind() : null;
 
+			PseudoStateKind kind = state.getPseudoState() != null ? state.getPseudoState().getKind() : null;
+
+			if (kind != null && (kind != PseudoStateKind.INITIAL && kind != PseudoStateKind.JOIN
+					&& kind != PseudoStateKind.FORK && kind != PseudoStateKind.END)) {
+				callPreStateChangeInterceptors(toState, message, transition, stateMachine);
+			}
+
+			kind = toState.getPseudoState() != null ? toState.getPseudoState().getKind() : null;
 			if (kind == PseudoStateKind.FORK) {
 
 				Mono<Void> xxx1 = exitCurrentState(toState, message, transition, stateMachine);
 				ForkPseudoState<S, E> fps = (ForkPseudoState<S, E>) toState.getPseudoState();
 				Mono<Void> xxx2 = Flux.fromIterable(fps.getForks())
-					.flatMap(f -> setCurrentState(f, message, transition, false, stateMachine, null, fps.getForks()))
+
+
+					.flatMap(f -> {
+						callPreStateChangeInterceptors(f, message, transition, stateMachine);
+						return setCurrentState(f, message, transition, false, stateMachine, null, fps.getForks());
+					})
+
+
+//					.flatMap(f -> setCurrentState(f, message, transition, false, stateMachine, null, fps.getForks()))
 					.then()
 					;
 				return xxx1.then(xxx2);
@@ -1764,6 +1785,11 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		if (state == null) {
 			return Mono.empty();
 		}
+
+		// call post interceptors here instead end of switchToState
+		// as anonymous transition would cause post calls to happen on wrong order
+		callPostStateChangeInterceptors(state, message, transition, stateMachine);
+
 		log.debug("Trying Enter state=[" + state + "]");
 		if (log.isTraceEnabled()) {
 			log.trace("Trying Enter state=[" + state + "]");
