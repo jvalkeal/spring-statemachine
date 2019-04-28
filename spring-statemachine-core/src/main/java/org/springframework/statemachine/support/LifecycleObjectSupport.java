@@ -72,6 +72,7 @@ public abstract class LifecycleObjectSupport
 				() -> doPostStartReactively(),
 				() -> doPostStopReactively()
 				);
+		this.reactiveLifecycleManager.setOwner(this);
 	}
 
 	@Override
@@ -99,8 +100,8 @@ public abstract class LifecycleObjectSupport
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		Assert.notNull(beanFactory, "beanFactory must not be null");
-		if(log.isDebugEnabled()) {
-			log.debug("Setting bean factory: " + beanFactory + " for " + this);
+		if(log.isTraceEnabled()) {
+			log.trace("Setting bean factory: " + beanFactory + " for " + this);
 		}
 		this.beanFactory = beanFactory;
 	}
@@ -303,8 +304,8 @@ public abstract class LifecycleObjectSupport
 	 */
 	protected TaskScheduler getTaskScheduler() {
 		if(taskScheduler == null && getBeanFactory() != null) {
-			if(log.isDebugEnabled()) {
-				log.debug("getting taskScheduler service from bean factory " + getBeanFactory());
+			if(log.isTraceEnabled()) {
+				log.trace("getting taskScheduler service from bean factory " + getBeanFactory());
 			}
 			taskScheduler = StateMachineContextUtils.getTaskScheduler(getBeanFactory());
 		}
@@ -328,8 +329,8 @@ public abstract class LifecycleObjectSupport
 	 */
 	protected TaskExecutor getTaskExecutor() {
 		if(taskExecutor == null && getBeanFactory() != null) {
-			if(log.isDebugEnabled()) {
-				log.debug("getting taskExecutor service from bean factory " + getBeanFactory());
+			if(log.isTraceEnabled()) {
+				log.trace("getting taskExecutor service from bean factory " + getBeanFactory());
 			}
 			taskExecutor = StateMachineContextUtils.getTaskExecutor(getBeanFactory());
 		}

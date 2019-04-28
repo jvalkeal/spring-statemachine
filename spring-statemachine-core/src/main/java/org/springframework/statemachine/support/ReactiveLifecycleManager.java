@@ -40,6 +40,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 	private Supplier<Mono<Void>> postStartRequest;
 	private Supplier<Mono<Void>> postStopRequest;
 	private AtomicBoolean stopRequested = new AtomicBoolean();
+	private Object owner;
 
 	public enum LifecycleState {
 		STOPPED,
@@ -62,7 +63,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	@Override
 	public Mono<Void> startReactively() {
-		log.debug("Request startReactively " + this + " " + state.get());
+		log.debug("Request startReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STOPPED, LifecycleState.STARTING))
 				.filter(owns -> owns)
@@ -74,6 +75,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		.then(Mono.defer(postStartRequest))
 		.then(Mono.defer(() -> {
 			if (stopRequested.compareAndSet(true, false)) {
+				log.debug("Stopping as stopRequested is true");
 				return stopReactively();
 			}
 			return Mono.empty();
@@ -83,13 +85,13 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 
 	@Override
 	public Mono<Void> stopReactively() {
-		log.debug("Request stopReactively " + this + " " + state.get());
+		log.debug("Request stopReactively " + this);
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
 				.doOnNext(owns -> {
 					// TODO: REACTOR needs better use of atomic
 					if (!owns && state.get() != LifecycleState.STOPPED) {
-						log.debug("Don't own, requesting to postpone stop" + this + " " + state.get());
+						log.debug("Don't own, requesting to postpone stop" + this);
 						stopRequested.compareAndSet(false, true);
 					}
 				})
@@ -103,12 +105,21 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		;
 	}
 
+	public void setOwner(Object owner) {
+		this.owner = owner;
+	}
+
 	public LifecycleState getLifecycleState() {
 		return state.get();
 	}
 
 	public boolean isRunning() {
 		return state.get() == LifecycleState.STARTED;
+	}
+
+	@Override
+	public String toString() {
+		return "[lifecyclestate=" + state.get() + ", owner=" + owner + "]";
 	}
 
 	private class AtomicEnum {
@@ -120,7 +131,7 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		}
 
 		public void set(final LifecycleState newValue) {
-			log.info("Lifecycle to " + newValue + " in " + ReactiveLifecycleManager.this);
+			log.debug("Lifecycle to " + newValue + " in " + ReactiveLifecycleManager.this);
 			this.ref.set(newValue);
 		}
 

@@ -547,7 +547,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 	@Override
 	protected Mono<Void> doPreStopReactively() {
-		return stateMachineExecutor.stopReactively().and(Mono.fromRunnable(() -> {
+		return Mono.fromRunnable(() -> {
 			notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
 			// stash current state before we null it so that
 			// we can still return where we 'were' when machine is stopped
@@ -555,7 +555,22 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			currentState = null;
 			initialEnabled = null;
 			log.debug("Stop complete " + this);
-		}));
+		})
+		.then(stateMachineExecutor.stopReactively())
+		;
+
+		// TODO: REACTOR, doing this other way around will dispose triggerDisposable in
+		//       ReactiveStateMachineExecutor and we get cancel before runnable is ran.
+
+//		return stateMachineExecutor.stopReactively().then(Mono.fromRunnable(() -> {
+//			notifyStateMachineStopped(buildStateContext(Stage.STATEMACHINE_STOP, null, null, this));
+//			// stash current state before we null it so that
+//			// we can still return where we 'were' when machine is stopped
+//			lastState = currentState;
+//			currentState = null;
+//			initialEnabled = null;
+//			log.debug("Stop complete " + this);
+//		}));
 	}
 
 //	@Override
@@ -1231,7 +1246,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 //			return setCurrentState(toState, message, transition, true, stateMachine, null, targets);
 		})
 //		.then(!isComplete() ? Mono.empty() : stopReactively())
+//		.and(shouldComplete() ? stopReactively() : Mono.empty())
+		.then(Mono.defer(() -> {
+			return shouldComplete() ? stopReactively() : Mono.empty();
+		}))
 		;
+	}
+
+	private boolean shouldComplete() {
+		return StateMachineUtils.isPseudoState(currentState, PseudoStateKind.END);
 	}
 
 	private State<S,E> followLinkedPseudoStates(State<S,E> state, StateContext<S, E> stateContext) {

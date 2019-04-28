@@ -142,8 +142,22 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 				triggerDisposable = null;
 			}
 			initialHandled.set(false);
-		});
+		})
+		;
 	}
+
+//	@Override
+//	protected Mono<Void> doPostStopReactively() {
+//		return Mono.fromRunnable(() -> {
+//			stopTriggers();
+//			if (triggerDisposable != null) {
+//				triggerDisposable.dispose();
+//				triggerDisposable = null;
+//			}
+//			initialHandled.set(false);
+//		})
+//		;
+//	}
 
 	@Override
 	public void queueTrigger(Trigger<S, E> trigger, Message<E> message) {
