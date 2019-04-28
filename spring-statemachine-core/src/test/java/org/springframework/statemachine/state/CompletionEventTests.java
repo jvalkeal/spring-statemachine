@@ -188,7 +188,11 @@ public class CompletionEventTests extends AbstractStateMachineTests {
 
 		machine.sendEvent(MessageBuilder.withPayload("E1").build());
 		machine.sendEvent(MessageBuilder.withPayload("E2").build());
-		assertThat(machine.getState().getId(), is("S3"));
+
+		// TODO: REACTOR think this change is because we do subcribe
+		//       with onComplete so things are not fully changed with sendEvent
+		Awaitility.await().until(() -> machine.getState().getId(), is("S3"));
+		// assertThat(machine.getState().getId(), is("S3"));
 	}
 
 	@SuppressWarnings({ "unchecked" })
