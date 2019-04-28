@@ -39,6 +39,8 @@ import reactor.core.scheduler.Schedulers;
  */
 public class RegionState<S, E> extends AbstractState<S, E> {
 
+	private boolean regionParallel = false;
+
 	/**
 	 * Instantiates a new region state.
 	 *
@@ -102,15 +104,19 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 
 	@Override
 	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
-		// TODO: make paraller configurable
-		return Flux.fromIterable(getRegions())
-			.parallel()
-			.runOn(Schedulers.parallel())
-			.flatMap(r -> r.sendEvent(Mono.just(event)))
-//			.subscribeOn(Schedulers.parallel())
-//			.publishOn(Schedulers.parallel())
-			.sequential()
-			;
+		// TODO: REACTOR make paraller configurable
+		if(regionParallel) {
+			return Flux.fromIterable(getRegions())
+					.parallel()
+					.runOn(Schedulers.parallel())
+					.flatMap(r -> r.sendEvent(Mono.just(event)))
+					.sequential()
+					;
+		} else {
+			return Flux.fromIterable(getRegions())
+					.flatMap(r -> r.sendEvent(Mono.just(event)))
+					;
+		}
 	}
 
 	@Override
@@ -145,15 +151,35 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 	}
 
 	private Mono<Void> startOrEntry(StateContext<S, E> context) {
+		// TODO: REACTOR see RegionMachineTests.testParallelRegionExecutionInInitialState()
 		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
-			return Flux.fromIterable(getRegions())
+//			return Flux.fromIterable(getRegions())
+//					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+//					.publishOn(Schedulers.parallel())
+//					.flatMap(r -> r.startReactively())
+//					.then();
+			if (regionParallel) {
+				return Flux.fromIterable(getRegions())
 				.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-//				.parallel()
-//				.runOn(Schedulers.parallel())
+				.parallel()
+				.runOn(Schedulers.parallel())
 				.flatMap(r -> r.startReactively())
-				.publishOn(Schedulers.parallel())
-//				.sequential()
+				.sequential()
 				.then();
+			} else {
+				return Flux.fromIterable(getRegions())
+						.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+						.flatMap(r -> r.startReactively())
+						.then();
+
+			}
+//			return Flux.fromIterable(getRegions())
+//					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+//					.parallel()
+//					.runOn(Schedulers.parallel())
+//					.flatMap(r -> r.startReactively())
+//					.sequential()
+//					.then();
 		} else {
 			return Flux.fromIterable(getRegions())
 				.filter(r -> r.getState() != null)
@@ -197,6 +223,10 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 			}
 		}
 		return states;
+	}
+
+	public void setRegionParallel(boolean regionParallel) {
+		this.regionParallel = regionParallel;
 	}
 
 	@Override

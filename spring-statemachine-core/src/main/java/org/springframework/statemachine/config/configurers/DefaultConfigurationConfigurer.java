@@ -50,6 +50,7 @@ public class DefaultConfigurationConfigurer<S, E>
 	private TransitionConflictPolicy transitionConflightPolicy;
 	private StateDoActionPolicy stateDoActionPolicy;
 	private Long stateDoActionPolicyTimeout;
+	private boolean regionParallel = false;
 	private final List<StateMachineListener<S, E>> listeners = new ArrayList<StateMachineListener<S, E>>();
 
 	@Override
@@ -62,6 +63,7 @@ public class DefaultConfigurationConfigurer<S, E>
 		builder.setStateMachineListeners(listeners);
 		builder.setTransitionConflictPolicy(transitionConflightPolicy);
 		builder.setStateDoActionPolicy(stateDoActionPolicy, stateDoActionPolicyTimeout);
+		builder.setRegionParallel(regionParallel);
 	}
 
 	@Override
@@ -115,6 +117,12 @@ public class DefaultConfigurationConfigurer<S, E>
 	@Override
 	public ConfigurationConfigurer<S, E> stateDoActionPolicyTimeout(long timeout, TimeUnit unit) {
 		this.stateDoActionPolicyTimeout = unit.toMillis(timeout);
+		return this;
+	}
+
+	@Override
+	public ConfigurationConfigurer<S, E> regionParallel(boolean enabled) {
+		this.regionParallel = enabled;
 		return this;
 	}
 }

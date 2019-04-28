@@ -38,6 +38,7 @@ import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.region.Region;
@@ -450,6 +451,13 @@ public class RegionMachineTests extends AbstractStateMachineTests {
 	static class Config3 extends EnumStateMachineConfigurerAdapter<TestStates, TestEvents> {
 
 		@Override
+		public void configure(StateMachineConfigurationConfigurer<TestStates, TestEvents> config) throws Exception {
+			config
+				.withConfiguration()
+					.regionParallel(true);
+		}
+
+		@Override
 		public void configure(StateMachineStateConfigurer<TestStates, TestEvents> states) throws Exception {
 			states
 				.withStates()
@@ -507,6 +515,13 @@ public class RegionMachineTests extends AbstractStateMachineTests {
 	@Configuration
 	@EnableStateMachine
 	static class Config4 extends EnumStateMachineConfigurerAdapter<TestStates, TestEvents> {
+
+		@Override
+		public void configure(StateMachineConfigurationConfigurer<TestStates, TestEvents> config) throws Exception {
+			config
+				.withConfiguration()
+					.regionParallel(true);
+		}
 
 		@Override
 		public void configure(StateMachineStateConfigurer<TestStates, TestEvents> states) throws Exception {
