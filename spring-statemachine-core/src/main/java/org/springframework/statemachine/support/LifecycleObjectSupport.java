@@ -346,17 +346,17 @@ public abstract class LifecycleObjectSupport
 	 */
 	protected void onInit() throws Exception {}
 
-	/**
-	 * Subclasses may implement this method with the start behavior. This
-	 * method will be invoked while holding the {@link #lifecycleLock}.
-	 */
+//	/**
+//	 * Subclasses may implement this method with the start behavior. This
+//	 * method will be invoked while holding the {@link #lifecycleLock}.
+//	 */
 //	@Override
 //	protected void doStart() {};
 
-	/**
-	 * Subclasses may implement this method with the stop behavior. This method
-	 * will be invoked while holding the {@link #lifecycleLock}.
-	 */
+//	/**
+//	 * Subclasses may implement this method with the stop behavior. This method
+//	 * will be invoked while holding the {@link #lifecycleLock}.
+//	 */
 //	@Override
 //	protected void doStop() {};
 

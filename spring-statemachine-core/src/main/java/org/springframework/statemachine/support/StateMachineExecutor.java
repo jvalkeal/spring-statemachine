@@ -41,6 +41,7 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 	 * Queue event.
 	 *
 	 * @param message the message
+	 * @return completion when event is queued
 	 */
 	Mono<Void> queueEvent(Mono<Message<E>> message);
 
@@ -64,6 +65,7 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 	 *
 	 * @param context the state context
 	 * @param state the state
+	 * @return completion when handled
 	 */
 	Mono<Void> executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
 
@@ -133,6 +135,7 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 		 * @param transition the transition
 		 * @param stateContext the state context
 		 * @param message the message
+		 * @return completion when handled
 		 */
 		Mono<Void> transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
 
