@@ -87,7 +87,9 @@ public class ReactiveLifecycleManager implements StateMachineReactiveLifecycle {
 		return Mono.defer(() -> {
 			return Mono.just(state.compareAndSet(LifecycleState.STARTED, LifecycleState.STOPPING))
 				.doOnNext(owns -> {
-					if (!owns) {
+					// TODO: REACTOR needs better use of atomic
+					if (!owns && state.get() != LifecycleState.STOPPED) {
+						log.debug("Don't own, requesting to postpone stop" + this + " " + state.get());
 						stopRequested.compareAndSet(false, true);
 					}
 				})

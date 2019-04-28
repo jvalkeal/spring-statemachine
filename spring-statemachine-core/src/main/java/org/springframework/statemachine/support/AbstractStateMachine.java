@@ -306,7 +306,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			state.addStateListener(new StateListenerAdapter<S, E>() {
 				@Override
 				public void onComplete(StateContext<S, E> context) {
-					log.debug("XXXXXXXXXXXXXXXXXXX onComplete " + context);
+					log.debug("State onComplete: state=[" + state + "] context=[" + context + "]");
 					((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state).subscribe();
 				};
 			});
