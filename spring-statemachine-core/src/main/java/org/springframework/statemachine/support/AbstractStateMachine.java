@@ -1716,6 +1716,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		} else if (currentState.isOrthogonal()) {
 			Collection<Region<S,E>> regions = ((AbstractState<S, E>)currentState).getRegions();
 			return Flux.fromIterable(regions)
+				.filter(r -> r.getStates().contains(state))
 				.flatMap(r -> exitFromState(r.getState(), message, transition, stateMachine, sources, targets))
 				.then()
 				.and(exitFromState(currentState, message, transition, stateMachine, sources, targets));
