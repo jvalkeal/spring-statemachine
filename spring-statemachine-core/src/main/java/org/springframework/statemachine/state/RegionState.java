@@ -105,18 +105,15 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 
 	@Override
 	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
-		// TODO: REACTOR make paraller configurable
 		if(regionExecutionPolicy == RegionExecutionPolicy.PARALLEL) {
 			return Flux.fromIterable(getRegions())
-					.parallel()
-					.runOn(Schedulers.parallel())
-					.flatMap(r -> r.sendEvent(Mono.just(event)))
-					.sequential()
-					;
+				.parallel()
+				.runOn(Schedulers.parallel())
+				.flatMap(r -> r.sendEvent(Mono.just(event)))
+				.sequential();
 		} else {
 			return Flux.fromIterable(getRegions())
-					.flatMap(r -> r.sendEvent(Mono.just(event)))
-					;
+				.flatMap(r -> r.sendEvent(Mono.just(event)));
 		}
 	}
 
@@ -147,26 +144,25 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 					.doOnNext(ea -> {
 						executeAction(ea, context);
 					})
-					.then());
+				.then());
 		}));
 	}
 
 	private Mono<Void> startOrEntry(StateContext<S, E> context) {
-		// TODO: REACTOR see RegionMachineTests.testParallelRegionExecutionInInitialState()
 		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
 			if (regionExecutionPolicy == RegionExecutionPolicy.PARALLEL) {
 				return Flux.fromIterable(getRegions())
-				.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-				.parallel()
-				.runOn(Schedulers.parallel())
-				.flatMap(r -> r.startReactively())
-				.sequential()
-				.then();
+					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+					.parallel()
+					.runOn(Schedulers.parallel())
+					.flatMap(r -> r.startReactively())
+					.sequential()
+					.then();
 			} else {
 				return Flux.fromIterable(getRegions())
-						.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-						.flatMap(r -> r.startReactively())
-						.then();
+					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
+					.flatMap(r -> r.startReactively())
+					.then();
 
 			}
 		} else {
@@ -179,8 +175,8 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
-		return super.entry(context).and(
-			Flux.fromIterable(getEntryActions())
+		return super.entry(context)
+			.and(Flux.fromIterable(getEntryActions())
 			.doOnNext(ea -> {
 				executeAction(ea, context);
 			})
@@ -228,5 +224,4 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		return "RegionState [getIds()=" + getIds() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
 				+ ", toString()=" + super.toString() + "]";
 	}
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,11 +198,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		this.submachine = submachine;
 	}
 
-//	@Override
-//	public boolean sendEvent(Message<E> event) {
-//		return false;
-//	}
-
 	@Override
 	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		return Flux.empty();
@@ -369,11 +364,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
-//	@Override
-//	protected void doStart() {
-//		armTriggers();
-//	}
-
 	@Override
 	protected Mono<Void> doPreStartReactively() {
 		return Mono.fromRunnable(() -> armTriggers());
@@ -383,11 +373,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	protected Mono<Void> doPreStopReactively() {
 		return Mono.fromRunnable(() -> disarmTriggers());
 	}
-
-//	@Override
-//	protected void doStop() {
-//		disarmTriggers();
-//	}
 
 	/**
 	 * Gets the submachine.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,26 +144,20 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 			// don't stop if it looks like we're coming back
 			// stop would cause start with entry which would
 			// enable default transition and state
-			Mono<Void> ret = null;
+			Mono<Void> mono = null;
 			if (getSubmachine().getState() != null && context.getTransition() != null
 					&& context.getTransition().getSource().getId() != getSubmachine().getState().getId()) {
-//				getSubmachine().stop();
-				ret = getSubmachine().stopReactively();
+				mono = getSubmachine().stopReactively();
 			} else if (context.getTransition() != null && !StateMachineUtils.isSubstate(context.getTransition().getTarget(), context.getTransition()
 					.getSource())) {
-//				getSubmachine().stop();
-				ret = getSubmachine().stopReactively();
+				mono = getSubmachine().stopReactively();
 			} else {
-				ret = Mono.empty();
+				mono = Mono.empty();
 			}
 			if (!isLocal(context)) {
-				ret = ret.and(Flux.fromIterable(getExitActions()).doOnNext(ea -> executeAction(ea, context)).then());
-//				for (Action<S, E> action : getExitActions()) {
-//					executeAction(action, context);
-//				}
+				mono = mono.and(Flux.fromIterable(getExitActions()).doOnNext(ea -> executeAction(ea, context)).then());
 			}
-//			return Mono.empty();
-			return ret;
+			return mono;
 		}));
 	}
 
@@ -247,8 +241,6 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 							});
 				}
 			}
-//			getSubmachine().start();
-//			return Mono.empty();
 			return getSubmachine().startReactively();
 		}));
 	}
@@ -281,15 +273,6 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 		return super.sendEvent(event);
 	}
 
-//	@Override
-//	public boolean sendEvent(Message<E> event) {
-//		StateMachine<S, E> machine = getSubmachine();
-//		if (machine != null) {
-//			return machine.sendEvent(event);
-//		}
-//		return super.sendEvent(event);
-//	}
-
 	@Override
 	public boolean shouldDefer(Message<E> event) {
 		StateMachine<S, E> machine = getSubmachine();
@@ -318,5 +301,4 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 		return "StateMachineState [getIds()=" + getIds() + ", toString()=" + super.toString() + ", getClass()="
 				+ getClass() + "]";
 	}
-
 }
