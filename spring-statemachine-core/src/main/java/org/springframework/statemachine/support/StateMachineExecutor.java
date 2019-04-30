@@ -15,8 +15,6 @@
  */
 package org.springframework.statemachine.support;
 
-import java.util.concurrent.locks.Lock;
-
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
@@ -70,30 +68,11 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 	Mono<Void> executeTriggerlessTransitions(StateContext<S, E> context, State<S, E> state);
 
 	/**
-	 * Execute {@code StateMachineExecutor} logic.
-	 */
-	void execute();
-
-	/**
 	 * Sets the if initial stage is enabled.
 	 *
 	 * @param enabled the new flag
 	 */
 	void setInitialEnabled(boolean enabled);
-
-	/**
-	 * Start executor.
-	 *
-	 * @see LifecycleObjectSupport#start()
-	 */
-	void start();
-
-	/**
-	 * Stop executor.
-	 *
-	 * @see LifecycleObjectSupport#stop()
-	 */
-	void stop();
 
 	/**
 	 * Set initial forwarded event.
@@ -118,13 +97,6 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 	void addStateMachineInterceptor(StateMachineInterceptor<S, E> interceptor);
 
 	/**
-	 * Gets the execution lock.
-	 *
-	 * @return the execution lock
-	 */
-	Lock getLock();
-
-	/**
 	 * Callback interface when executor wants to handle transit.
 	 */
 	public interface StateMachineExecutorTransit<S, E> {
@@ -138,7 +110,5 @@ public interface StateMachineExecutor<S, E> extends StateMachineReactiveLifecycl
 		 * @return completion when handled
 		 */
 		Mono<Void> transit(Transition<S, E> transition, StateContext<S, E> stateContext, Message<E> message);
-
 	}
-
 }
