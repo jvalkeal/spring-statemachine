@@ -45,6 +45,7 @@ import org.springframework.statemachine.ensemble.StateMachineEnsemble;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
 import org.springframework.statemachine.persist.StateMachineRuntimePersister;
+import org.springframework.statemachine.region.RegionExecutionPolicy;
 import org.springframework.statemachine.security.SecurityRule;
 import org.springframework.statemachine.support.StateMachineInterceptor;
 import org.springframework.statemachine.transition.TransitionConflictPolicy;
@@ -69,7 +70,7 @@ public class StateMachineConfigurationBuilder<S, E>
 	private TransitionConflictPolicy transitionConflictPolicy;
 	private StateDoActionPolicy stateDoActionPolicy;
 	private Long stateDoActionPolicyTimeout;
-	private boolean regionParallel = false;
+	private RegionExecutionPolicy regionExecutionPolicy;
 	private StateMachineEnsemble<S, E> ensemble;
 	private final List<StateMachineListener<S, E>> listeners = new ArrayList<StateMachineListener<S, E>>();
 	private boolean securityEnabled = false;
@@ -149,12 +150,11 @@ public class StateMachineConfigurationBuilder<S, E>
 				interceptorsCopy.add(interceptor);
 			}
 		}
-		ConfigurationData<S, E> cd = new ConfigurationData<S, E>(beanFactory, taskExecutor, taskScheculer, autoStart, ensemble, listeners,
+		return new ConfigurationData<S, E>(beanFactory, taskExecutor, taskScheculer, autoStart, ensemble, listeners,
 				securityEnabled, transitionSecurityAccessDecisionManager, eventSecurityAccessDecisionManager,
 				eventSecurityRule, transitionSecurityRule, verifierEnabled, verifier, machineId, stateMachineMonitor,
-				interceptorsCopy, transitionConflictPolicy, stateDoActionPolicy, stateDoActionPolicyTimeout);
-		cd.setRegionParallel(regionParallel);
-		return cd;
+				interceptorsCopy, transitionConflictPolicy, stateDoActionPolicy, stateDoActionPolicyTimeout,
+				regionExecutionPolicy);
 	}
 
 	/**
@@ -322,7 +322,12 @@ public class StateMachineConfigurationBuilder<S, E>
 		this.stateDoActionPolicyTimeout = stateDoActionPolicyTimeout;
 	}
 
-	public void setRegionParallel(boolean regionParallel) {
-		this.regionParallel = regionParallel;
+	/**
+	 * Sets the region execution policy.
+	 *
+	 * @param regionExecutionPolicy the region execution policy
+	 */
+	public void setRegionExecutionPolicy(RegionExecutionPolicy regionExecutionPolicy) {
+		this.regionExecutionPolicy = regionExecutionPolicy;
 	}
 }

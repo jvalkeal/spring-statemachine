@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.springframework.statemachine.action.StateDoActionPolicy;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.common.annotation.AnnotationConfigurerBuilder;
 import org.springframework.statemachine.listener.StateMachineListener;
+import org.springframework.statemachine.region.RegionExecutionPolicy;
 import org.springframework.statemachine.transition.TransitionConflictPolicy;
 
 /**
@@ -115,6 +116,11 @@ public interface ConfigurationConfigurer<S, E> extends
 	 */
 	ConfigurationConfigurer<S, E> stateDoActionPolicyTimeout(long timeout, TimeUnit unit);
 
-	// TODO: REACTOR think about this setting, just dump boolean for now
-	ConfigurationConfigurer<S, E>  regionParallel(boolean enabled);
+	/**
+	 * Specify a {@link RegionExecutionPolicy}. Default to {@link RegionExecutionPolicy#SEQUENTIAL}.
+	 *
+	 * @param regionExecutionPolicy the region execution policy
+	 * @return the configuration configurer
+	 */
+	ConfigurationConfigurer<S, E> regionExecutionPolicy(RegionExecutionPolicy regionExecutionPolicy);
 }

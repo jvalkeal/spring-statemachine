@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.statemachine.config.model.verifier.StateMachineModelV
 import org.springframework.statemachine.ensemble.StateMachineEnsemble;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
+import org.springframework.statemachine.region.RegionExecutionPolicy;
 import org.springframework.statemachine.security.SecurityRule;
 import org.springframework.statemachine.support.StateMachineInterceptor;
 import org.springframework.statemachine.transition.TransitionConflictPolicy;
@@ -64,7 +65,7 @@ public class ConfigurationData<S, E> {
 	private final SecurityRule transitionSecurityRule;
 	private final StateMachineMonitor<S, E> stateMachineMonitor;
 	private final List<StateMachineInterceptor<S, E>> interceptors;
-	private boolean regionParallel = false;
+	private final RegionExecutionPolicy regionExecutionPolicy;
 
 	/**
 	 * Instantiates a new state machine configuration config data.
@@ -103,7 +104,7 @@ public class ConfigurationData<S, E> {
 			List<StateMachineInterceptor<S, E>> interceptors) {
 		this(beanFactory, taskExecutor, taskScheduler, autoStart, ensemble, listeners, securityEnabled,
 				transitionSecurityAccessDecisionManager, eventSecurityAccessDecisionManager, eventSecurityRule, transitionSecurityRule,
-				verifierEnabled, verifier, machineId, stateMachineMonitor, interceptors, null, null, null);
+				verifierEnabled, verifier, machineId, stateMachineMonitor, interceptors, null, null, null, null);
 	}
 
 	/**
@@ -128,6 +129,7 @@ public class ConfigurationData<S, E> {
 	 * @param transitionConflightPolicy the transition conflict policy
 	 * @param stateDoActionPolicy the state do action policy
 	 * @param stateDoActionPolicyTimeout the state do action policy timeout
+	 * @param regionExecutionPolicy the region execution policy
 	 */
 	public ConfigurationData(BeanFactory beanFactory, TaskExecutor taskExecutor,
 			TaskScheduler taskScheduler, boolean autoStart, StateMachineEnsemble<S, E> ensemble,
@@ -136,7 +138,7 @@ public class ConfigurationData<S, E> {
 			SecurityRule eventSecurityRule, SecurityRule transitionSecurityRule, boolean verifierEnabled,
 			StateMachineModelVerifier<S, E> verifier, String machineId, StateMachineMonitor<S, E> stateMachineMonitor,
 			List<StateMachineInterceptor<S, E>> interceptors, TransitionConflictPolicy transitionConflightPolicy,
-			StateDoActionPolicy stateDoActionPolicy, Long stateDoActionPolicyTimeout) {
+			StateDoActionPolicy stateDoActionPolicy, Long stateDoActionPolicyTimeout, RegionExecutionPolicy regionExecutionPolicy) {
 		this.beanFactory = beanFactory;
 		this.taskExecutor = taskExecutor;
 		this.taskScheduler = taskScheduler;
@@ -156,6 +158,7 @@ public class ConfigurationData<S, E> {
 		this.transitionConflictPolicy = transitionConflightPolicy;
 		this.stateDoActionPolicy = stateDoActionPolicy;
 		this.stateDoActionPolicyTimeout = stateDoActionPolicyTimeout;
+		this.regionExecutionPolicy = regionExecutionPolicy;
 	}
 
 	public String getMachineId() {
@@ -324,11 +327,12 @@ public class ConfigurationData<S, E> {
 		return stateDoActionPolicyTimeout;
 	}
 
-	public void setRegionParallel(boolean regionParallel) {
-		this.regionParallel = regionParallel;
-	}
-
-	public boolean isRegionParallel() {
-		return regionParallel;
+	/**
+	 * Gets the region execution policy.
+	 *
+	 * @return the region execution policy
+	 */
+	public RegionExecutionPolicy getRegionExecutionPolicy() {
+		return regionExecutionPolicy;
 	}
 }

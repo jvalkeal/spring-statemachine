@@ -23,6 +23,7 @@ import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.region.Region;
+import org.springframework.statemachine.region.RegionExecutionPolicy;
 import org.springframework.statemachine.support.StateMachineUtils;
 
 import reactor.core.publisher.Flux;
@@ -39,7 +40,7 @@ import reactor.core.scheduler.Schedulers;
  */
 public class RegionState<S, E> extends AbstractState<S, E> {
 
-	private boolean regionParallel = false;
+	private RegionExecutionPolicy regionExecutionPolicy;
 
 	/**
 	 * Instantiates a new region state.
@@ -105,7 +106,7 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 	@Override
 	public Flux<StateMachineEventResult<S, E>> sendEvent(Message<E> event) {
 		// TODO: REACTOR make paraller configurable
-		if(regionParallel) {
+		if(regionExecutionPolicy == RegionExecutionPolicy.PARALLEL) {
 			return Flux.fromIterable(getRegions())
 					.parallel()
 					.runOn(Schedulers.parallel())
@@ -153,12 +154,7 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 	private Mono<Void> startOrEntry(StateContext<S, E> context) {
 		// TODO: REACTOR see RegionMachineTests.testParallelRegionExecutionInInitialState()
 		if (getPseudoState() != null && getPseudoState().getKind() == PseudoStateKind.INITIAL) {
-//			return Flux.fromIterable(getRegions())
-//					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-//					.publishOn(Schedulers.parallel())
-//					.flatMap(r -> r.startReactively())
-//					.then();
-			if (regionParallel) {
+			if (regionExecutionPolicy == RegionExecutionPolicy.PARALLEL) {
 				return Flux.fromIterable(getRegions())
 				.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
 				.parallel()
@@ -173,13 +169,6 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 						.then();
 
 			}
-//			return Flux.fromIterable(getRegions())
-//					.filter(r -> !StateMachineUtils.containsAtleastOne(r.getStates(), context.getTargets()))
-//					.parallel()
-//					.runOn(Schedulers.parallel())
-//					.flatMap(r -> r.startReactively())
-//					.sequential()
-//					.then();
 		} else {
 			return Flux.fromIterable(getRegions())
 				.filter(r -> r.getState() != null)
@@ -225,8 +214,13 @@ public class RegionState<S, E> extends AbstractState<S, E> {
 		return states;
 	}
 
-	public void setRegionParallel(boolean regionParallel) {
-		this.regionParallel = regionParallel;
+	/**
+	 * Sets the region execution policy.
+	 *
+	 * @param regionExecutionPolicy the new region execution policy
+	 */
+	public void setRegionExecutionPolicy(RegionExecutionPolicy regionExecutionPolicy) {
+		this.regionExecutionPolicy = regionExecutionPolicy;
 	}
 
 	@Override
