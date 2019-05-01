@@ -57,12 +57,18 @@ public interface Region<S, E> extends StateMachineReactiveLifecycle {
 
 	/**
 	 * Start the region.
+	 *
+	 * @deprecated in favor of {@link StateMachineReactiveLifecycle#startReactively()}
 	 */
+	@Deprecated
 	void start();
 
 	/**
 	 * Stop the region.
+	 *
+	 * @deprecated in favor of {@link StateMachineReactiveLifecycle#stopReactively()}
 	 */
+	@Deprecated
 	void stop();
 
 	/**
@@ -152,5 +158,4 @@ public interface Region<S, E> extends StateMachineReactiveLifecycle {
 	 * @param listener the listener
 	 */
 	void removeStateListener(StateMachineListener<S, E> listener);
-
 }
