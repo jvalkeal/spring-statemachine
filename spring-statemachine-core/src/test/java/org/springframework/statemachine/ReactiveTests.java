@@ -31,6 +31,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachineEventResult.ResultType;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
@@ -167,6 +168,43 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		await().until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S4));
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testMonosSomeDefer() {
+		context.register(Config3.class);
+		context.refresh();
+		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		StateMachine<String, String> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
+		assertThat(machine, notNullValue());
+		verifyStart(machine);
+		assertThat(machine.getState().getIds(), containsInAnyOrder("READY"));
+
+		StepVerifier.create(machine.sendEvent(asMono("E1")))
+			.assertNext(r -> {
+				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
+				assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+			})
+			.expectComplete()
+			.verify();
+
+		StepVerifier.create(machine.sendEvent(asMono("E3")))
+			.assertNext(r -> {
+				assertThat(r.getResultType(), is(ResultType.DEFERRED));
+				assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+			})
+			.expectComplete()
+			.verify();
+
+		StepVerifier.create(machine.sendEvent(asMono("E2")))
+			.assertNext(r -> {
+				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
+				assertThat(machine.getState().getIds(), containsInAnyOrder("S3"));
+			})
+			.expectComplete()
+			.verify();
+	}
+
 	@Configuration
 	@EnableStateMachine
 	static class Config1 extends EnumStateMachineConfigurerAdapter<TestStates, TestEvents> {
@@ -254,6 +292,36 @@ public class ReactiveTests extends AbstractStateMachineTests {
 					.target(TestStates.SI)
 					.event(TestEvents.E4);
 		}
+	}
 
+	@Configuration
+	@EnableStateMachine
+	static class Config3 extends StateMachineConfigurerAdapter<String, String> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<String, String> states) throws Exception {
+			states
+				.withStates()
+					.initial("READY")
+					.state("S1", "E3")
+					.state("S2")
+					.state("S3");
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<String, String> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source("READY").target("S1")
+					.event("E1")
+					.and()
+				.withExternal()
+					.source("S1").target("S2")
+					.event("E2")
+					.and()
+				.withExternal()
+					.source("S2").target("S3")
+					.event("E3");
+		}
 	}
 }
