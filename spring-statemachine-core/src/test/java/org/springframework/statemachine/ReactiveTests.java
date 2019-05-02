@@ -15,13 +15,13 @@
  */
 package org.springframework.statemachine;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.springframework.statemachine.assertj.StateMachineAsserts.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -64,25 +64,25 @@ public class ReactiveTests extends AbstractStateMachineTests {
 	public void testMonosAllAccepted() {
 		context.register(Config1.class);
 		context.refresh();
-		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		assertThat(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE)).isTrue();
 		StateMachine<TestStates,TestEvents> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
-		assertThat(machine, notNullValue());
+		assertThat(machine).isNotNull();
 		verifyStart(machine);
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S1);
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E1)))
 			.assertNext(r -> {
-				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
-				assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2));
+				assertThat(r).hasResultType(ResultType.ACCEPTED);
+				assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S2);
 			})
 			.expectComplete()
 			.verify();
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E2)))
 			.assertNext(r -> {
-				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
-				assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
+				assertThat(r).hasResultType(ResultType.ACCEPTED);
+				assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S3);
 			})
 			.expectComplete()
 			.verify();
@@ -93,19 +93,19 @@ public class ReactiveTests extends AbstractStateMachineTests {
 	public void testFluxAllAccepted() {
 		context.register(Config1.class);
 		context.refresh();
-		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		assertThat(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE)).isTrue();
 		StateMachine<TestStates,TestEvents> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
-		assertThat(machine, notNullValue());
+		assertThat(machine).isNotNull();
 		verifyStart(machine);
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S1);
 
 		StepVerifier.create(machine.sendEvents(asFlux(TestEvents.E1, TestEvents.E2)))
 			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
 			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
 			.expectComplete()
 			.verify();
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S3);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -113,24 +113,24 @@ public class ReactiveTests extends AbstractStateMachineTests {
 	public void testMonosSomeDenied() {
 		context.register(Config1.class);
 		context.refresh();
-		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		assertThat(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE)).isTrue();
 		StateMachine<TestStates,TestEvents> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
-		assertThat(machine, notNullValue());
+		assertThat(machine).isNotNull();
 		verifyStart(machine);
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S1));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S1);
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E1)))
 			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
 			.expectComplete()
 			.verify();
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S2);
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E2)))
 			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
 			.expectComplete()
 			.verify();
-		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S3));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S3);
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E3)))
 			.expectNextMatches(r -> r.getResultType() == ResultType.DENIED)
@@ -145,9 +145,9 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		context.refresh();
 		ObjectStateMachine<TestStates,TestEvents> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, ObjectStateMachine.class);
-		assertThat(machine, notNullValue());
+		assertThat(machine).isNotNull();
 		verifyStart(machine);
-		assertThat(machine.getState().getIds(), contains(TestStates.SI));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.SI);
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E1)))
 			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
@@ -156,13 +156,13 @@ public class ReactiveTests extends AbstractStateMachineTests {
 		await().until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S20, TestStates.S30));
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E2)))
-			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
+			.expectNextCount(3)
 			.expectComplete()
 			.verify();
 		await().until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S21, TestStates.S30));
 
 		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E3)))
-			.expectNextMatches(r -> r.getResultType() == ResultType.ACCEPTED)
+			.expectNextCount(3)
 			.expectComplete()
 			.verify();
 		await().until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S4));
@@ -173,36 +173,62 @@ public class ReactiveTests extends AbstractStateMachineTests {
 	public void testMonosSomeDefer() {
 		context.register(Config3.class);
 		context.refresh();
-		assertTrue(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE));
+		assertThat(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE)).isTrue();
 		StateMachine<String, String> machine =
 				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
-		assertThat(machine, notNullValue());
+		assertThat(machine).isNotNull();
 		verifyStart(machine);
-		assertThat(machine.getState().getIds(), containsInAnyOrder("READY"));
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder("READY");
 
 		StepVerifier.create(machine.sendEvent(asMono("E1")))
 			.assertNext(r -> {
-				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
-				assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+				assertThat(r).hasResultType(ResultType.ACCEPTED);
+				assertThat(machine.getState().getIds()).containsExactlyInAnyOrder("S1");
 			})
 			.expectComplete()
 			.verify();
 
 		StepVerifier.create(machine.sendEvent(asMono("E3")))
 			.assertNext(r -> {
-				assertThat(r.getResultType(), is(ResultType.DEFERRED));
-				assertThat(machine.getState().getIds(), containsInAnyOrder("S1"));
+				assertThat(r).hasResultType(ResultType.DEFERRED);
+				assertThat(machine.getState().getIds()).containsExactlyInAnyOrder("S1");
 			})
 			.expectComplete()
 			.verify();
 
 		StepVerifier.create(machine.sendEvent(asMono("E2")))
 			.assertNext(r -> {
-				assertThat(r.getResultType(), is(ResultType.ACCEPTED));
-				assertThat(machine.getState().getIds(), containsInAnyOrder("S3"));
+				assertThat(r).hasResultType(ResultType.ACCEPTED);
+				assertThat(machine.getState().getIds()).containsExactlyInAnyOrder("S3");
 			})
 			.expectComplete()
 			.verify();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testRegions() {
+		context.register(Config4.class);
+		context.refresh();
+		assertThat(context.containsBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE)).isTrue();
+		StateMachine<TestStates,TestEvents> machine =
+				context.getBean(StateMachineSystemConstants.DEFAULT_ID_STATEMACHINE, StateMachine.class);
+		assertThat(machine).isNotNull();
+		verifyStart(machine);
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S10, TestStates.S20);
+
+		List<StateMachineEventResult<TestStates, TestEvents>> ers = new ArrayList<>();
+
+		StepVerifier.create(machine.sendEvent(asMono(TestEvents.E1)))
+			.thenConsumeWhile(er -> true, er -> {
+				ers.add(er);
+			})
+			.expectComplete()
+			.verify();
+		;
+		assertThat(ers).filteredOnAssertions(er -> assertThat(er).hasResultType(ResultType.ACCEPTED)).hasSize(1);
+		assertThat(ers).filteredOnAssertions(er -> assertThat(er).hasResultType(ResultType.DENIED)).hasSize(1);
+		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S11, TestStates.S20);
 	}
 
 	@Configuration
@@ -322,6 +348,37 @@ public class ReactiveTests extends AbstractStateMachineTests {
 				.withExternal()
 					.source("S2").target("S3")
 					.event("E3");
+		}
+	}
+
+	@Configuration
+	@EnableStateMachine
+	static class Config4 extends EnumStateMachineConfigurerAdapter<TestStates, TestEvents> {
+
+		@Override
+		public void configure(StateMachineStateConfigurer<TestStates, TestEvents> states) throws Exception {
+			states
+				.withStates()
+					.initial(TestStates.S10)
+					.state(TestStates.S11)
+					.and()
+				.withStates()
+					.initial(TestStates.S20)
+					.state(TestStates.S21);
+		}
+
+		@Override
+		public void configure(StateMachineTransitionConfigurer<TestStates, TestEvents> transitions) throws Exception {
+			transitions
+				.withExternal()
+					.source(TestStates.S10)
+					.target(TestStates.S11)
+					.event(TestEvents.E1)
+					.and()
+				.withExternal()
+					.source(TestStates.S20)
+					.target(TestStates.S21)
+					.event(TestEvents.E2);
 		}
 	}
 }

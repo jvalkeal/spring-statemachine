@@ -22,12 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -76,7 +74,6 @@ import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Signal;
 
 /**
  * Base implementation of a {@link StateMachine} loosely modelled from UML state
@@ -226,12 +223,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 	public boolean sendEvent(Message<E> event) {
 		return sendEvent(Mono.just(event))
 			.switchIfEmpty(Flux.just(StateMachineEventResult.<S, E>from(this, event, ResultType.DENIED)))
-			.reduce(true, (a, r) -> {
-				if (a && r.getResultType() == ResultType.DENIED) {
-					a = false;
-				}
-				return a;
-			})
+			.reduce(false, (a, r) -> !(a | r.getResultType() == ResultType.DENIED))
 			.block();
 	}
 
@@ -621,44 +613,15 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		this.transitionConflictPolicy = transitionConflictPolicy;
 	}
 
-	private Flux<StateMachineEventResult<S, E>> handleEvent(Message<E> event) {
-		return Flux.just(StateMachineEventResult.<S, E>from(this, event,
-				hasStateMachineError() ? ResultType.DENIED : ResultType.ACCEPTED))
-			.switchOnFirst(switchEmptyIfDenied())
-			.switchOnFirst(handlePreEventInterceptors())
-			.flatMap(r -> acceptEvent(r.getMessage()))
+	private Flux<StateMachineEventResult<S, E>> handleEvent(Message<E> message) {
+		if (hasStateMachineError()) {
+			return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+		}
+		return Mono.just(message)
+			.map(m -> getStateMachineInterceptors().preEvent(m, this))
+			.onErrorResume(error -> Mono.empty())
+			.flatMapMany(m -> acceptEvent(m))
 			.doOnNext(notifyOnDenied());
-	}
-
-	private BiFunction<Signal<? extends StateMachineEventResult<S, E>>,
-				Flux<StateMachineEventResult<S, E>>,
-				Publisher<? extends StateMachineEventResult<S, E>>> handlePreEventInterceptors() {
-		return (signal, flux) -> {
-			if (signal.hasValue()) {
-				StateMachineEventResult<S, E> r = signal.get();
-				try {
-					Message<E> m = getStateMachineInterceptors().preEvent(r.getMessage(), this);
-					r.setMessage(m);
-					return Flux.just(r);
-				} catch (Exception e) {
-					return Flux.empty();				}
-			}
-			return flux;
-		};
-	}
-
-	private BiFunction<Signal<? extends StateMachineEventResult<S, E>>,
-				Flux<StateMachineEventResult<S, E>>,
-				Publisher<? extends StateMachineEventResult<S, E>>> switchEmptyIfDenied() {
-		return (signal, flux) -> {
-			if (signal.hasValue()) {
-				StateMachineEventResult<S, E> r = signal.get();
-				if (r.getResultType() == ResultType.DENIED) {
-					return Flux.empty();
-				}
-			}
-			return flux;
-		};
 	}
 
 	private Consumer<StateMachineEventResult<S, E>> notifyOnDenied() {
@@ -678,28 +641,68 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					stateMachineExecutor.queueDeferredEvent(message);
 					return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DEFERRED));
 				}
-				Flux<StateMachineEventResult<S, E>> xxx = cs.sendEvent(message);
-
-				return xxx.thenMany(Mono.defer(() -> {
-
-					for (Transition<S,E> transition : transitions) {
-						State<S,E> source = transition.getSource();
-						Trigger<S, E> trigger = transition.getTrigger();
-
-						if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-							if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-								return stateMachineExecutor.queueEvent(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
+				return cs.sendEvent(message).collectList().flatMapMany(l -> {
+					Flux<StateMachineEventResult<S, E>> ret = Flux.fromIterable(l);
+					if (!l.stream().anyMatch(er -> er.getResultType() == ResultType.ACCEPTED)) {
+						ret = ret.concatWith(Mono.defer(() -> {
+							for (Transition<S,E> transition : transitions) {
+								State<S,E> source = transition.getSource();
+								Trigger<S, E> trigger = transition.getTrigger();
+								if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+									if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+										return stateMachineExecutor.queueEvent(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
+									}
+								}
 							}
-						}
+							return Mono.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+						}));
 					}
-					return Mono.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
-				}));
+					return ret;
+				});
 			}
 			return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
 		});
 	}
 
+	private Flux<StateMachineEventResult<S, E>> acceptEvent3(Message<E> message) {
+		return Flux.defer(() -> {
+			State<S, E> cs = currentState;
+			if (cs != null) {
+				if (cs.shouldDefer(message)) {
+					stateMachineExecutor.queueDeferredEvent(message);
+					return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DEFERRED));
+				}
+				Flux<StateMachineEventResult<S, E>> xxx1 = cs.sendEvent(message);
 
+				Mono<List<StateMachineEventResult<S, E>>> xxx2 = xxx1.collectList();
+
+				return xxx2.flatMapMany(l -> {
+					boolean accepted = l.stream().anyMatch(er -> er.getResultType() == ResultType.ACCEPTED);
+
+					Flux<StateMachineEventResult<S, E>> xxx3 = Flux.fromIterable(l);
+					if (!accepted) {
+						xxx3 = xxx3.concatWith(Mono.defer(() -> {
+
+							for (Transition<S,E> transition : transitions) {
+								State<S,E> source = transition.getSource();
+								Trigger<S, E> trigger = transition.getTrigger();
+
+								if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
+									if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
+										return stateMachineExecutor.queueEvent(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
+									}
+								}
+							}
+							return Mono.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+						}));
+					}
+
+					return xxx3;
+				});
+			}
+			return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
+		});
+	}
 
 	private StateMachine<S, E> getRelayStateMachine() {
 		return relay != null ? relay : this;

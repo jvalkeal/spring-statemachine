@@ -192,6 +192,8 @@ public class StateContextTests extends AbstractStateMachineTests {
 
 		// all nested machines sends these
 		assertThat(listener.contexts, contains(
+				hasStage(Stage.EVENT_NOT_ACCEPTED),
+				hasStage(Stage.EVENT_NOT_ACCEPTED),
 				hasStage(Stage.EVENT_NOT_ACCEPTED)
 		));
 

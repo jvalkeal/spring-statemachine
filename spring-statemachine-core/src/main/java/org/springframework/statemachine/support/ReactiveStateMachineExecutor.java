@@ -100,7 +100,6 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	@Override
 	protected void onInit() throws Exception {
 		triggerSink = triggerProcessor.sink();
-
 		triggerFlux = Flux.from(triggerProcessor)
 			.flatMap(trigger -> handleTrigger(trigger));
 	}
@@ -191,17 +190,18 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	@Override
 	public Mono<Void> queueEvent(Mono<Message<E>> message) {
 		Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
-
 		return messages
 			.flatMap(m -> handleEvent(m))
 			.doOnNext(i -> {
 				triggerSink.next(i);
 			})
-			.then()
-			;
+			.then();
 	}
 
 	private Mono<TriggerQueueItem> handleEvent(Message<E> queuedEvent) {
+		if (log.isDebugEnabled()) {
+			log.debug("Handling message " + queuedEvent);
+		}
 		return Mono.defer(() -> {
 			State<S,E> currentState = stateMachine.getState();
 			if ((currentState != null && currentState.shouldDefer(queuedEvent))) {
