@@ -43,25 +43,11 @@ public interface StateMachineEventResult<S, E> {
 	Message<E> getMessage();
 
 	/**
-	 * Sets the message.
-	 *
-	 * @param message the new message
-	 */
-	void setMessage(Message<E> message);
-
-	/**
 	 * Gets the result type.
 	 *
 	 * @return the result type
 	 */
 	ResultType getResultType();
-
-	/**
-	 * Sets the result type.
-	 *
-	 * @param resultType the new result type
-	 */
-	void setResultType(ResultType resultType);
 
 	/**
 	 * Enumeration of a result type indicating whether a region accepted, denied or
@@ -90,8 +76,8 @@ public interface StateMachineEventResult<S, E> {
 	static class DefaultStateMachineEventResult<S, E> implements StateMachineEventResult<S, E> {
 
 		private final Region<S, E> region;
-		private Message<E> message;
-		private ResultType resultType;
+		private final Message<E> message;
+		private final ResultType resultType;
 
 		DefaultStateMachineEventResult(Region<S, E> region, Message<E> message, ResultType resultType) {
 			this.region = region;
@@ -110,18 +96,8 @@ public interface StateMachineEventResult<S, E> {
 		}
 
 		@Override
-		public void setMessage(Message<E> message) {
-			this.message = message;
-		}
-
-		@Override
 		public ResultType getResultType() {
 			return resultType;
-		}
-
-		@Override
-		public void setResultType(ResultType resultType) {
-			this.resultType = resultType;
 		}
 
 		@Override

@@ -15,14 +15,33 @@
  */
 package org.springframework.statemachine.support;
 
+import org.springframework.context.Lifecycle;
+
 import reactor.core.publisher.Mono;
 
+/**
+ * Reactive equivalent of a {@link Lifecycle}.
+ *
+ * @author Janne Valkealahti
+ * @see Lifecycle
+ *
+ */
 public interface StateMachineReactiveLifecycle {
 
+	/**
+	 * Starts component reactively.
+	 *
+	 * @return the mono for completion
+	 */
 	default Mono<Void> startReactively() {
 		return Mono.empty();
 	}
 
+	/**
+	 * Stops component reactively.
+	 *
+	 * @return the mono for completion
+	 */
 	default Mono<Void> stopReactively() {
 		return Mono.empty();
 	}
