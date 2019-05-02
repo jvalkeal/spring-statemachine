@@ -664,46 +664,6 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		});
 	}
 
-	private Flux<StateMachineEventResult<S, E>> acceptEvent3(Message<E> message) {
-		return Flux.defer(() -> {
-			State<S, E> cs = currentState;
-			if (cs != null) {
-				if (cs.shouldDefer(message)) {
-					stateMachineExecutor.queueDeferredEvent(message);
-					return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DEFERRED));
-				}
-				Flux<StateMachineEventResult<S, E>> xxx1 = cs.sendEvent(message);
-
-				Mono<List<StateMachineEventResult<S, E>>> xxx2 = xxx1.collectList();
-
-				return xxx2.flatMapMany(l -> {
-					boolean accepted = l.stream().anyMatch(er -> er.getResultType() == ResultType.ACCEPTED);
-
-					Flux<StateMachineEventResult<S, E>> xxx3 = Flux.fromIterable(l);
-					if (!accepted) {
-						xxx3 = xxx3.concatWith(Mono.defer(() -> {
-
-							for (Transition<S,E> transition : transitions) {
-								State<S,E> source = transition.getSource();
-								Trigger<S, E> trigger = transition.getTrigger();
-
-								if (cs != null && StateMachineUtils.containsAtleastOne(source.getIds(), cs.getIds())) {
-									if (trigger != null && trigger.evaluate(new DefaultTriggerContext<S, E>(message.getPayload()))) {
-										return stateMachineExecutor.queueEvent(Mono.just(message)).thenReturn(StateMachineEventResult.<S, E>from(this, message, ResultType.ACCEPTED));
-									}
-								}
-							}
-							return Mono.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
-						}));
-					}
-
-					return xxx3;
-				});
-			}
-			return Flux.just(StateMachineEventResult.<S, E>from(this, message, ResultType.DENIED));
-		});
-	}
-
 	private StateMachine<S, E> getRelayStateMachine() {
 		return relay != null ? relay : this;
 	}
