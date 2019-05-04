@@ -225,7 +225,7 @@ public class ReactiveTests extends AbstractStateMachineTests {
 			})
 			.expectComplete()
 			.verify();
-		;
+
 		assertThat(ers).filteredOnAssertions(er -> assertThat(er).hasResultType(ResultType.ACCEPTED)).hasSize(1);
 		assertThat(ers).filteredOnAssertions(er -> assertThat(er).hasResultType(ResultType.DENIED)).hasSize(1);
 		assertThat(machine.getState().getIds()).containsExactlyInAnyOrder(TestStates.S11, TestStates.S20);
