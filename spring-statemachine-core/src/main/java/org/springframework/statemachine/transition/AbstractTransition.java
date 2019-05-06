@@ -175,13 +175,13 @@ public abstract class AbstractTransition<S, E> implements Transition<S, E> {
 				return a.apply(context)
 					.thenEmpty(Mono.fromRunnable(() -> {
 						if (this.actionListener != null) {
-							this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
+							try {
+								this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
+							} catch (Exception e) {
+								log.warn("Error with actionListener", e);
+							}
 						}
-					}))
-//					.doOnNext(aVoid -> {
-//						this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
-//					})
-					;
+					}));
 			})
 			.then();
 	}

@@ -485,24 +485,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	 *
 	 * @param context the context
 	 */
-//	protected void scheduleStateActions(StateContext<S, E> context) {
-//		AtomicInteger completionCount = null;
-//		if (isSimple()) {
-//			completionCount = new AtomicInteger(stateActions.size());
-//		}
-//		for (Action<S, E> action : stateActions) {
-//			ScheduledFuture<?> future = scheduleAction(action, context, completionCount);
-//			if (log.isDebugEnabled()) {
-//				log.debug("Scheduling state do action " + action + " with future " + future);
-//			}
-//			if (future != null) {
-//				scheduledActions.add(new ScheduledAction(future, resolveDoActionTimeout(context)));
-//			}
-//		}
-//		if (isSimple() && stateActions.size() == 0) {
-//			notifyStateOnComplete(context);
-//		}
-//	}
 	protected void scheduleStateActions(StateContext<S, E> context) {
 		AtomicInteger completionCount = null;
 		if (isSimple()) {
@@ -522,25 +504,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
-//	/**
-//	 * Execute action and notify action listener if set.
-//	 *
-//	 * @param action the action
-//	 * @param context the context
-//	 */
-//	protected void executeAction(Action<S, E> action, StateContext<S, E> context) {
-//		long now = System.currentTimeMillis();
-//		action.execute(context);
-//		if (this.actionListener != null) {
-//			try {
-//				// TODO: REACTOR disabled for now
-//				// this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
-//			} catch (Exception e) {
-//				log.warn("Error with actionListener", e);
-//			}
-//		}
-//	}
-
 	/**
 	 * Execute action and notify action listener if set.
 	 *
@@ -555,13 +518,13 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 				return a.apply(context)
 					.thenEmpty(Mono.fromRunnable(() -> {
 						if (this.actionListener != null) {
-							this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
+							try {
+								this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
+							} catch (Exception e) {
+								log.warn("Error with actionListener", e);
+							}
 						}
-					}))
-//					.doOnNext(aVoid -> {
-//						this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
-//					})
-					;
+					}));
 			});
 	}
 
@@ -573,25 +536,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	 * @param completionCount the completion count tracker
 	 * @return the scheduled future
 	 */
-//	protected ScheduledFuture<?> scheduleAction(final Action<S, E> action, final StateContext<S, E> context,
-//			final AtomicInteger completionCount) {
-//		TaskScheduler taskScheduler = getTaskScheduler();
-//		if (taskScheduler == null) {
-//			log.error("Unable to schedule action as taskSchedule is not set, action=[" + action + "]");
-//			return null;
-//		}
-//		ScheduledFuture<?> future = taskScheduler.schedule(new Runnable() {
-//
-//			@Override
-//			public void run() {
-//				executeAction(action, context);
-//				if (completionCount != null && completionCount.decrementAndGet() <= 0) {
-//					notifyStateOnComplete(context);
-//				}
-//			}
-//		}, new Date());
-//		return future;
-//	}
 	protected ScheduledFuture<?> scheduleAction(final Function<StateContext<S, E>, Mono<Void>> action, final StateContext<S, E> context,
 			final AtomicInteger completionCount) {
 		TaskScheduler taskScheduler = getTaskScheduler();
@@ -603,6 +547,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 			@Override
 			public void run() {
+				// TODO: REACTOR subscribe is probably wrong!
 				executeAction(action, context).subscribe();
 				if (completionCount != null && completionCount.decrementAndGet() <= 0) {
 					notifyStateOnComplete(context);

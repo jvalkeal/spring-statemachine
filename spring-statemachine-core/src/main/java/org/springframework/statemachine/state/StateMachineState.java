@@ -156,9 +156,10 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 				mono = Mono.empty();
 			}
 			if (!isLocal(context)) {
-				mono = mono.then(Flux.fromIterable(getExitActions())
-						.flatMap(a -> a.apply(context))
-						.then());
+				Mono<Void> actions = Flux.fromIterable(getExitActions())
+					.flatMap(a -> a.apply(context))
+					.then();
+				mono = mono.then(actions);
 			}
 			return mono;
 		}));
@@ -168,12 +169,12 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	public Mono<Void> entry(final StateContext<S, E> context) {
 		Mono<Void> mono = super.entry(context);
 		if (!isLocal(context)) {
-			mono = mono.then(Flux.fromIterable(getEntryActions())
-					.flatMap(a -> a.apply(context))
-					.then());
+			Mono<Void> actions = Flux.fromIterable(getEntryActions())
+				.flatMap(a -> a.apply(context))
+				.then();
+			mono = mono.then(actions);
 		}
 		mono = mono.and(Mono.fromRunnable(() -> {
-
 			if (context.getTransition() != null) {
 				State<S, E> target = context.getTransition().getTarget();
 				State<S, E> immediateDeepParent = findDeepParent(getSubmachine().getStates(), target);

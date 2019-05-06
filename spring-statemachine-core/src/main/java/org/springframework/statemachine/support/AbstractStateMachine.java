@@ -325,6 +325,7 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 						notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, message, t, getRelayStateMachine()));
 					})
 					.flatMap(now -> {
+						// TODO: REACTOR need to think about error handling as we used to try/catch
 						return t.executeTransitionActions(ctx).then(Mono.just(now));
 					})
 					.doOnNext(now -> {
@@ -354,46 +355,6 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 					})
 					.then()
 					;
-			}
-
-//			@Override
-			public Mono<Void> transit2(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
-//				Mono<Void> mono = Mono.empty();
-				// TODO: REACTOR move notify's to a chain
-				long now = System.currentTimeMillis();
-				// TODO: fix above stateContext as it's not used
-				notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, message, t, getRelayStateMachine()));
-// TODO: XXX
-//				try {
-//					t.executeTransitionActions(ctx);
-//				} catch (Exception e) {
-//					// aborting, executor should stop possible loop checking possible transitions
-//					// causing infinite execution
-//					log.warn("Aborting as transition " + t, e);
-//					throw new StateMachineException("Aborting as transition " + t + " caused error ", e);
-//				}
-				Mono<Void> mono = t.executeTransitionActions(ctx);
-
-
-				notifyTransition(buildStateContext(Stage.TRANSITION, message, t, getRelayStateMachine()));
-				if (t.getTarget().getPseudoState() != null && t.getTarget().getPseudoState().getKind() == PseudoStateKind.JOIN) {
-					// TODO: REACTOR damn, this is not chained! we tests didn't fail?
-					exitFromState(t.getSource(), message, t, getRelayStateMachine());
-				} else {
-					if (t.getKind() == TransitionKind.INITIAL) {
-						mono = mono.then( switchToState(t.getTarget(), message, t, getRelayStateMachine()).thenEmpty(Mono.defer(() -> {
-							notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
-							return Mono.empty();
-						}))
-						);
-					} else if (t.getKind() != TransitionKind.INTERNAL) {
-						mono = mono.then(switchToState(t.getTarget(), message, t, getRelayStateMachine()));
-					}
-				}
-				// TODO: looks like events should be called here and anno processing earlier
-				notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
-				notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
-				return mono;
 			}
 		});
 		stateMachineExecutor = executor;
