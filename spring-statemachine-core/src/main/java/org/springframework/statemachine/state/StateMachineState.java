@@ -157,7 +157,7 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 			}
 			if (!isLocal(context)) {
 				Mono<Void> actions = Flux.fromIterable(getExitActions())
-					.flatMap(a -> a.apply(context))
+					.flatMap(a -> executeAction(a, context))
 					.then();
 				mono = mono.then(actions);
 			}
@@ -170,7 +170,7 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 		Mono<Void> mono = super.entry(context);
 		if (!isLocal(context)) {
 			Mono<Void> actions = Flux.fromIterable(getEntryActions())
-				.flatMap(a -> a.apply(context))
+				.flatMap(a -> executeAction(a, context))
 				.then();
 			mono = mono.then(actions);
 		}

@@ -18,8 +18,6 @@ package org.springframework.statemachine.state;
 import java.util.Collection;
 import java.util.function.Function;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.region.Region;
@@ -36,8 +34,6 @@ import reactor.core.publisher.Mono;
  * @param <E> the type of event
  */
 public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
-
-	private static final Log log = LogFactory.getLog(ObjectState.class);
 
 	/**
 	 * Instantiates a new object state.
@@ -162,39 +158,9 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 		return actions.and(super.entry(context));
 	}
 
-//	@Override
-//	public Mono<Void> exit(StateContext<S, E> context) {
-//		return super.exit(context).and(Mono.defer(() -> {
-//			for (Action<S, E> action : getExitActions()) {
-//				try {
-//					executeAction(action, context);
-//				} catch (Exception e) {
-//					log.error("Action execution resulted error", e);
-//				}
-//			}
-//			return Mono.empty();
-//		}));
-//	}
-//
-//	@Override
-//	public Mono<Void> entry(StateContext<S, E> context) {
-//		return Mono.defer(() -> {
-//			for (Action<S, E> action : getEntryActions()) {
-//				try {
-//					executeAction(action, context);
-//				} catch (Exception e) {
-//					log.error("Action execution resulted error", e);
-//				}
-//			}
-//			return Mono.empty();
-//		})
-//		.and(super.entry(context));
-//	}
-
 	@Override
 	public String toString() {
 		return "ObjectState [getIds()=" + getIds() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
 				+ ", toString()=" + super.toString() + "]";
 	}
-
 }
