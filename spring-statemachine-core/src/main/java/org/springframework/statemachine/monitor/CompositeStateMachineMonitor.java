@@ -16,11 +16,14 @@
 package org.springframework.statemachine.monitor;
 
 import java.util.Iterator;
+import java.util.function.Function;
 
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
-import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.support.AbstractCompositeItems;
 import org.springframework.statemachine.transition.Transition;
+
+import reactor.core.publisher.Mono;
 
 /**
  * Implementation of a {@link StateMachineMonitor} backed by a multiple monitors.
@@ -42,10 +45,11 @@ public class CompositeStateMachineMonitor<S, E> extends AbstractCompositeItems<S
 	}
 
 	@Override
-	public void action(StateMachine<S, E> stateMachine, Action<S, E> transition, long duration) {
+	public void action(StateMachine<S, E> stateMachine, Function<StateContext<S, E>, Mono<Void>> action,
+			long duration) {
 		for (Iterator<StateMachineMonitor<S, E>> iterator = getItems().reverse(); iterator.hasNext();) {
 			StateMachineMonitor<S, E> monitor = iterator.next();
-			monitor.action(stateMachine, transition, duration);
+			monitor.action(stateMachine, action, duration);
 		}
 	}
 }

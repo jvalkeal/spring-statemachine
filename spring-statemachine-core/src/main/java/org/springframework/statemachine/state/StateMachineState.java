@@ -17,6 +17,7 @@ package org.springframework.statemachine.state;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.function.Function;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -25,7 +26,6 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.access.StateMachineAccess;
 import org.springframework.statemachine.access.StateMachineFunction;
-import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.support.StateMachineUtils;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.statemachine.transition.TransitionKind;
@@ -94,8 +94,8 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	 * @param pseudoState the pseudo state
 	 */
 	public StateMachineState(S id, StateMachine<S, E> submachine, Collection<E> deferred,
-			Collection<? extends Action<S, E>> entryActions, Collection<? extends Action<S, E>> exitActions,
-			PseudoState<S, E> pseudoState) {
+			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
+			Collection<Function<StateContext<S, E>, Mono<Void>>> exitActions, PseudoState<S, E> pseudoState) {
 		super(id, deferred, entryActions, exitActions, pseudoState, submachine);
 		this.ids = new ArrayList<S>();
 		this.ids.add(id);
@@ -111,7 +111,8 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	 * @param exitActions the exit actions
 	 */
 	public StateMachineState(S id, StateMachine<S, E> submachine, Collection<E> deferred,
-			Collection<? extends Action<S, E>> entryActions, Collection<? extends Action<S, E>> exitActions) {
+			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
+			Collection<Function<StateContext<S, E>, Mono<Void>>> exitActions) {
 		super(id, deferred, entryActions, exitActions, null, submachine);
 		this.ids = new ArrayList<S>();
 		this.ids.add(id);
@@ -164,10 +165,14 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 	@Override
 	public Mono<Void> entry(final StateContext<S, E> context) {
 		return super.entry(context).and(Mono.defer(() -> {
+			Mono<Void> ret = Mono.empty();
 			if (!isLocal(context)) {
-				for (Action<S, E> action : getEntryActions()) {
-					executeAction(action, context);
-				}
+				ret = Flux.fromIterable(getEntryActions())
+						.flatMap(a -> a.apply(context))
+						.then();
+//				for (Action<S, E> action : getEntryActions()) {
+//					executeAction(action, context);
+//				}
 			}
 
 			if (context.getTransition() != null) {
@@ -241,7 +246,7 @@ public class StateMachineState<S, E> extends AbstractState<S, E> {
 							});
 				}
 			}
-			return getSubmachine().startReactively();
+			return ret.and(getSubmachine().startReactively());
 		}));
 	}
 

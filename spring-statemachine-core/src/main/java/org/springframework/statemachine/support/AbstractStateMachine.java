@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,11 +43,9 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineContext;
 import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.StateMachineEventResult.ResultType;
-import org.springframework.statemachine.StateMachineException;
 import org.springframework.statemachine.access.StateMachineAccess;
 import org.springframework.statemachine.access.StateMachineAccessor;
 import org.springframework.statemachine.access.StateMachineFunction;
-import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.action.ActionListener;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
@@ -321,29 +320,36 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 			@Override
 			public Mono<Void> transit(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
-				Mono<Void> mono = Mono.empty();
+//				Mono<Void> mono = Mono.empty();
+				// TODO: REACTOR move notify's to a chain
 				long now = System.currentTimeMillis();
 				// TODO: fix above stateContext as it's not used
 				notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, message, t, getRelayStateMachine()));
-				try {
-					t.executeTransitionActions(ctx);
-				} catch (Exception e) {
-					// aborting, executor should stop possible loop checking possible transitions
-					// causing infinite execution
-					log.warn("Aborting as transition " + t, e);
-					throw new StateMachineException("Aborting as transition " + t + " caused error ", e);
-				}
+// TODO: XXX
+//				try {
+//					t.executeTransitionActions(ctx);
+//				} catch (Exception e) {
+//					// aborting, executor should stop possible loop checking possible transitions
+//					// causing infinite execution
+//					log.warn("Aborting as transition " + t, e);
+//					throw new StateMachineException("Aborting as transition " + t + " caused error ", e);
+//				}
+				Mono<Void> mono = t.executeTransitionActions(ctx);
+
+
 				notifyTransition(buildStateContext(Stage.TRANSITION, message, t, getRelayStateMachine()));
 				if (t.getTarget().getPseudoState() != null && t.getTarget().getPseudoState().getKind() == PseudoStateKind.JOIN) {
+					// TODO: REACTOR damn, this is not chained! we tests didn't fail?
 					exitFromState(t.getSource(), message, t, getRelayStateMachine());
 				} else {
 					if (t.getKind() == TransitionKind.INITIAL) {
-						mono = switchToState(t.getTarget(), message, t, getRelayStateMachine()).thenEmpty(Mono.defer(() -> {
+						mono = mono.then( switchToState(t.getTarget(), message, t, getRelayStateMachine()).thenEmpty(Mono.defer(() -> {
 							notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
 							return Mono.empty();
-						}));
+						}))
+						);
 					} else if (t.getKind() != TransitionKind.INTERNAL) {
-						mono = switchToState(t.getTarget(), message, t, getRelayStateMachine());
+						mono = mono.then(switchToState(t.getTarget(), message, t, getRelayStateMachine()));
 					}
 				}
 				// TODO: looks like events should be called here and anno processing earlier
@@ -356,9 +362,9 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 		for (Transition<S, E> t : getTransitions()) {
 			t.addActionListener(new ActionListener<S, E>() {
-
 				@Override
-				public void onExecute(StateMachine<S, E> stateMachine, Action<S, E> action, long duration) {
+				public void onExecute(StateMachine<S, E> stateMachine, Function<StateContext<S, E>, Mono<Void>> action,
+						long duration) {
 					notifyActionMonitor(stateMachine, action, duration);
 				}
 			});
@@ -366,7 +372,8 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 		for (State<S, E> s : getStates()) {
 			s.addActionListener(new ActionListener<S, E>() {
 				@Override
-				public void onExecute(StateMachine<S, E> stateMachine, Action<S, E> action, long duration) {
+				public void onExecute(StateMachine<S, E> stateMachine, Function<StateContext<S, E>, Mono<Void>> action,
+						long duration) {
 					notifyActionMonitor(stateMachine, action, duration);
 				}
 			});
