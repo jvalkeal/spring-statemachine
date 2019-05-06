@@ -320,6 +320,44 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 
 			@Override
 			public Mono<Void> transit(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
+				return Mono.fromSupplier(() -> System.currentTimeMillis())
+					.doOnNext(now -> {
+						notifyTransitionStart(buildStateContext(Stage.TRANSITION_START, message, t, getRelayStateMachine()));
+					})
+					.flatMap(now -> {
+						return t.executeTransitionActions(ctx).then(Mono.just(now));
+					})
+					.doOnNext(now -> {
+						notifyTransition(buildStateContext(Stage.TRANSITION, message, t, getRelayStateMachine()));
+					})
+					.flatMap(now -> {
+						Mono<Void> ret = null;
+						if (t.getTarget().getPseudoState() != null && t.getTarget().getPseudoState().getKind() == PseudoStateKind.JOIN) {
+							ret = exitFromState(t.getSource(), message, t, getRelayStateMachine());
+						} else {
+							if (t.getKind() == TransitionKind.INITIAL) {
+								Mono<Void> notify = Mono.fromRunnable(() -> {
+									notifyStateMachineStarted(buildStateContext(Stage.STATEMACHINE_START, message, t, getRelayStateMachine()));
+								});
+								ret = switchToState(t.getTarget(), message, t, getRelayStateMachine()).then(notify);
+							} else if (t.getKind() != TransitionKind.INTERNAL) {
+								ret = switchToState(t.getTarget(), message, t, getRelayStateMachine());
+							} else {
+								ret = Mono.empty();
+							}
+						}
+						return ret.then(Mono.just(now));
+					})
+					.doOnNext(now -> {
+						notifyTransitionEnd(buildStateContext(Stage.TRANSITION_END, message, t, getRelayStateMachine()));
+						notifyTransitionMonitor(getRelayStateMachine(), t, System.currentTimeMillis() - now);
+					})
+					.then()
+					;
+			}
+
+//			@Override
+			public Mono<Void> transit2(Transition<S, E> t, StateContext<S, E> ctx, Message<E> message) {
 //				Mono<Void> mono = Mono.empty();
 				// TODO: REACTOR move notify's to a chain
 				long now = System.currentTimeMillis();

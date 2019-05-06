@@ -149,7 +149,8 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 	@Override
 	public Mono<Void> exit(StateContext<S, E> context) {
 		Mono<Void> monos = Flux.fromIterable(getExitActions())
-			.flatMap(a -> a.apply(context))
+				.flatMap(a -> executeAction(a, context))
+//			.flatMap(a -> a.apply(context))
 			.then();
 		return super.exit(context).and(monos);
 	}
@@ -157,7 +158,8 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
 		Mono<Void> monos = Flux.fromIterable(getEntryActions())
-				.flatMap(a -> a.apply(context))
+				.flatMap(a -> executeAction(a, context))
+				//.flatMap(a -> a.apply(context))
 				.then();
 		return monos.and(super.entry(context));
 	}

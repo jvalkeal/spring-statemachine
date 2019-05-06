@@ -553,9 +553,15 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			.flatMap(a -> {
 				long now = System.currentTimeMillis();
 				return a.apply(context)
-					.doOnNext(aVoid -> {
-						this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
-					});
+					.thenEmpty(Mono.fromRunnable(() -> {
+						if (this.actionListener != null) {
+							this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
+						}
+					}))
+//					.doOnNext(aVoid -> {
+//						this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
+//					})
+					;
 			});
 	}
 

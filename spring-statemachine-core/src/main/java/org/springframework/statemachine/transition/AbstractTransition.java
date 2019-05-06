@@ -173,9 +173,15 @@ public abstract class AbstractTransition<S, E> implements Transition<S, E> {
 			.flatMap(a -> {
 				long now = System.currentTimeMillis();
 				return a.apply(context)
-					.doOnNext(aVoid -> {
-						this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
-					});
+					.thenEmpty(Mono.fromRunnable(() -> {
+						if (this.actionListener != null) {
+							this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
+						}
+					}))
+//					.doOnNext(aVoid -> {
+//						this.actionListener.onExecute(context.getStateMachine(), a, System.currentTimeMillis() - now);
+//					})
+					;
 			})
 			.then();
 	}
