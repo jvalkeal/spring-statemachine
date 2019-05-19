@@ -65,6 +65,7 @@ public final class Actions {
 			@Override
 			public void execute(final StateContext<S, E> context) {
 				try {
+					System.out.println("HI ERROR");
 					action.execute(context);
 				}
 				catch (Exception exception) {

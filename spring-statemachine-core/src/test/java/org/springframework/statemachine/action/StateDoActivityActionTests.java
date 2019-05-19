@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.action;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -91,7 +92,9 @@ public class StateDoActivityActionTests extends AbstractStateMachineTests {
 		doSendEventAndConsumeAll(machine, TestEvents.E3);
 		assertThat(testActionS1I.onExecuteLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(testActionS1.interruptedLatch.await(2, TimeUnit.SECONDS), is(false));
+
 		doSendEventAndConsumeAll(machine, TestEvents.E1);
+		await().until(() -> machine.getState().getIds(), containsInAnyOrder(TestStates.S2));
 
 		doSendEventAndConsumeAll(machine, TestEvents.E4);
 		assertThat(testActionS2I.onExecuteLatch.await(2, TimeUnit.SECONDS), is(true));

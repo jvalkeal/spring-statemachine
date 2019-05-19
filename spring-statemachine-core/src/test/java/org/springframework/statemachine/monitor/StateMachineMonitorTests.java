@@ -15,7 +15,9 @@
  */
 package org.springframework.statemachine.monitor;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.springframework.statemachine.TestUtils.doSendEventAndConsumeAll;
@@ -72,6 +74,7 @@ public class StateMachineMonitorTests extends AbstractStateMachineTests {
 		// assertThat(monitor.actions.keySet(), containsInAnyOrder(taction, enaction, exaction, saction));
 		monitor.reset();
 		doSendEventAndConsumeAll(machine, "E2");
+		await().until(() -> machine.getState().getIds(), containsInAnyOrder("S1"));
 		assertThat(machine.getState().getIds(), contains("S1"));
 	}
 

@@ -267,12 +267,11 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		.then(Mono.fromRunnable(() -> {
 			completionListeners.clear();
 		}))
-		.then(cancelStateActionsX())
+		.then(cancelStateActions())
 		.then(Mono.fromRunnable(() -> {
 			stateListener.onExit(context);
 			disarmTriggers();
-		}))
-		;
+		}));
 	}
 
 	// @Override
@@ -368,13 +367,10 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 			stateListener.onEntry(context);
 			armTriggers();
-			// scheduleStateActions(context);
 			return Mono.empty();
 		})
-		.then(scheduleStateActionsX(context))
-		;
+		.then(scheduleStateActions(context));
 	}
-
 
 	@Override
 	public S getId() {
@@ -537,95 +533,153 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
-	private List<ScheduledActionX> scheduledActionsX = new ArrayList<>();
+	private List<ScheduledAction> scheduledActions = new ArrayList<>();
 
-	private static class ScheduledActionX {
+	private static class ScheduledAction {
 		Disposable disposable;
 		Long timeout;
 		Long subscribeTime;
 
-		ScheduledActionX(Disposable disposable, Long timeout, Long subscribeTime) {
+		ScheduledAction(Disposable disposable, Long timeout, Long subscribeTime) {
 			this.disposable = disposable;
 			this.timeout = timeout;
 			this.subscribeTime = subscribeTime;
 		}
 	}
 
-	protected Mono<Void> scheduleStateActionsX(StateContext<S, E> context) {
-		final Scheduler scheduler = Schedulers.newElastic("myThreads");
-		final AtomicInteger completionCount = new AtomicInteger(Integer.MAX_VALUE);
-		if (isSimple()) {
-			completionCount.set(stateActions.size());
-		}
-
-		Long timeout = resolveDoActionTimeout(context);
-
-		Flux<Function<StateContext<S, E>, Mono<Void>>> xxx1 = Flux.fromIterable(stateActions);
-
-		Flux<Mono<Void>> xxx2 = xxx1
-			// .publishOn(Schedulers.single())
-			.map(f -> {
-			long now = System.currentTimeMillis();
-			Mono<Void> apply1 = f.apply(context);
-			Mono<Void> apply2 = apply1.thenEmpty(Mono.fromRunnable(() -> {
-				if (this.actionListener != null) {
-					try {
-						this.actionListener.onExecute(context.getStateMachine(), f,
-								System.currentTimeMillis() - now);
-					} catch (Exception e) {
-						log.warn("Error with actionListener", e);
+	protected Mono<Void> scheduleStateActions(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			final AtomicInteger completionCount = new AtomicInteger(Integer.MAX_VALUE);
+			if (isSimple() && stateActions.size() > 0) {
+				completionCount.set(stateActions.size());
+			}
+			Long timeout = resolveDoActionTimeout(context);
+			return Flux.fromIterable(stateActions)
+				.map(sa -> {
+					long now = System.currentTimeMillis();
+					System.out.println("HI ERROR SA " + sa);
+					return sa.apply(context)
+						.thenEmpty(Mono.fromRunnable(() -> {
+							if (this.actionListener != null) {
+								try {
+									this.actionListener.onExecute(context.getStateMachine(), sa,
+											System.currentTimeMillis() - now);
+								} catch (Exception e) {
+									log.warn("Error with actionListener", e);
+								}
+							}
+						}));
+				})
+				.doFinally(s -> {
+					if (completionCount.decrementAndGet() <= 0) {
+						// System.out.println("HI DDD1 " + context.hashCode());
+						notifyStateOnComplete(context);
 					}
+				})
+				.map(f -> f.subscribeOn(Schedulers.parallel()).subscribe())
+				.map(d -> new ScheduledAction(d, timeout, System.currentTimeMillis()))
+				.doOnNext(sa -> scheduledActions.add(sa))
+				.thenEmpty(Mono.fromRunnable(() -> {
+					if (isSimple() && stateActions.size() == 0) {
+						// System.out.println("HI DDD2 " + context.hashCode());
+						notifyStateOnComplete(context);
+					}
+				}))
+				;
+		});
+	}
+
+	// protected Mono<Void> scheduleStateActionsx(StateContext<S, E> context) {
+	// 	final Scheduler scheduler = Schedulers.newElastic("myThreads");
+	// 	final AtomicInteger completionCount = new AtomicInteger(Integer.MAX_VALUE);
+	// 	if (isSimple()) {
+	// 		completionCount.set(stateActions.size());
+	// 	}
+
+	// 	Long timeout = resolveDoActionTimeout(context);
+
+	// 	Flux<Function<StateContext<S, E>, Mono<Void>>> xxx1 = Flux.fromIterable(stateActions);
+
+	// 	Flux<Mono<Void>> xxx2 = xxx1
+	// 		// .publishOn(Schedulers.single())
+	// 		.map(f -> {
+	// 		long now = System.currentTimeMillis();
+	// 		Mono<Void> apply1 = f.apply(context);
+	// 		Mono<Void> apply2 = apply1.thenEmpty(Mono.fromRunnable(() -> {
+	// 			if (this.actionListener != null) {
+	// 				try {
+	// 					this.actionListener.onExecute(context.getStateMachine(), f,
+	// 							System.currentTimeMillis() - now);
+	// 				} catch (Exception e) {
+	// 					log.warn("Error with actionListener", e);
+	// 				}
+	// 			}
+	// 		}));
+	// 		return apply2;
+	// 	});
+
+	// 	Flux<Disposable> xxx3 = xxx2.doFinally(s -> {
+	// 		if (completionCount.decrementAndGet() <= 0) {
+	// 			notifyStateOnComplete(context);
+	// 		}
+	// 	})
+	// 	// .map(f -> f.subscribeOn(scheduler).subscribe());
+	// 	.map(f -> f.subscribeOn(Schedulers.parallel()).subscribe());
+
+	// 	Flux<ScheduledActionX> xxx4 = xxx3.map(d -> new ScheduledActionX(d, timeout, System.currentTimeMillis()));
+	// 	Flux<ScheduledActionX> xxx5 = xxx4.doOnNext(sc -> scheduledActionsX.add(sc));
+	// 	Mono<Void> xxx6 = xxx5.thenEmpty(Mono.fromRunnable(() -> {
+	// 		if (isSimple() && stateActions.size() == 0) {
+	// 			notifyStateOnComplete(context);
+	// 		}
+	// 	}));
+	// 	return xxx6;
+	// }
+
+	protected Mono<Void> cancelStateActions() {
+		return Flux.fromIterable(scheduledActions)
+			.flatMap(sa -> {
+				long delay = 0;
+				if (sa.subscribeTime != null && sa.timeout != null) {
+					long tocancel = sa.subscribeTime + sa.timeout;
+					long now = System.currentTimeMillis();
+					delay = now > tocancel ? 0 : tocancel - now;
 				}
-			}));
-			return apply2;
-		});
-
-		Flux<Disposable> xxx3 = xxx2.doFinally(s -> {
-			if (completionCount.decrementAndGet() <= 0) {
-				notifyStateOnComplete(context);
-			}
-		})
-		// .timeout(timeout != null ? Duration.ofMillis(timeout) : Duration.ofMillis(Long.MAX_VALUE))
-		// .publishOn(Schedulers.parallel())
-		// scheduler
-		// .map(f -> f.subscribe());
-		.map(f -> f.subscribeOn(scheduler).subscribe());
-
-
-		Flux<ScheduledActionX> xxx4 = xxx3.map(d -> new ScheduledActionX(d, timeout, System.currentTimeMillis()));
-		Flux<ScheduledActionX> xxx5 = xxx4.doOnNext(sc -> scheduledActionsX.add(sc));
-		Mono<Void> xxx6 = xxx5.thenEmpty(Mono.fromRunnable(() -> {
-			if (isSimple() && stateActions.size() == 0) {
-				notifyStateOnComplete(context);
-			}
-		}));
-		return xxx6;
+				return Mono.delay(Duration.ofMillis(delay)).thenReturn(sa);
+			})
+			.doOnNext(sa -> {
+				sa.disposable.dispose();
+			})
+			.thenEmpty(Mono.fromRunnable(() -> {
+				scheduledActions.clear();
+			}))
+			;
 	}
 
-	protected Mono<Void> cancelStateActionsX() {
-		Flux<ScheduledActionX> xxx1 = Flux.fromIterable(scheduledActionsX);
+	// protected Mono<Void> cancelStateActions() {
+	// 	Flux<ScheduledActionX> xxx1 = Flux.fromIterable(scheduledActionsX);
 
-		Flux<ScheduledActionX> xxx2 = xxx1.flatMap(sa -> {
-			long delay = 0;
-			if (sa.subscribeTime != null && sa.timeout != null) {
-				long tocancel = sa.subscribeTime + sa.timeout;
-				long now = System.currentTimeMillis();
-				delay = now > tocancel ? 0 : tocancel - now;
-				System.out.println("XXX1 " + tocancel + " " + now + " " + delay);
-			}
-			System.out.println("XXX2 " + delay);
-			return Mono.delay(Duration.ofMillis(delay)).thenReturn(sa);
-		});
+	// 	Flux<ScheduledActionX> xxx2 = xxx1.flatMap(sa -> {
+	// 		long delay = 0;
+	// 		if (sa.subscribeTime != null && sa.timeout != null) {
+	// 			long tocancel = sa.subscribeTime + sa.timeout;
+	// 			long now = System.currentTimeMillis();
+	// 			delay = now > tocancel ? 0 : tocancel - now;
+	// 			System.out.println("XXX1 " + tocancel + " " + now + " " + delay);
+	// 		}
+	// 		System.out.println("XXX2 " + delay);
+	// 		return Mono.delay(Duration.ofMillis(delay)).thenReturn(sa);
+	// 	});
 
-		Flux<ScheduledActionX> xxx3 = xxx2.doOnNext(sa -> {
-			System.out.println("XXX3 " + sa.disposable);
-			sa.disposable.dispose();
-		});
-		Mono<Void> xxx4 = xxx3.thenEmpty(Mono.fromRunnable(() -> {
-			scheduledActionsX.clear();
-		}));
-		return xxx4;
-	}
+	// 	Flux<ScheduledActionX> xxx3 = xxx2.doOnNext(sa -> {
+	// 		System.out.println("XXX3 " + sa.disposable);
+	// 		sa.disposable.dispose();
+	// 	});
+	// 	Mono<Void> xxx4 = xxx3.thenEmpty(Mono.fromRunnable(() -> {
+	// 		scheduledActionsX.clear();
+	// 	}));
+	// 	return xxx4;
+	// }
 
 
 	// /**

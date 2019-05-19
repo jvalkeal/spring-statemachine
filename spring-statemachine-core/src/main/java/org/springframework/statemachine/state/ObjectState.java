@@ -154,6 +154,9 @@ public class ObjectState<S, E> extends AbstractSimpleState<S, E> {
 	public Mono<Void> entry(StateContext<S, E> context) {
 		Mono<Void> actions = Flux.fromIterable(getEntryActions())
 			.flatMap(a -> executeAction(a, context))
+			.onErrorContinue((t, u) -> {
+				System.out.println("ERROR CONTINUE");
+			})
 			.then();
 		return actions.and(super.entry(context));
 	}

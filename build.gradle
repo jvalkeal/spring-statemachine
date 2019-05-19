@@ -388,6 +388,7 @@ project('spring-statemachine-uml') {
 		testCompile 'org.hamcrest:hamcrest-core'
 		testCompile 'org.hamcrest:hamcrest-library'
 		testCompile 'junit:junit'
+		testCompile 'org.awaitility:awaitility'
 		testRuntime 'org.apache.logging.log4j:log4j-core'
 	}
 }

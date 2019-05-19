@@ -113,6 +113,7 @@ public class JoinStateTests extends AbstractStateMachineTests {
 		assertThat(machine.getState().getIds(), containsInAnyOrder(TestStates.S2, TestStates.S20, TestStates.S30));
 
 		listener.reset(1);
+		System.out.println("HIXXX");
 		machine.sendEvent(TestEvents.E2);
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
 		assertThat(listener.stateChangedCount, is(1));
