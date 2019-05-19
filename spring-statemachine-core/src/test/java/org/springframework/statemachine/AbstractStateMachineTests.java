@@ -199,17 +199,21 @@ public abstract class AbstractStateMachineTests {
 
 		@Override
 		public void execute(StateContext<TestStates, TestEvents> context) {
+			System.out.println("HI 1");
 			onExecuteStartLatch.countDown();
 			now = System.currentTimeMillis();
 			if (sleep > 0) {
 				try {
+					System.out.println("HI 2");
 					Thread.sleep(sleep);
 				} catch (InterruptedException e) {
+					System.out.println("HI 3");
 					interrupted.set(true);
 					interruptedLatch.countDown();
 				}
 			}
 			super.execute(context);
+			System.out.println("HI 4");
 		}
 
 	}
