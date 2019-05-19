@@ -19,18 +19,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
@@ -48,7 +44,6 @@ import org.springframework.statemachine.trigger.Trigger;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -68,11 +63,11 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions;
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> exitActions;
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> stateActions;
+	private final List<ScheduledAction> scheduledActions = new ArrayList<>();
 	private final Collection<Region<S, E>> regions = new ArrayList<Region<S, E>>();
 	private final StateMachine<S, E> submachine;
 	private List<Trigger<S, E>> triggers = new ArrayList<Trigger<S, E>>();
 	private final CompositeStateListener<S, E> stateListener = new CompositeStateListener<S, E>();
-	// private final List<ScheduledAction> scheduledActions = new ArrayList<>();
 	private CompositeActionListener<S, E> actionListener;
 	private final List<StateMachineListener<S, E>> completionListeners = new CopyOnWriteArrayList<>();
 	private StateDoActionPolicy stateDoActionPolicy;
@@ -221,29 +216,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		return deferred.contains(event.getPayload());
 	}
 
-	// @Override
-	// public Mono<Void> exit(StateContext<S, E> context) {
-	// 	return Mono.defer(() -> {
-	// 		if (submachine != null) {
-	// 			for (StateMachineListener<S, E> l : completionListeners) {
-	// 				submachine.removeStateListener(l);
-	// 			}
-	// 		} else if (!regions.isEmpty()) {
-	// 			for (Region<S, E> region : regions) {
-	// 				for (StateMachineListener<S, E> l : completionListeners) {
-	// 					region.removeStateListener(l);
-	// 				}
-	// 			}
-	// 		}
-	// 		completionListeners.clear();
-	// 		cancelStateActions();
-	// 		stateListener.onExit(context);
-	// 		disarmTriggers();
-	// 		return Mono.empty();
-	// 	});
-	// }
-
-
 	@Override
 	public Mono<Void> exit(StateContext<S, E> context) {
 		return Mono.defer(() -> {
@@ -258,10 +230,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 					}
 				}
 			}
-			// completionListeners.clear();
-			// cancelStateActions();
-			// stateListener.onExit(context);
-			// disarmTriggers();
 			return Mono.empty();
 		})
 		.then(Mono.fromRunnable(() -> {
@@ -273,55 +241,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			disarmTriggers();
 		}));
 	}
-
-	// @Override
-	// public Mono<Void> entry(StateContext<S, E> context) {
-	// 	return Mono.defer(() -> {
-	// 		if (submachine != null) {
-	// 			final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
-
-	// 				@Override
-	// 				public void stateContext(StateContext<S, E> stateContext) {
-	// 					if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-	// 						if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
-	// 							completionListeners.remove(this);
-	// 							submachine.removeStateListener(this);
-	// 							if (completionListeners.isEmpty()) {
-	// 								notifyStateOnComplete(stateContext);
-	// 							}
-	// 						}
-	// 					}
-	// 				}
-	// 			};
-	// 			submachine.addStateListener(l);
-	// 		} else if (!regions.isEmpty()) {
-	// 			for (final Region<S, E> region : regions) {
-	// 				final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
-
-	// 					@Override
-	// 					public void stateContext(StateContext<S, E> stateContext) {
-	// 						if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-	// 							if (stateContext.getStateMachine() == region && region.isComplete()) {
-	// 								completionListeners.remove(this);
-	// 								region.removeStateListener(this);
-	// 								if (completionListeners.isEmpty()) {
-	// 									notifyStateOnComplete(stateContext);
-	// 								}
-	// 							}
-	// 						}
-	// 					}
-	// 				};
-	// 				completionListeners.add(l);
-	// 				region.addStateListener(l);
-	// 			}
-	// 		}
-
-	// 		stateListener.onEntry(context);
-	// 		armTriggers();
-	// 		scheduleStateActions(context);
-	// 		return Mono.empty();
-	// 	});
-	// }
 
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
@@ -533,21 +452,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
-	private List<ScheduledAction> scheduledActions = new ArrayList<>();
-
-	private static class ScheduledAction {
-		Disposable disposable;
-		Long timeout;
-		Long subscribeTime;
-
-		ScheduledAction(Disposable disposable, Long timeout, Long subscribeTime) {
-			this.disposable = disposable;
-			this.timeout = timeout;
-			this.subscribeTime = subscribeTime;
-		}
-	}
-
-	protected Mono<Void> scheduleStateActions(StateContext<S, E> context) {
+	private Mono<Void> scheduleStateActions(StateContext<S, E> context) {
 		return Mono.defer(() -> {
 			final AtomicInteger completionCount = new AtomicInteger(Integer.MAX_VALUE);
 			if (isSimple() && stateActions.size() > 0) {
@@ -557,7 +462,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			return Flux.fromIterable(stateActions)
 				.map(sa -> {
 					long now = System.currentTimeMillis();
-					System.out.println("HI ERROR SA " + sa);
 					return sa.apply(context)
 						.thenEmpty(Mono.fromRunnable(() -> {
 							if (this.actionListener != null) {
@@ -572,7 +476,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 				})
 				.doFinally(s -> {
 					if (completionCount.decrementAndGet() <= 0) {
-						// System.out.println("HI DDD1 " + context.hashCode());
 						notifyStateOnComplete(context);
 					}
 				})
@@ -581,7 +484,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 				.doOnNext(sa -> scheduledActions.add(sa))
 				.thenEmpty(Mono.fromRunnable(() -> {
 					if (isSimple() && stateActions.size() == 0) {
-						// System.out.println("HI DDD2 " + context.hashCode());
 						notifyStateOnComplete(context);
 					}
 				}))
@@ -589,54 +491,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		});
 	}
 
-	// protected Mono<Void> scheduleStateActionsx(StateContext<S, E> context) {
-	// 	final Scheduler scheduler = Schedulers.newElastic("myThreads");
-	// 	final AtomicInteger completionCount = new AtomicInteger(Integer.MAX_VALUE);
-	// 	if (isSimple()) {
-	// 		completionCount.set(stateActions.size());
-	// 	}
-
-	// 	Long timeout = resolveDoActionTimeout(context);
-
-	// 	Flux<Function<StateContext<S, E>, Mono<Void>>> xxx1 = Flux.fromIterable(stateActions);
-
-	// 	Flux<Mono<Void>> xxx2 = xxx1
-	// 		// .publishOn(Schedulers.single())
-	// 		.map(f -> {
-	// 		long now = System.currentTimeMillis();
-	// 		Mono<Void> apply1 = f.apply(context);
-	// 		Mono<Void> apply2 = apply1.thenEmpty(Mono.fromRunnable(() -> {
-	// 			if (this.actionListener != null) {
-	// 				try {
-	// 					this.actionListener.onExecute(context.getStateMachine(), f,
-	// 							System.currentTimeMillis() - now);
-	// 				} catch (Exception e) {
-	// 					log.warn("Error with actionListener", e);
-	// 				}
-	// 			}
-	// 		}));
-	// 		return apply2;
-	// 	});
-
-	// 	Flux<Disposable> xxx3 = xxx2.doFinally(s -> {
-	// 		if (completionCount.decrementAndGet() <= 0) {
-	// 			notifyStateOnComplete(context);
-	// 		}
-	// 	})
-	// 	// .map(f -> f.subscribeOn(scheduler).subscribe());
-	// 	.map(f -> f.subscribeOn(Schedulers.parallel()).subscribe());
-
-	// 	Flux<ScheduledActionX> xxx4 = xxx3.map(d -> new ScheduledActionX(d, timeout, System.currentTimeMillis()));
-	// 	Flux<ScheduledActionX> xxx5 = xxx4.doOnNext(sc -> scheduledActionsX.add(sc));
-	// 	Mono<Void> xxx6 = xxx5.thenEmpty(Mono.fromRunnable(() -> {
-	// 		if (isSimple() && stateActions.size() == 0) {
-	// 			notifyStateOnComplete(context);
-	// 		}
-	// 	}));
-	// 	return xxx6;
-	// }
-
-	protected Mono<Void> cancelStateActions() {
+	private Mono<Void> cancelStateActions() {
 		return Flux.fromIterable(scheduledActions)
 			.flatMap(sa -> {
 				long delay = 0;
@@ -655,87 +510,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			}))
 			;
 	}
-
-	// protected Mono<Void> cancelStateActions() {
-	// 	Flux<ScheduledActionX> xxx1 = Flux.fromIterable(scheduledActionsX);
-
-	// 	Flux<ScheduledActionX> xxx2 = xxx1.flatMap(sa -> {
-	// 		long delay = 0;
-	// 		if (sa.subscribeTime != null && sa.timeout != null) {
-	// 			long tocancel = sa.subscribeTime + sa.timeout;
-	// 			long now = System.currentTimeMillis();
-	// 			delay = now > tocancel ? 0 : tocancel - now;
-	// 			System.out.println("XXX1 " + tocancel + " " + now + " " + delay);
-	// 		}
-	// 		System.out.println("XXX2 " + delay);
-	// 		return Mono.delay(Duration.ofMillis(delay)).thenReturn(sa);
-	// 	});
-
-	// 	Flux<ScheduledActionX> xxx3 = xxx2.doOnNext(sa -> {
-	// 		System.out.println("XXX3 " + sa.disposable);
-	// 		sa.disposable.dispose();
-	// 	});
-	// 	Mono<Void> xxx4 = xxx3.thenEmpty(Mono.fromRunnable(() -> {
-	// 		scheduledActionsX.clear();
-	// 	}));
-	// 	return xxx4;
-	// }
-
-
-	// /**
-	//  * Cancel existing state actions and clear list.
-	//  */
-	// protected void cancelStateActions() {
-	// 	if (log.isDebugEnabled()) {
-	// 		log.debug("Handling finish of state actions, scheduledActions size is " + scheduledActions.size());
-	// 	}
-	// 	for (ScheduledAction task : scheduledActions) {
-	// 		if (task.timeout != null) {
-	// 			if (log.isDebugEnabled()) {
-	// 				log.debug("Timeouting scheduled state do action " + task);
-	// 			}
-	// 			try {
-	// 				task.future.get(task.timeout, TimeUnit.MILLISECONDS);
-	// 			} catch (Exception e) {
-	// 				if (log.isDebugEnabled()) {
-	// 					log.debug("Cancelling scheduled state do action after timeout " + task);
-	// 				}
-	// 				task.future.cancel(true);
-	// 			}
-	// 		} else {
-	// 			if (log.isDebugEnabled()) {
-	// 				log.debug("Cancelling scheduled state do action immediately " + task);
-	// 			}
-	// 			task.future.cancel(true);
-	// 		}
-	// 	}
-	// 	scheduledActions.clear();
-	// }
-
-	// /**
-	//  * Schedule state actions and store futures into list to
-	//  * be cancelled.
-	//  *
-	//  * @param context the context
-	//  */
-	// protected void scheduleStateActions(StateContext<S, E> context) {
-	// 	AtomicInteger completionCount = null;
-	// 	if (isSimple()) {
-	// 		completionCount = new AtomicInteger(stateActions.size());
-	// 	}
-	// 	for (Function<StateContext<S, E>, Mono<Void>> action : stateActions) {
-	// 		ScheduledFuture<?> future = scheduleAction(action, context, completionCount);
-	// 		if (log.isDebugEnabled()) {
-	// 			log.debug("Scheduling state do action " + action + " with future " + future);
-	// 		}
-	// 		if (future != null) {
-	// 			scheduledActions.add(new ScheduledAction(future, resolveDoActionTimeout(context)));
-	// 		}
-	// 	}
-	// 	if (isSimple() && stateActions.size() == 0) {
-	// 		notifyStateOnComplete(context);
-	// 	}
-	// }
 
 	/**
 	 * Execute action and notify action listener if set.
@@ -761,35 +535,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			});
 	}
 
-	// /**
-	//  * Schedule action and return future which can be used to cancel it.
-	//  *
-	//  * @param action the action
-	//  * @param context the context
-	//  * @param completionCount the completion count tracker
-	//  * @return the scheduled future
-	//  */
-	// protected ScheduledFuture<?> scheduleAction(final Function<StateContext<S, E>, Mono<Void>> action, final StateContext<S, E> context,
-	// 		final AtomicInteger completionCount) {
-	// 	TaskScheduler taskScheduler = getTaskScheduler();
-	// 	if (taskScheduler == null) {
-	// 		log.error("Unable to schedule action as taskSchedule is not set, action=[" + action + "]");
-	// 		return null;
-	// 	}
-	// 	ScheduledFuture<?> future = taskScheduler.schedule(new Runnable() {
-
-	// 		@Override
-	// 		public void run() {
-	// 			// TODO: REACTOR subscribe is probably wrong!
-	// 			executeAction(action, context).subscribe();
-	// 			if (completionCount != null && completionCount.decrementAndGet() <= 0) {
-	// 				notifyStateOnComplete(context);
-	// 			}
-	// 		}
-	// 	}, new Date());
-	// 	return future;
-	// }
-
 	protected void notifyStateOnComplete(StateContext<S, E> context) {
 		stateListener.onComplete(context);
 	}
@@ -805,19 +550,17 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		return timeout;
 	}
 
-	// private static class ScheduledAction {
-	// 	ScheduledFuture<?> future;
-	// 	Long timeout;
+	private static class ScheduledAction {
+		Disposable disposable;
+		Long timeout;
+		Long subscribeTime;
 
-	// 	public ScheduledAction(ScheduledFuture<?> future, Long timeout) {
-	// 		this.future = future;
-	// 		this.timeout = timeout;
-	// 	}
-	// 	@Override
-	// 	public String toString() {
-	// 		return "ScheduledTask [future=" + future + ", timeout=" + timeout + "]";
-	// 	}
-	// }
+		ScheduledAction(Disposable disposable, Long timeout, Long subscribeTime) {
+			this.disposable = disposable;
+			this.timeout = timeout;
+			this.subscribeTime = subscribeTime;
+		}
+	}
 
 	@Override
 	public String toString() {
