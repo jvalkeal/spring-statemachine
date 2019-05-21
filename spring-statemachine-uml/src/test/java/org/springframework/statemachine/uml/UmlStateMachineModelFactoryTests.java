@@ -15,6 +15,7 @@
  */
 package org.springframework.statemachine.uml;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -695,9 +696,11 @@ public class UmlStateMachineModelFactoryTests extends AbstractUmlTests {
 		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S1"));
 		assertThat(e1Action.latch.await(1, TimeUnit.SECONDS), is(true));
 		doSendEventAndConsumeAll(stateMachine, "E1");
+		await().until(() -> stateMachine.getState().getIds(), containsInAnyOrder("S2"));
 		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S2"));
 		assertThat(e2Action.latch.await(1, TimeUnit.SECONDS), is(true));
 		doSendEventAndConsumeAll(stateMachine, "E2");
+		await().until(() -> stateMachine.getState().getIds(), containsInAnyOrder("S3"));
 		assertThat(stateMachine.getState().getIds(), containsInAnyOrder("S3"));
 	}
 

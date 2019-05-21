@@ -15,21 +15,18 @@
  */
 package org.springframework.statemachine.state;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
@@ -44,8 +41,10 @@ import org.springframework.statemachine.support.LifecycleObjectSupport;
 import org.springframework.statemachine.support.StateMachineUtils;
 import org.springframework.statemachine.trigger.Trigger;
 
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Base implementation of a {@link State}.
@@ -64,11 +63,11 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions;
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> exitActions;
 	private final Collection<Function<StateContext<S, E>, Mono<Void>>> stateActions;
+	private final List<ScheduledAction> scheduledActions = new ArrayList<>();
 	private final Collection<Region<S, E>> regions = new ArrayList<Region<S, E>>();
 	private final StateMachine<S, E> submachine;
 	private List<Trigger<S, E>> triggers = new ArrayList<Trigger<S, E>>();
 	private final CompositeStateListener<S, E> stateListener = new CompositeStateListener<S, E>();
-	private final List<ScheduledAction> scheduledActions = new ArrayList<>();
 	private CompositeActionListener<S, E> actionListener;
 	private final List<StateMachineListener<S, E>> completionListeners = new CopyOnWriteArrayList<>();
 	private StateDoActionPolicy stateDoActionPolicy;
@@ -77,7 +76,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
+	 * @param id          the state identifier
 	 * @param pseudoState the pseudo state
 	 */
 	public AbstractState(S id, PseudoState<S, E> pseudoState) {
@@ -87,7 +86,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
+	 * @param id       the state identifier
 	 * @param deferred the deferred
 	 */
 	public AbstractState(S id, Collection<E> deferred) {
@@ -97,10 +96,10 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
+	 * @param exitActions  the exit actions
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -111,11 +110,11 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
-	 * @param pseudoState the pseudo state
+	 * @param exitActions  the exit actions
+	 * @param pseudoState  the pseudo state
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -126,12 +125,12 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
-	 * @param pseudoState the pseudo state
-	 * @param submachine the submachine
+	 * @param exitActions  the exit actions
+	 * @param pseudoState  the pseudo state
+	 * @param submachine   the submachine
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -143,12 +142,12 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
-	 * @param pseudoState the pseudo state
-	 * @param regions the regions
+	 * @param exitActions  the exit actions
+	 * @param pseudoState  the pseudo state
+	 * @param regions      the regions
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -160,13 +159,13 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
-	 * @param pseudoState the pseudo state
-	 * @param regions the regions
-	 * @param submachine the submachine
+	 * @param exitActions  the exit actions
+	 * @param pseudoState  the pseudo state
+	 * @param regions      the regions
+	 * @param submachine   the submachine
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -178,14 +177,14 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	/**
 	 * Instantiates a new abstract state.
 	 *
-	 * @param id the state identifier
-	 * @param deferred the deferred
+	 * @param id           the state identifier
+	 * @param deferred     the deferred
 	 * @param entryActions the entry actions
-	 * @param exitActions the exit actions
+	 * @param exitActions  the exit actions
 	 * @param stateActions the state actions
-	 * @param pseudoState the pseudo state
-	 * @param regions the regions
-	 * @param submachine the submachine
+	 * @param pseudoState  the pseudo state
+	 * @param regions      the regions
+	 * @param submachine   the submachine
 	 */
 	public AbstractState(S id, Collection<E> deferred,
 			Collection<Function<StateContext<S, E>, Mono<Void>>> entryActions,
@@ -231,12 +230,16 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 					}
 				}
 			}
+			return Mono.empty();
+		})
+		.then(Mono.fromRunnable(() -> {
 			completionListeners.clear();
-			cancelStateActions();
+		}))
+		.then(cancelStateActions())
+		.then(Mono.fromRunnable(() -> {
 			stateListener.onExit(context);
 			disarmTriggers();
-			return Mono.empty();
-		});
+		}));
 	}
 
 	@Override
@@ -283,9 +286,9 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 			stateListener.onEntry(context);
 			armTriggers();
-			scheduleStateActions(context);
 			return Mono.empty();
-		});
+		})
+		.then(scheduleStateActions(context));
 	}
 
 	@Override
@@ -449,59 +452,67 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
-	/**
-	 * Cancel existing state actions and clear list.
-	 */
-	protected void cancelStateActions() {
-		if (log.isDebugEnabled()) {
-			log.debug("Handling finish of state actions, scheduledActions size is " + scheduledActions.size());
-		}
-		for (ScheduledAction task : scheduledActions) {
-			if (task.timeout != null) {
-				if (log.isDebugEnabled()) {
-					log.debug("Timeouting scheduled state do action " + task);
-				}
-				try {
-					task.future.get(task.timeout, TimeUnit.MILLISECONDS);
-				} catch (Exception e) {
-					if (log.isDebugEnabled()) {
-						log.debug("Cancelling scheduled state do action after timeout " + task);
+	private Mono<Void> scheduleStateActions(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+			Long timeout = resolveDoActionTimeout(context);
+			return Flux.fromIterable(stateActions)
+				.map(stateAction -> executeAction(stateAction, context))
+				// go in a separate thread so that possible blocking action can be interrupted
+				.map(function -> function.subscribeOn(Schedulers.parallel())
+					.doFinally(signal -> {
+						if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
+							// TODO: REACTOR I'd really like to run this not in a same thread
+							//       but we need to wait action to complete
+							notifyStateOnComplete(context);
+						}
+					})
+					.subscribe())
+				.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
+				.doOnNext(stateAction -> scheduledActions.add(stateAction))
+				.thenEmpty(Mono.fromRunnable(() -> {
+					if (isSimple() && stateActions.size() == 0) {
+						notifyStateOnComplete(context);
 					}
-					task.future.cancel(true);
-				}
-			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("Cancelling scheduled state do action immediately " + task);
-				}
-				task.future.cancel(true);
-			}
-		}
-		scheduledActions.clear();
+				}));
+		});
 	}
 
-	/**
-	 * Schedule state actions and store futures into list to
-	 * be cancelled.
-	 *
-	 * @param context the context
-	 */
-	protected void scheduleStateActions(StateContext<S, E> context) {
-		AtomicInteger completionCount = null;
-		if (isSimple()) {
-			completionCount = new AtomicInteger(stateActions.size());
-		}
-		for (Function<StateContext<S, E>, Mono<Void>> action : stateActions) {
-			ScheduledFuture<?> future = scheduleAction(action, context, completionCount);
-			if (log.isDebugEnabled()) {
-				log.debug("Scheduling state do action " + action + " with future " + future);
-			}
-			if (future != null) {
-				scheduledActions.add(new ScheduledAction(future, resolveDoActionTimeout(context)));
-			}
-		}
-		if (isSimple() && stateActions.size() == 0) {
-			notifyStateOnComplete(context);
-		}
+	private Mono<Void> scheduleStateActions2(StateContext<S, E> context) {
+		return Mono.defer(() -> {
+			final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+			Long timeout = resolveDoActionTimeout(context);
+			return Flux.fromIterable(stateActions)
+				.parallel()
+				.runOn(Schedulers.parallel())
+				.map(stateAction -> executeAction(stateAction, context)
+					.doFinally(signal -> {
+						if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
+							notifyStateOnComplete(context);
+						}
+					})
+					.subscribe())
+				.sequential()
+				.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
+				.doOnNext(stateAction -> scheduledActions.add(stateAction))
+				.thenEmpty(Mono.fromRunnable(() -> {
+					if (isSimple() && stateActions.size() == 0) {
+						notifyStateOnComplete(context);
+					}
+				}));
+		});
+	}
+
+	private Mono<Void> cancelStateActions() {
+		return Flux.fromIterable(scheduledActions)
+			// state action tells us how long it needs for timeout, delay
+			.flatMap(stateAction -> Mono.delay(stateAction.getNeededDelayNow()).thenReturn(stateAction))
+			// then dispose which i.e. should interrupt blocking threads or cancel reactive code
+			.doOnNext(stateAction -> stateAction.disposable.dispose())
+			// we're done, clear state scheduled state actions
+			.thenEmpty(Mono.fromRunnable(() -> {
+				scheduledActions.clear();
+			}));
 	}
 
 	/**
@@ -528,35 +539,6 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			});
 	}
 
-	/**
-	 * Schedule action and return future which can be used to cancel it.
-	 *
-	 * @param action the action
-	 * @param context the context
-	 * @param completionCount the completion count tracker
-	 * @return the scheduled future
-	 */
-	protected ScheduledFuture<?> scheduleAction(final Function<StateContext<S, E>, Mono<Void>> action, final StateContext<S, E> context,
-			final AtomicInteger completionCount) {
-		TaskScheduler taskScheduler = getTaskScheduler();
-		if (taskScheduler == null) {
-			log.error("Unable to schedule action as taskSchedule is not set, action=[" + action + "]");
-			return null;
-		}
-		ScheduledFuture<?> future = taskScheduler.schedule(new Runnable() {
-
-			@Override
-			public void run() {
-				// TODO: REACTOR subscribe is probably wrong!
-				executeAction(action, context).subscribe();
-				if (completionCount != null && completionCount.decrementAndGet() <= 0) {
-					notifyStateOnComplete(context);
-				}
-			}
-		}, new Date());
-		return future;
-	}
-
 	protected void notifyStateOnComplete(StateContext<S, E> context) {
 		stateListener.onComplete(context);
 	}
@@ -573,16 +555,24 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	}
 
 	private static class ScheduledAction {
-		ScheduledFuture<?> future;
+		Disposable disposable;
 		Long timeout;
+		Long subscribeTime;
 
-		public ScheduledAction(ScheduledFuture<?> future, Long timeout) {
-			this.future = future;
+		ScheduledAction(Disposable disposable, Long timeout, Long subscribeTime) {
+			this.disposable = disposable;
 			this.timeout = timeout;
+			this.subscribeTime = subscribeTime;
 		}
-		@Override
-		public String toString() {
-			return "ScheduledTask [future=" + future + ", timeout=" + timeout + "]";
+
+		Duration getNeededDelayNow() {
+			long delay = 0;
+			if (subscribeTime != null && timeout != null) {
+				long now = System.currentTimeMillis();
+				long tocancel = subscribeTime + timeout;
+				delay = now > tocancel ? 0 : tocancel - now;
+			}
+			return Duration.ofMillis(delay);
 		}
 	}
 
