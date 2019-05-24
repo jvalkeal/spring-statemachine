@@ -279,9 +279,17 @@ public abstract class AbstractStateMachine<S, E> extends StateMachineObjectSuppo
 			state.addStateListener(new StateListenerAdapter<S, E>() {
 				@Override
 				public void onComplete(StateContext<S, E> context) {
-					log.debug("State onComplete: state=[" + state + "] context=[" + context + "]");
-					((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state).subscribe();
+					// log.debug("State onComplete 2: state=[" + state + "] context=[" + context + "]");
+					// ((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state).subscribe();
 				};
+
+				@Override
+				public Mono<Void> doOnComplete(StateContext<S, E> context) {
+					log.debug("State onComplete: state=[" + state + "] context=[" + context + "]");
+					return ((AbstractStateMachine<S, E>)getRelayStateMachine()).executeTriggerlessTransitions(AbstractStateMachine.this, context, state)
+						// .log()
+						;
+				}
 			});
 
 			if (state.isSubmachineState()) {

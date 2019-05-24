@@ -26,6 +26,7 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Subscription;
 import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateContext.Stage;
@@ -44,6 +45,7 @@ import org.springframework.statemachine.trigger.Trigger;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -244,44 +246,98 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
-		return Mono.defer(() -> {
-			if (submachine != null) {
-				final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 
-					@Override
-					public void stateContext(StateContext<S, E> stateContext) {
-						if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-							if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
-								completionListeners.remove(this);
-								submachine.removeStateListener(this);
-								if (completionListeners.isEmpty()) {
-									notifyStateOnComplete(stateContext);
-								}
-							}
-						}
-					}
-				};
-				submachine.addStateListener(l);
-			} else if (!regions.isEmpty()) {
-				for (final Region<S, E> region : regions) {
+		Flux.fromIterable(regions)
+			.flatMap(region -> {
+				return Mono.<Void>create(sink -> {
 					final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 
 						@Override
 						public void stateContext(StateContext<S, E> stateContext) {
 							if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
 								if (stateContext.getStateMachine() == region && region.isComplete()) {
+									log.info("XXX1 " + region);
 									completionListeners.remove(this);
 									region.removeStateListener(this);
-									if (completionListeners.isEmpty()) {
-										notifyStateOnComplete(stateContext);
-									}
+									sink.success();
 								}
 							}
 						}
 					};
 					completionListeners.add(l);
 					region.addStateListener(l);
-				}
+					});
+			})
+			.then(handleStateDoOnComplete(context))
+			.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)))
+			.log()
+			.subscribe()
+			;
+
+		return Mono.defer(() -> {
+			// Mono<Void> ret = Mono.empty();
+			if (submachine != null) {
+				Mono.justOrEmpty(submachine)
+					.flatMap(submachine -> {
+						return Mono.<Void>create(sink -> {
+							final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
+
+								@Override
+								public void stateContext(StateContext<S, E> stateContext) {
+									if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+										if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
+											completionListeners.remove(this);
+											submachine.removeStateListener(this);
+											if (completionListeners.isEmpty()) {
+												sink.success();
+											}
+										}
+									}
+								}
+							};
+							submachine.addStateListener(l);
+						});
+					})
+					// .then(handleStateDoOnComplete(context))
+					.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)))
+					.subscribe()
+					;
+				// final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
+
+				// 	@Override
+				// 	public void stateContext(StateContext<S, E> stateContext) {
+				// 		if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+				// 			if (stateContext.getStateMachine() == submachine && submachine.isComplete()) {
+				// 				completionListeners.remove(this);
+				// 				submachine.removeStateListener(this);
+				// 				if (completionListeners.isEmpty()) {
+				// 					notifyStateOnComplete(stateContext);
+				// 				}
+				// 			}
+				// 		}
+				// 	}
+				// };
+				// submachine.addStateListener(l);
+			} else if (!regions.isEmpty()) {
+				// for (final Region<S, E> region : regions) {
+				// 	final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
+
+				// 		@Override
+				// 		public void stateContext(StateContext<S, E> stateContext) {
+				// 			if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+				// 				if (stateContext.getStateMachine() == region && region.isComplete()) {
+				// 					completionListeners.remove(this);
+				// 					region.removeStateListener(this);
+				// 					if (completionListeners.isEmpty()) {
+				// 						notifyStateOnComplete(stateContext);
+				// 					}
+				// 				}
+				// 			}
+				// 		}
+				// 	};
+				// 	completionListeners.add(l);
+				// 	region.addStateListener(l);
+				// }
 			}
 
 			stateListener.onEntry(context);
@@ -452,63 +508,170 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 		}
 	}
 
+	// private Mono<Void> scheduleStateActions2(StateContext<S, E> context) {
+	// 	return Mono.defer(() -> {
+	// 		final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+	// 		Long timeout = resolveDoActionTimeout(context);
+	// 		return Flux.fromIterable(stateActions)
+	// 			.map(stateAction -> executeAction(stateAction, context))
+	// 			// go in a separate thread so that possible blocking action can be interrupted
+	// 			.map(function -> function.subscribeOn(Schedulers.parallel())
+	// 				.doFinally(signal -> {
+	// 					if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
+	// 						// TODO: REACTOR I'd really like to run this not in a same thread
+	// 						//       but we need to wait action to complete
+	// 						notifyStateOnComplete(context);
+	// 					}
+	// 				})
+	// 				.subscribe())
+	// 			.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
+	// 			.doOnNext(stateAction -> scheduledActions.add(stateAction))
+	// 			.thenEmpty(Mono.fromRunnable(() -> {
+	// 				if (isSimple() && stateActions.size() == 0) {
+	// 					notifyStateOnComplete(context);
+	// 				}
+	// 			}));
+	// 	});
+	// }
+
+	// private Mono<Void> scheduleStateActions3(StateContext<S, E> context) {
+	// 	return Mono.defer(() -> {
+	// 		final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+	// 		Long timeout = resolveDoActionTimeout(context);
+	// 		return Flux.fromIterable(stateActions)
+	// 			.map(stateAction -> executeAction(stateAction, context))
+	// 			.map(function -> function
+	// 				.then(handleCompleteOrEmpty1(context, completionCount))
+	// 				.subscribeOn(Schedulers.parallel())
+	// 				.subscribe())
+	// 			.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
+	// 			.doOnNext(stateAction -> scheduledActions.add(stateAction))
+	// 			.then(handleCompleteOrEmpty2(context, completionCount))
+	// 			;
+	// 	});
+	// }
+
 	private Mono<Void> scheduleStateActions(StateContext<S, E> context) {
 		return Mono.defer(() -> {
 			final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
 			Long timeout = resolveDoActionTimeout(context);
 			return Flux.fromIterable(stateActions)
 				.map(stateAction -> executeAction(stateAction, context))
-				// go in a separate thread so that possible blocking action can be interrupted
-				.map(function -> function.subscribeOn(Schedulers.parallel())
-					.doFinally(signal -> {
-						if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
-							// TODO: REACTOR I'd really like to run this not in a same thread
-							//       but we need to wait action to complete
-							notifyStateOnComplete(context);
-						}
-					})
-					.subscribe())
-				.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
-				.doOnNext(stateAction -> scheduledActions.add(stateAction))
-				.thenEmpty(Mono.fromRunnable(() -> {
-					if (isSimple() && stateActions.size() == 0) {
-						notifyStateOnComplete(context);
-					}
-				}));
+				.map(function -> {
+					return function
+						.subscribeOn(Schedulers.parallel())
+						.doOnSubscribe(subscription -> {
+							log.debug("Adding dispose subs1 " + subscription);
+							scheduledActions.add(new ScheduledAction(subscription, timeout, System.currentTimeMillis()));
+						})
+						.then(handleCompleteOrEmpty1(context, completionCount))
+						.subscribe();
+				})
+				.then(handleCompleteOrEmpty2(context, completionCount))
+				;
 		});
 	}
 
-	private Mono<Void> scheduleStateActions2(StateContext<S, E> context) {
+	// private Mono<Void> scheduleStateActions(StateContext<S, E> context) {
+	// 	return Mono.defer(() -> {
+	// 		final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+	// 		Long timeout = resolveDoActionTimeout(context);
+
+	// 		return Flux.fromIterable(stateActions)
+	// 			.map(stateAction -> executeAction(stateAction, context))
+	// 			.flatMap(function -> {
+	// 				MonoProcessor<Mono<Void>> xxx = MonoProcessor.create();
+	// 				Disposable disposable = function
+	// 					.subscribeOn(Schedulers.parallel())
+	// 					.doFinally(signal -> {
+	// 						System.out.println("XXX32");
+	// 						xxx.onNext(handleCompleteOrEmpty1(context, completionCount));
+	// 						System.out.println("XXX33");
+	// 					})
+	// 					.subscribe();
+	// 				ScheduledAction stateAction = new ScheduledAction(disposable, timeout, System.currentTimeMillis());
+	// 				scheduledActions.add(stateAction);
+	// 				xxx
+	// 				.subscribeOn(Schedulers.parallel())
+	// 				.subscribe();
+	// 				// return xxx.flatMap(x -> x);
+	// 				return Mono.empty();
+	// 			})
+	// 			.log()
+	// 			// .flatMap(x -> x)
+	// 			.then(handleCompleteOrEmpty2(context, completionCount))
+	// 			;
+	// 	});
+	// }
+
+	private Mono<Void> handleCompleteOrEmpty1(StateContext<S, E> context, AtomicInteger completionCount) {
 		return Mono.defer(() -> {
-			final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
-			Long timeout = resolveDoActionTimeout(context);
-			return Flux.fromIterable(stateActions)
-				.parallel()
-				.runOn(Schedulers.parallel())
-				.map(stateAction -> executeAction(stateAction, context)
-					.doFinally(signal -> {
-						if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
-							notifyStateOnComplete(context);
-						}
-					})
-					.subscribe())
-				.sequential()
-				.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
-				.doOnNext(stateAction -> scheduledActions.add(stateAction))
-				.thenEmpty(Mono.fromRunnable(() -> {
-					if (isSimple() && stateActions.size() == 0) {
-						notifyStateOnComplete(context);
-					}
-				}));
+			if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
+				System.out.println("XXX11");
+				return handleStateDoOnComplete(context)
+					.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)));
+			} else {
+				System.out.println("XXX12");
+				return Mono.empty();
+			}
 		});
 	}
+
+	private Mono<Void> handleCompleteOrEmpty2(StateContext<S, E> context, AtomicInteger completionCount) {
+		return Mono.defer(() -> {
+			if (isSimple() && stateActions.size() == 0) {
+				// System.out.println("XXX2");
+				return handleStateDoOnComplete(context)
+					.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)));
+			} else {
+				return Mono.empty();
+			}
+		});
+	}
+
+	// private Mono<Void> scheduleStateActions3(StateContext<S, E> context) {
+	// 	return Mono.defer(() -> {
+	// 		final AtomicInteger completionCount = new AtomicInteger(stateActions.size());
+	// 		Long timeout = resolveDoActionTimeout(context);
+	// 		return Flux.fromIterable(stateActions)
+	// 			.parallel()
+	// 			.runOn(Schedulers.parallel())
+	// 			.map(stateAction -> executeAction(stateAction, context)
+	// 				.doFinally(signal -> {
+	// 					if (completionCount.decrementAndGet() <= 0 && stateActions.size() > 0) {
+	// 						notifyStateOnComplete(context);
+	// 					}
+	// 				})
+	// 				.subscribe())
+	// 			.sequential()
+	// 			.map(disposable -> new ScheduledAction(disposable, timeout, System.currentTimeMillis()))
+	// 			.doOnNext(stateAction -> scheduledActions.add(stateAction))
+	// 			.thenEmpty(Mono.fromRunnable(() -> {
+	// 				if (isSimple() && stateActions.size() == 0) {
+	// 					notifyStateOnComplete(context);
+	// 				}
+	// 			}));
+	// 	});
+	// }
 
 	private Mono<Void> cancelStateActions() {
 		return Flux.fromIterable(scheduledActions)
 			// state action tells us how long it needs for timeout, delay
 			.flatMap(stateAction -> Mono.delay(stateAction.getNeededDelayNow()).thenReturn(stateAction))
 			// then dispose which i.e. should interrupt blocking threads or cancel reactive code
-			.doOnNext(stateAction -> stateAction.disposable.dispose())
+			.doOnNext(stateAction -> {
+				log.debug("About to dispose");
+				if (stateAction.disposable != null) {
+					log.debug("About to dispose disposable");
+					stateAction.disposable.dispose();
+				}
+				if (stateAction.subscription != null) {
+					log.debug("About to dispose sub " + stateAction.subscription);
+					stateAction.subscription.cancel();
+					log.debug("About to dispose sub done " + stateAction.subscription);
+				}
+			})
+			// .doOnNext(stateAction -> stateAction.disposable.dispose())
 			// we're done, clear state scheduled state actions
 			.thenEmpty(Mono.fromRunnable(() -> {
 				scheduledActions.clear();
@@ -539,6 +702,28 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			});
 	}
 
+	// protected Mono<Void> executeAction2(Function<StateContext<S, E>, Mono<Void>> action, StateContext<S, E> context) {
+	// 		long now = System.currentTimeMillis();
+	// 		return action.apply(context)
+	// 			.log()
+	// 			.thenEmpty(Mono.fromRunnable(() -> {
+	// 				if (this.actionListener != null) {
+	// 					try {
+	// 						this.actionListener.onExecute(context.getStateMachine(), action, System.currentTimeMillis() - now);
+	// 					} catch (Exception e) {
+	// 						log.warn("Error with actionListener", e);
+	// 					}
+	// 				}
+	// 			})
+	// 			)
+	// 			.log()
+	// 			;
+	// }
+
+	protected Mono<Void> handleStateDoOnComplete(StateContext<S, E> context) {
+		return stateListener.doOnComplete(context);
+	}
+
 	protected void notifyStateOnComplete(StateContext<S, E> context) {
 		stateListener.onComplete(context);
 	}
@@ -555,9 +740,16 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 	}
 
 	private static class ScheduledAction {
+		Subscription subscription;
 		Disposable disposable;
 		Long timeout;
 		Long subscribeTime;
+
+		ScheduledAction(Subscription subscription, Long timeout, Long subscribeTime) {
+			this.subscription = subscription;
+			this.timeout = timeout;
+			this.subscribeTime = subscribeTime;
+		}
 
 		ScheduledAction(Disposable disposable, Long timeout, Long subscribeTime) {
 			this.disposable = disposable;
