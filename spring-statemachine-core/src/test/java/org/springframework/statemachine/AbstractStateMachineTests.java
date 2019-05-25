@@ -289,7 +289,6 @@ public abstract class AbstractStateMachineTests {
 
 		@Override
 		public void stateChanged(State<TestStates4, TestEvents> from, State<TestStates4, TestEvents> to) {
-			log.info("DDD " + from );
 			stateChangedLatch.countDown();
 		}
 

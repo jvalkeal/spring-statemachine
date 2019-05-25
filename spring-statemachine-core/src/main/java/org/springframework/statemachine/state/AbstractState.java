@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -220,7 +222,7 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 
 	@Override
 	public Mono<Void> exit(StateContext<S, E> context) {
-		return Mono.defer(() -> {
+		return Mono.<Void>defer(() -> {
 			if (submachine != null) {
 				for (StateMachineListener<S, E> l : completionListeners) {
 					submachine.removeStateListener(l);
@@ -234,50 +236,32 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 			}
 			return Mono.empty();
 		})
-		.then(Mono.fromRunnable(() -> {
+		.then(Mono.<Void>fromRunnable(() -> {
 			completionListeners.clear();
 		}))
 		.then(cancelStateActions())
-		.then(Mono.fromRunnable(() -> {
+		.then(Mono.<Void>fromRunnable(() -> {
 			stateListener.onExit(context);
 			disarmTriggers();
-		}));
+		}))
+		.doFinally(signal -> disposeDisposables())
+		;
+	}
+
+	private final Queue<Disposable> disposables = new ConcurrentLinkedDeque<>();
+
+	protected void disposeDisposables() {
+		Disposable disposable;
+		while ((disposable = disposables.poll()) != null) {
+			disposable.dispose();
+		}
 	}
 
 	@Override
 	public Mono<Void> entry(StateContext<S, E> context) {
-
-		Flux.fromIterable(regions)
-			.flatMap(region -> {
-				return Mono.<Void>create(sink -> {
-					final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
-
-						@Override
-						public void stateContext(StateContext<S, E> stateContext) {
-							if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
-								if (stateContext.getStateMachine() == region && region.isComplete()) {
-									log.info("XXX1 " + region);
-									completionListeners.remove(this);
-									region.removeStateListener(this);
-									sink.success();
-								}
-							}
-						}
-					};
-					completionListeners.add(l);
-					region.addStateListener(l);
-					});
-			})
-			.then(handleStateDoOnComplete(context))
-			.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)))
-			.log()
-			.subscribe()
-			;
-
 		return Mono.defer(() -> {
-			// Mono<Void> ret = Mono.empty();
 			if (submachine != null) {
-				Mono.justOrEmpty(submachine)
+				Disposable disposable = Mono.just(submachine)
 					.flatMap(submachine -> {
 						return Mono.<Void>create(sink -> {
 							final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
@@ -300,8 +284,8 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 					})
 					// .then(handleStateDoOnComplete(context))
 					.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)))
-					.subscribe()
-					;
+					.subscribe();
+				disposables.add(disposable);
 				// final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 
 				// 	@Override
@@ -319,6 +303,34 @@ public abstract class AbstractState<S, E> extends LifecycleObjectSupport impleme
 				// };
 				// submachine.addStateListener(l);
 			} else if (!regions.isEmpty()) {
+				// TODO: REACTOR we should handle disposable
+				Flux.fromIterable(regions)
+					.flatMap(region -> {
+						return Mono.<Void>create(sink -> {
+							final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
+
+								@Override
+								public void stateContext(StateContext<S, E> stateContext) {
+									if (stateContext.getStage() == Stage.STATEMACHINE_STOP) {
+										if (stateContext.getStateMachine() == region && region.isComplete()) {
+											log.info("XXX1 " + region);
+											completionListeners.remove(this);
+											region.removeStateListener(this);
+											sink.success();
+										}
+									}
+								}
+							};
+							completionListeners.add(l);
+							region.addStateListener(l);
+							});
+					})
+					.then(handleStateDoOnComplete(context))
+					.then(Mono.fromRunnable(() -> notifyStateOnComplete(context)))
+					.subscribe();
+
+
+
 				// for (final Region<S, E> region : regions) {
 				// 	final StateMachineListener<S, E> l = new StateMachineListenerAdapter<S, E>() {
 

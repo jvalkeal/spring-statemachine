@@ -23,14 +23,11 @@ import static org.springframework.statemachine.TestUtils.doSendEventAndConsumeAl
 import static org.springframework.statemachine.TestUtils.doStartAndAssert;
 import static org.springframework.statemachine.TestUtils.resolveMachine;
 
-import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.awaitility.Awaitility;
 import org.junit.Test;
-import org.reactivestreams.Subscription;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,100 +40,11 @@ import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-
 public class CompletionEventTests extends AbstractStateMachineTests {
 
 	@Override
 	protected AnnotationConfigApplicationContext buildContext() {
 		return new AnnotationConfigApplicationContext();
-	}
-
-	// @Test
-	public void testXxx1() throws Exception{
-		AtomicReference<Subscription> ref = new AtomicReference<>();
-
-		// Mono<String> mono1 = Mono.delay(Duration.ofSeconds(2))
-		// 	.thenReturn("HI")
-		// 	.doOnSubscribe(s -> {
-		// 		System.out.println("S1 " + s);
-		// 		ref.set(s);
-		// 	})
-		// 	.doOnEach(s -> System.out.println("XXX1 " + s))
-		// 	;
-		Mono<String> mono1 = Mono.just("HI")
-			.doOnSubscribe(s -> {
-				System.out.println("S1 " + s);
-				ref.set(s);
-			})
-			.doOnEach(s -> System.out.println("XXX1 " + s))
-			.delayElement(Duration.ofSeconds(2))
-			.doOnEach(s -> System.out.println("XXX2 " + s))
-			;
-
-		Mono<String> mono2 = Mono.just("THERE")
-			.doOnSubscribe(s -> {
-				System.out.println("S2 " + s);
-			})
-			.doOnEach(s -> System.out.println("XXX3 " + s))
-			;
-
-		mono1.then(mono2).subscribe();
-		// mono1.and(mono2).subscribe();
-		// Flux.merge(mono1, mono2).subscribe(c -> {
-		// 	System.out.println("D " + c);
-		// });
-		// Mono.when(mono1, mono2).subscribe();
-
-		Thread.sleep(1000);
-		ref.get().cancel();
-		Thread.sleep(5000);
-	}
-
-	// @Test
-	public void testXxx2() throws Exception {
-
-		Mono<Object> fromRunnable = Mono.fromRunnable(() -> {
-			System.out.println("start");
-			try {
-				Thread.sleep(5000);
-			} catch (Exception e) {
-				System.out.println("interrupt");
-			}
-			System.out.println("done");
-		});
-
-		Disposable subscribe = fromRunnable.subscribeOn(Schedulers.parallel()).subscribe();
-		Thread.sleep(1000);
-		subscribe.dispose();
-		Thread.sleep(6000);
-	}
-
-	// @Test
-	public void testXxx3() throws Exception {
-		AtomicReference<Subscription> ref = new AtomicReference<>();
-		Mono<Object> fromRunnable = Mono.fromRunnable(() -> {
-			System.out.println("start");
-			try {
-				Thread.sleep(5000);
-			} catch (Throwable e) {
-				System.out.println("interrupt");
-			}
-			System.out.println("done");
-		});
-
-		Disposable subscribe = fromRunnable
-		.subscribeOn(Schedulers.parallel())
-		.doOnSubscribe(s -> {
-			ref.set(s);
-		})
-		.subscribe();
-		Thread.sleep(1000);
-		ref.get().cancel();
-		Thread.sleep(6000);
 	}
 
 	@Test
