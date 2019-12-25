@@ -145,7 +145,7 @@ public class ObjectStateTests {
 		}
 	}
 
-	private static class TestBlockingAction implements ReactiveAction<String, String> {
+	public static class TestBlockingAction implements ReactiveAction<String, String> {
 
 		AtomicInteger countBefore = new AtomicInteger();
 		AtomicInteger countAfter = new AtomicInteger();
