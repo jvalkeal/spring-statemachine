@@ -35,7 +35,7 @@ public class EventSecurityTests extends AbstractSecurityTests {
 	public void testNoSecurityContext() throws Exception {
 		TestListener listener = new TestListener();
 		StateMachine<States, Events> machine = buildMachine(listener, "ROLE_ANONYMOUS", ComparisonType.ANY, null);
-		assertTransitionDenied(machine, listener);
+		assertTransitionDeniedResultAsDenied(machine, listener);
 	}
 
 	@Test

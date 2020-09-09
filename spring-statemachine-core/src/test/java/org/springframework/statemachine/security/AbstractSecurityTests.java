@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.statemachine.TestUtils.doSendEventAndConsumeAll;
+import static org.springframework.statemachine.TestUtils.doSendEventAndConsumeResultAsDenied;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +56,18 @@ public abstract class AbstractSecurityTests extends AbstractStateMachineTests {
 
 		listener.reset(1);
 		doSendEventAndConsumeAll(machine, Events.A);
+		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(false));
+		assertThat(listener.stateChangedCount, is(0));
+		assertThat(machine.getState().getIds(), containsInAnyOrder(States.S0));
+	}
+
+	protected static void assertTransitionDeniedResultAsDenied(StateMachine<States, Events> machine, TestListener listener) throws Exception {
+		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(true));
+		assertThat(listener.stateChangedCount, is(1));
+		assertThat(machine.getState().getIds(), containsInAnyOrder(States.S0));
+
+		listener.reset(1);
+		doSendEventAndConsumeResultAsDenied(machine, Events.A);
 		assertThat(listener.stateChangedLatch.await(2, TimeUnit.SECONDS), is(false));
 		assertThat(listener.stateChangedCount, is(0));
 		assertThat(machine.getState().getIds(), containsInAnyOrder(States.S0));

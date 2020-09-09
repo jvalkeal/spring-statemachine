@@ -36,6 +36,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateContext.Stage;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineException;
 import org.springframework.statemachine.StateMachineSystemConstants;
 import org.springframework.statemachine.state.JoinPseudoState;
 import org.springframework.statemachine.state.PseudoStateKind;
@@ -50,6 +51,8 @@ import org.springframework.statemachine.trigger.Trigger;
 import org.springframework.statemachine.trigger.TriggerListener;
 
 import reactor.core.Disposable;
+import reactor.core.Exceptions;
+import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -82,6 +85,7 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	private volatile Message<E> queuedMessage = null;
 	private StateMachineExecutorTransit<S, E> stateMachineExecutorTransit;
 	private EmitterProcessor<TriggerQueueItem> triggerProcessor = EmitterProcessor.create(false);
+	// private DirectProcessor<TriggerQueueItem> triggerProcessor = DirectProcessor.create();
 	private FluxSink<TriggerQueueItem> triggerSink;
 	private Flux<Void> triggerFlux;
 	private Disposable triggerDisposable;
@@ -194,13 +198,28 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 		interceptors.add(interceptor);
 	}
 
+	// @Override
+	// public Mono<Void> queueEvent(Mono<Message<E>> message) {
+	// 	Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
+	// 	return messages
+	// 		.flatMap(m -> handleEvent(m))
+	// 		.doOnNext(i -> {
+	// 			triggerSink.next(i);
+	// 		})
+	// 		.then();
+	// }
+
 	@Override
 	public Mono<Void> queueEvent(Mono<Message<E>> message) {
 		Flux<Message<E>> messages = Flux.merge(message, Flux.fromIterable(deferList));
 		return messages
 			.flatMap(m -> handleEvent(m))
 			.doOnNext(i -> {
-				triggerSink.next(i);
+				try {
+					triggerSink.next(i);
+				} catch (Exception e) {
+					throw new StateMachineException("Unable to handle queued event", e);
+				}
 			})
 			.then();
 	}
@@ -325,8 +344,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 	}
 
 	private Mono<Boolean> handleTriggerTrans(List<Transition<S, E>> trans, Message<E> queuedMessage, State<S, E> completion) {
-			return Flux.fromIterable(trans)
-				.filter(t -> {
+		return Flux.fromIterable(trans)
+			.filter(t -> {
 				State<S,E> source = t.getSource();
 				if (source == null) {
 					return false;
@@ -388,16 +407,18 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 									.onErrorResume(e -> {
 										interceptors.postTransition(stateContext);
 										return Mono.just(false);
-									});
+									})
+									;
 								} else {
 									return Mono.just(false);
 								}
 							})
 						)
-						.onErrorResume(e -> Mono.just(false));
+						// .onErrorResume(e -> Mono.just(false))
+						;
 				}
 			})
-			.takeUntil(x -> x)
+			.takeUntil(transit -> transit)
 			.last(false);
 	}
 
