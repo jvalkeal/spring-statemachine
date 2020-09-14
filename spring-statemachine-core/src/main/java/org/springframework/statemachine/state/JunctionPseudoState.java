@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.util.Assert;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Junction implementation of a {@link PseudoState}.
@@ -52,25 +55,38 @@ public class JunctionPseudoState<S, E> implements PseudoState<S, E> {
 		return PseudoStateKind.JUNCTION;
 	}
 
-	@Override
-	public State<S, E> entry(StateContext<S, E> context) {
-		State<S, E> s = null;
-		JunctionStateData<S, E> jsd = null;
-		for (JunctionStateData<S, E> j : junctions) {
-			jsd = j;
-			if (j.guard != null && evaluateInternal(j.guard, context)) {
-				break;
-			}
-		}
-		if (jsd != null) {
-			s = jsd.getState();
-			executeActions(jsd.getActions(), context);
-		}
-		return s;
-	}
+	// @Override
+	// public State<S, E> entry(StateContext<S, E> context) {
+	// 	State<S, E> s = null;
+	// 	JunctionStateData<S, E> jsd = null;
+	// 	for (JunctionStateData<S, E> j : junctions) {
+	// 		jsd = j;
+	// 		if (j.guard != null && evaluateInternal(j.guard, context)) {
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (jsd != null) {
+	// 		s = jsd.getState();
+	// 		executeActions(jsd.getActions(), context);
+	// 	}
+	// 	return s;
+	// }
 
 	@Override
-	public void exit(StateContext<S, E> context) {
+	public Mono<State<S, E>> entry(StateContext<S, E> context) {
+		return Flux.fromIterable(junctions)
+			.filter(j -> j.guard != null && evaluateInternal(j.guard, context))
+			.next()
+			.flatMap(j -> {
+				return Flux.fromIterable(j.getActions()).then(Mono.just(j.getState()));
+			})
+			;
+	}
+
+
+	@Override
+	public Mono<Void> exit(StateContext<S, E> context) {
+		return Mono.empty();
 	}
 
 	@Override

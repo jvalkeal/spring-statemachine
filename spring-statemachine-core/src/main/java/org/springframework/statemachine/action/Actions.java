@@ -16,7 +16,9 @@
 
 package org.springframework.statemachine.action;
 
+import java.util.Collection;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.support.DefaultStateContext;
@@ -96,5 +98,9 @@ public final class Actions {
 		} else {
 			return null;
 		}
+	}
+
+	public static <S, E> Collection<Function<StateContext<S, E>, Mono<Void>>> from(Collection<Action<S, E>> actions) {
+		return actions.stream().map(action -> from(action)).collect(Collectors.toList());
 	}
 }
