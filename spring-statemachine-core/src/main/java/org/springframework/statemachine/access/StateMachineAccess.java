@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.springframework.statemachine.StateMachineContext;
 import org.springframework.statemachine.monitor.StateMachineMonitor;
 import org.springframework.statemachine.support.StateMachineInterceptor;
 
+import reactor.core.publisher.Mono;
+
 /**
  * Functional interface exposing {@link StateMachine} internals.
  *
@@ -29,7 +31,7 @@ import org.springframework.statemachine.support.StateMachineInterceptor;
  * @param <S> the type of state
  * @param <E> the type of event
  */
-public interface StateMachineAccess<S, E> {
+public interface StateMachineAccess<S, E> extends ReactiveStateMachineAccess<S, E> {
 
 	/**
 	 * Sets the relay state machine.
@@ -44,6 +46,13 @@ public interface StateMachineAccess<S, E> {
 	 * @param stateMachineContext the state machine context
 	 */
 	void resetStateMachine(StateMachineContext<S, E> stateMachineContext);
+
+	/**
+	 * Reset state machine reactively.
+	 *
+	 * @param stateMachineContext the state machine context
+	 */
+	Mono<Void> resetStateMachineReactively(StateMachineContext<S, E> stateMachineContext);
 
 	/**
 	 * Adds the state machine interceptor.

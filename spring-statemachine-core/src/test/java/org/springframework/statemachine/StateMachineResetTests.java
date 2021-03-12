@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -46,6 +47,7 @@ import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.support.DefaultExtendedState;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -792,10 +794,9 @@ public class StateMachineResetTests extends AbstractStateMachineTests {
 		DefaultStateMachineContext<TestStates, TestEvents> stateMachineContext =
 				new DefaultStateMachineContext<TestStates, TestEvents>(TestStates.S1, null, null, null);
 
-		Mono<Void> resetMono = Mono.<Void>fromRunnable(() -> {
-				machine.getStateMachineAccessor().doWithAllRegions(function -> function.resetStateMachine(stateMachineContext));
-			})
-			.publishOn(Schedulers.single());
+		Stream<Mono<Void>> monos = machine.getStateMachineAccessor().withAllRegions().stream()
+				.map(a -> a.resetStateMachineReactively(stateMachineContext));
+		Mono<Void> resetMono = Flux.fromStream(monos).flatMap(m -> m).next().publishOn(Schedulers.single());
 		StepVerifier.create(resetMono).expectComplete().verify();
 
 		doStartAndAssert(machine);
