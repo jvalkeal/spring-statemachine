@@ -362,6 +362,18 @@ project('spring-statemachine-data-common') {
 	}
 }
 
+project('spring-statemachine-integration') {
+	description = 'Spring State Machine Integration'
+
+	dependencies {
+		compile project(':spring-statemachine-core')
+		compile 'org.springframework.integration:spring-integration-core'
+		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
+		testCompile 'org.springframework.integration:spring-integration-jdbc'
+		testCompile 'io.projectreactor:reactor-test'
+	}
+}
+
 project('spring-statemachine-cluster') {
 	description = 'Spring State Machine Cluster'
 
@@ -424,12 +436,14 @@ project('spring-statemachine-build-tests') {
 	tasks.findByPath('artifactoryPublish')?.enabled = false
 
 	dependencies {
+		testCompile project(':spring-statemachine-integration')
 		testCompile project(':spring-statemachine-uml')
 		testCompile project(':spring-statemachine-test')
 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-redis')
 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-mongodb')
 		testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
+		testCompile 'org.springframework.integration:spring-integration-jdbc'
 		testCompile 'io.projectreactor:reactor-test'
 		testCompile 'org.apache.commons:commons-pool2'
 		testRuntime 'org.springframework.boot:spring-boot-starter-data-mongodb'
