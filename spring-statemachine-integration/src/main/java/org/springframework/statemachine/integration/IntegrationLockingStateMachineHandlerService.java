@@ -147,6 +147,17 @@ public class IntegrationLockingStateMachineHandlerService<S, E>
 		}
 	}
 
+	private Mono<StateMachine<S, E>> restoreStateMachineReactively(StateMachine<S, E> stateMachine,
+			final StateMachineContext<S, E> stateMachineContext) {
+		if (stateMachineContext == null) {
+			return Mono.just(stateMachine);
+		}
+		stateMachine.getStateMachineAccessor().doWithRegion(function -> function.resetStateMachine(stateMachineContext));
+
+		// return stateMachine;
+		return null;
+	}
+
 	private StateMachine<S, E> restoreStateMachine(StateMachine<S, E> stateMachine,
 			final StateMachineContext<S, E> stateMachineContext) {
 		if (stateMachineContext == null) {

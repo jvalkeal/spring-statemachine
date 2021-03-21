@@ -215,3 +215,19 @@ project('spring-statemachine-samples-monitoring') {
 	}
 }
 
+project('spring-statemachine-samples-lockingreactive') {
+	description = 'Spring State Machine Locking Reactive Sample'
+	dependencies {
+		compile project(':spring-statemachine-autoconfigure')
+		compile project(':spring-statemachine-integration')
+		compile project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
+		compile('org.springframework.boot:spring-boot-starter-webflux')
+		compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+		compile('org.springframework.boot:spring-boot-starter-data-jpa')
+		compile('org.springframework.integration:spring-integration-jdbc')
+		compile('com.h2database:h2')
+		testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
+		testCompile 'io.projectreactor:reactor-test'
+		testCompile 'org.springframework.boot:spring-boot-starter-test'
+	}
+}

@@ -45,12 +45,14 @@ import org.springframework.statemachine.data.jpa.JpaPersistingStateMachineInterc
 import org.springframework.statemachine.data.jpa.JpaStateMachineRepository;
 import org.springframework.statemachine.integration.IntegrationLockingStateMachineHandlerService;
 import org.springframework.statemachine.persist.StateMachineRuntimePersister;
+import org.springframework.statemachine.service.LockingStateMachineHandlerService;
+import org.springframework.statemachine.service.ReactiveLockingStateMachineHandlerService;
 import org.springframework.statemachine.state.State;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-public class JdbcIntegrationLockingStateMachineHandlerService extends AbstractBuildTests {
+public class JdbcIntegrationLockingStateMachineHandlerServiceTests extends AbstractBuildTests {
 
 	@Override
 	protected AnnotationConfigApplicationContext buildContext() {
@@ -67,7 +69,7 @@ public class JdbcIntegrationLockingStateMachineHandlerService extends AbstractBu
 		JdbcLockRegistry lockRegistry = context.getBean(JdbcLockRegistry.class);
 		StateMachinePersist<String, String, String> persist = context.getBean(StateMachinePersist.class);
 
-		IntegrationLockingStateMachineHandlerService<String, String> service = new IntegrationLockingStateMachineHandlerService<>(
+		LockingStateMachineHandlerService<String, String> service = new IntegrationLockingStateMachineHandlerService<>(
 			lockRegistry, stateMachineFactory, persist);
 
 		AtomicReference<State<String, String>> state = new AtomicReference<>();
@@ -97,7 +99,7 @@ public class JdbcIntegrationLockingStateMachineHandlerService extends AbstractBu
 		JdbcLockRegistry lockRegistry = context.getBean(JdbcLockRegistry.class);
 		StateMachinePersist<String, String, String> persist = context.getBean(StateMachinePersist.class);
 
-		IntegrationLockingStateMachineHandlerService<String, String> service = new IntegrationLockingStateMachineHandlerService<>(
+		ReactiveLockingStateMachineHandlerService<String, String> service = new IntegrationLockingStateMachineHandlerService<>(
 			lockRegistry, stateMachineFactory, persist);
 
 		Mono<String> mono1 = service.handleReactivelyWhileLocked("machine2", machine -> {

@@ -32,6 +32,7 @@ include 'spring-statemachine-samples:datajpa'
 include 'spring-statemachine-samples:datajpamultipersist'
 include 'spring-statemachine-samples:datapersist'
 include 'spring-statemachine-samples:monitoring'
+include 'spring-statemachine-samples:lockingreactive'
 
 include 'spring-statemachine-data'
 include 'spring-statemachine-data:jpa'
