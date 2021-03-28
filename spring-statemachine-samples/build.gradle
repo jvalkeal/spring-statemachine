@@ -227,6 +227,7 @@ project('spring-statemachine-samples-lockingreactive') {
 		compile('org.springframework.integration:spring-integration-jdbc')
 		compile('com.h2database:h2')
 		runtime('org.mariadb.jdbc:mariadb-java-client')
+		runtime('org.postgresql:postgresql')
 		testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
 		testCompile 'io.projectreactor:reactor-test'
 		testCompile 'org.springframework.boot:spring-boot-starter-test'

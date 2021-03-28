@@ -18,6 +18,8 @@ package demo.lockingreactive;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -25,6 +27,7 @@ import org.springframework.statemachine.service.ReactiveLockingStateMachineHandl
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.thymeleaf.spring5.context.webflux.IReactiveDataDriverContextVariable;
@@ -36,8 +39,10 @@ import reactor.core.publisher.Mono;
 @Controller
 public class StateMachineController {
 
+	private final static Logger log = LoggerFactory.getLogger(StateMachineController.class);
 	private final static List<String> EVENTS = Arrays.asList("E1", "E2", "E3");
 	private final static List<String> MACHINES = Arrays.asList("machine1", "machine2", "machine3");
+	private final static List<Long> SLEEPS = Arrays.asList(1000l, 5000l, 20000l);
 
 	@Autowired
 	private ReactiveLockingStateMachineHandlerService<String, String> service;
@@ -50,22 +55,27 @@ public class StateMachineController {
 	@RequestMapping("/state")
 	public String feedAndGetStates(
 			@RequestParam(value = "machine", required = false, defaultValue = "machine1") String machine,
+			@RequestParam(value = "sleep", required = false) Long sleep,
 			@RequestParam(value = "events", required = false) List<String> events,
 			Model model) throws Exception {
+		log.info("state {} {} {}", machine, sleep, StringUtils.collectionToDelimitedString(events, ","));
 		model.addAttribute("events", EVENTS);
 		model.addAttribute("machines", MACHINES);
+		model.addAttribute("sleeps", SLEEPS);
 		model.addAttribute("machine", machine);
 
 		// build messages or empty if not given
 		Flux<Message<String>> messages = !ObjectUtils.isEmpty(events)
-				? Flux.fromIterable(events).map(e -> MessageBuilder.withPayload(e).build())
+				? Flux.fromIterable(events).map(e -> MessageBuilder.withPayload(e).setHeader("sleep", sleep).build())
 				: Flux.empty();
 
 		// handle while locked and return machine state id after
 		Mono<String> state = service.handleReactivelyWhileLocked(machine, stateMachine -> {
 			return stateMachine.sendEvents(messages)
 				.then(Mono.fromCallable(() -> stateMachine.getState().getId()));
-		});
+		})
+		.onErrorResume(t -> Mono.just(t.getMessage()));
+		;
 
 		// pass state mono to thymeleaf which resolves it reactively
 		// convert to flux as thymeleaf cannot handle mono

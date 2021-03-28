@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    initialization-mode: always
+    schema:
+      - classpath*:/org/springframework/integration/jdbc/schema-postgresql.sql

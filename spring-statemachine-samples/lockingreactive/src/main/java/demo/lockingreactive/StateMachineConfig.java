@@ -15,8 +15,13 @@
  */
 package demo.lockingreactive;
 
+import java.time.Duration;
+import java.util.function.Function;
+
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +29,9 @@ import org.springframework.integration.jdbc.lock.DefaultLockRepository;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.integration.jdbc.lock.LockRepository;
 import org.springframework.integration.support.locks.LockRegistry;
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachinePersist;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.StateMachineFactory;
@@ -37,8 +44,12 @@ import org.springframework.statemachine.integration.IntegrationLockingStateMachi
 import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 import org.springframework.statemachine.service.ReactiveLockingStateMachineHandlerService;
 
+import reactor.core.publisher.Mono;
+
 @Configuration
 public class StateMachineConfig {
+
+	private final static Logger log = LoggerFactory.getLogger(StateMachineConfig.class);
 
 //tag::snippetA[]
 	@Bean
@@ -99,17 +110,65 @@ public class StateMachineConfig {
 					.source("S1")
 					.target("S2")
 					.event("E1")
+					.actionFunction(actionFunction())
 					.and()
 				.withExternal()
 					.source("S2")
 					.target("S3")
 					.event("E2")
+					.actionFunction(actionFunction())
 					.and()
 				.withExternal()
 					.source("S3")
 					.target("S1")
-					.event("E3");
+					.event("E3")
+					.actionFunction(actionFunction());
 		}
+
+		@Bean
+		public Function<StateContext<String, String>, Mono<Void>> actionFunction() {
+			return context -> {
+				long sleep = 0;
+				if (context.getMessageHeaders().containsKey("sleep")) {
+					sleep = context.getMessageHeaders().get("sleep", Long.class);
+				}
+				log.info("Sleeping {}", sleep);
+				return Mono.delay(Duration.ofMillis(sleep)).then();
+			};
+		}
+
+		// @Bean
+		// public Action<String, String> transitionAction() {
+		// 	return context -> {
+		// 		try {
+		// 			log.info("Executing transitionAction");
+		// 			Long sleep = context.getMessageHeaders().get("sleep", Long.class);
+		// 			log.info("Executing transitionAction {}", sleep);
+		// 			if (sleep != null) {
+		// 				try {
+		// 					log.info("Sleeping {}", sleep);
+		// 					Thread.sleep(sleep);
+		// 				} catch (Exception e) {
+		// 					log.info("interrupt", e);
+		// 					Thread.currentThread().interrupt();
+		// 				}
+		// 			}
+		// 		} catch (Exception e) {
+		// 			log.info("error", e);
+		// 		}
+		// 		// log.info("Executing transitionAction");
+		// 		// Long sleep = context.getMessageHeaders().get("xxx", long.class);
+		// 		// log.info("Executing transitionAction {}", sleep);
+		// 		// if (sleep != null) {
+		// 		// 	try {
+		// 		// 		log.info("Sleeping {}", sleep);
+		// 		// 		Thread.sleep(sleep);
+		// 		// 	} catch (Exception e) {
+		// 		// 		Thread.currentThread().interrupt();
+		// 		// 	}
+		// 		// }
+		// 	};
+		// }
 	}
 //end::snippetB[]
 }

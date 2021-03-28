@@ -73,20 +73,21 @@ public class IntegrationLockingStateMachineHandlerService<S, E>
 			throw new StateMachineException("Interrupted getting lock in the [" + this + ']', e);
 		}
 
+		V ret;
 		StateMachine<S, E> stateMachine = stateMachineFactory.getStateMachine(machineId);
 		try {
 			StateMachineContext<S, E> stateMachineContext = stateMachinePersist.read(machineId);
 			stateMachine = restoreStateMachine(stateMachine, stateMachineContext);
 			stateMachine.start();
-			V ret = machineFunction.apply(stateMachine);
-			return ret;
+			ret = machineFunction.apply(stateMachine);
 		} catch (Exception e) {
 			log.error("Error during locking processing", e);
+			throw new StateMachineException("Error restoring machine", e);
 		} finally {
 			stateMachine.stop();
 			lock.unlock();
 		}
-		return null;
+		return ret;
 	}
 
 	@Override
