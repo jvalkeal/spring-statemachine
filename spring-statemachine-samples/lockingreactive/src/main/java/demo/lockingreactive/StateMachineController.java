@@ -72,6 +72,7 @@ public class StateMachineController {
 		// handle while locked and return machine state id after
 		Mono<String> state = service.handleReactivelyWhileLocked(machine, stateMachine -> {
 			return stateMachine.sendEvents(messages)
+				.log()
 				.then(Mono.fromCallable(() -> stateMachine.getState().getId()));
 		})
 		.onErrorResume(t -> Mono.just(t.getMessage()));

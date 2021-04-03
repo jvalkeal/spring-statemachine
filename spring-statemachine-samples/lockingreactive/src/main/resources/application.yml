@@ -1,6 +1,6 @@
 logging:
   level:
-    root: INFO
+    org.springframework.statemachine: DEBUG
 spring:
   h2:
     console:

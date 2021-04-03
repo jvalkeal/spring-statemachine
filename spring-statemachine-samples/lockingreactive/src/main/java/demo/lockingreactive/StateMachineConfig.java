@@ -100,7 +100,10 @@ public class StateMachineConfig {
 				.withStates()
 					.initial("S1")
 					.state("S2")
-					.state("S3");
+					.stateEntryFunction("S2", actionFunction())
+					.state("S3")
+					.stateEntryFunction("S3", actionFunction())
+					;
 		}
 
 		@Override
@@ -110,19 +113,20 @@ public class StateMachineConfig {
 					.source("S1")
 					.target("S2")
 					.event("E1")
-					.actionFunction(actionFunction())
+					// .actionFunction(actionFunction())
 					.and()
 				.withExternal()
 					.source("S2")
 					.target("S3")
 					.event("E2")
-					.actionFunction(actionFunction())
+					// .actionFunction(actionFunction())
 					.and()
 				.withExternal()
 					.source("S3")
 					.target("S1")
 					.event("E3")
-					.actionFunction(actionFunction());
+					// .actionFunction(actionFunction())
+					;
 		}
 
 		@Bean
@@ -133,7 +137,7 @@ public class StateMachineConfig {
 					sleep = context.getMessageHeaders().get("sleep", Long.class);
 				}
 				log.info("Sleeping {}", sleep);
-				return Mono.delay(Duration.ofMillis(sleep)).then();
+				return Mono.delay(Duration.ofMillis(sleep)).log().then().log();
 			};
 		}
 
