@@ -1,0 +1,7 @@
+logging:
+  level:
+    org.springframework.statemachine: DEBUG
+spring:
+  h2:
+    console:
+      enabled: true

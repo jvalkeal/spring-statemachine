@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+  datasource:
+    url: jdbc:mariadb://localhost:3306/sm?useMysqlMetadata=true
+    username: spring
+    password: spring
+    driver-class-name: org.mariadb.jdbc.Driver
