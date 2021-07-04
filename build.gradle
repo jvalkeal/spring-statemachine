@@ -21,10 +21,10 @@ buildscript {
 	// 	gradlePluginPortal()
 // 		maven { url 'https://repo.spring.io/plugins-release' }
 	// }
-// 	dependencies {
+	dependencies {
 // 		classpath("io.spring.gradle:propdeps-plugin:0.0.8")
-// 		classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
-// 	}
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+	}
 }
 
 plugins {
