@@ -1,0 +1,12 @@
+description = 'Spring State Machine Monitoring Sample'
+
+dependencies {
+	api project(':spring-statemachine-autoconfigure')
+	api 'org.springframework.boot:spring-boot-starter-actuator'
+	api 'org.springframework.boot:spring-boot-starter-web'
+	api 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	testImplementation('com.jayway.jsonpath:json-path')
+	testImplementation('com.jayway.jsonpath:json-path-assert')
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+}

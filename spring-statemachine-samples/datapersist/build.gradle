@@ -1,0 +1,17 @@
+description = 'Spring State Machine Data Persist Sample'
+
+dependencies {
+	api project(':spring-statemachine-autoconfigure')
+	api project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
+	api project(':spring-statemachine-data-common:spring-statemachine-data-redis')
+	api project(':spring-statemachine-data-common:spring-statemachine-data-mongodb')
+	api 'org.springframework.boot:spring-boot-starter-web'
+	api 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	api 'org.springframework.boot:spring-boot-starter-data-jpa'
+	api 'org.springframework.boot:spring-boot-starter-data-redis'
+	api 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	api 'org.springframework.boot:spring-boot-devtools'
+	api 'com.h2database:h2'
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+}

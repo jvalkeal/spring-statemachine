@@ -1,0 +1,14 @@
+description = 'Spring State Machine Web Sample'
+
+dependencies {
+	api project(':spring-statemachine-cluster')
+	api 'org.springframework.boot:spring-boot-starter-security'
+	api 'org.springframework.boot:spring-boot-starter-web'
+	api 'org.springframework.boot:spring-boot-starter-websocket'
+	api 'org.springframework:spring-webmvc'
+	api 'org.springframework:spring-websocket'
+	api 'org.springframework.security:spring-security-messaging'
+	api 'org.springframework.session:spring-session-core'
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+}

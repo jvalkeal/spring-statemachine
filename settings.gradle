@@ -12,25 +12,25 @@ include 'spring-statemachine-autoconfigure'
 // include 'spring-statemachine-bom'
 // include 'spring-statemachine-starter'
 
-// include 'spring-statemachine-samples'
-// include 'spring-statemachine-samples:turnstile'
-// include 'spring-statemachine-samples:turnstilereactive'
-// include 'spring-statemachine-samples:showcase'
-// include 'spring-statemachine-samples:cdplayer'
-// include 'spring-statemachine-samples:tasks'
-// include 'spring-statemachine-samples:washer'
-// include 'spring-statemachine-samples:zookeeper'
-// include 'spring-statemachine-samples:persist'
-// include 'spring-statemachine-samples:web'
-// include 'spring-statemachine-samples:scope'
-// include 'spring-statemachine-samples:security'
-// include 'spring-statemachine-samples:eventservice'
-// include 'spring-statemachine-samples:deploy'
-// include 'spring-statemachine-samples:ordershipping'
-// include 'spring-statemachine-samples:datajpa'
-// include 'spring-statemachine-samples:datajpamultipersist'
-// include 'spring-statemachine-samples:datapersist'
-// include 'spring-statemachine-samples:monitoring'
+include 'spring-statemachine-samples'
+include 'spring-statemachine-samples:turnstile'
+include 'spring-statemachine-samples:turnstilereactive'
+include 'spring-statemachine-samples:showcase'
+include 'spring-statemachine-samples:cdplayer'
+include 'spring-statemachine-samples:tasks'
+include 'spring-statemachine-samples:washer'
+include 'spring-statemachine-samples:zookeeper'
+include 'spring-statemachine-samples:persist'
+include 'spring-statemachine-samples:web'
+include 'spring-statemachine-samples:scope'
+include 'spring-statemachine-samples:security'
+include 'spring-statemachine-samples:eventservice'
+include 'spring-statemachine-samples:deploy'
+include 'spring-statemachine-samples:ordershipping'
+include 'spring-statemachine-samples:datajpa'
+include 'spring-statemachine-samples:datajpamultipersist'
+include 'spring-statemachine-samples:datapersist'
+include 'spring-statemachine-samples:monitoring'
 
 include 'spring-statemachine-data'
 include 'spring-statemachine-data:jpa'
@@ -41,12 +41,12 @@ rootProject.children.find {
 	if (it.name == 'spring-statemachine-recipes') {
 		it.name = 'spring-statemachine-recipes-common'
 	}
-// 	if (it.name == 'spring-statemachine-samples') {
-// 		it.name = 'spring-statemachine-samples-common'
-// 		it.children.each {
-// 			it.name = 'spring-statemachine-samples-' + it.name
-// 		}
-// 	}
+	if (it.name == 'spring-statemachine-samples') {
+		it.name = 'spring-statemachine-samples-common'
+		it.children.each {
+			it.name = 'spring-statemachine-samples-' + it.name
+		}
+	}
 	if (it.name == 'spring-statemachine-data') {
 		it.name = 'spring-statemachine-data-common'
 		it.children.each {

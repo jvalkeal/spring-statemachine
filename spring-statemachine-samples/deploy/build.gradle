@@ -1,0 +1,10 @@
+description = 'Spring State Machine Deploy Sample'
+
+dependencies {
+	api project(':spring-statemachine-uml')
+	api 'org.springframework.boot:spring-boot-starter-web'
+	api 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	testImplementation project(':spring-statemachine-test')
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+}

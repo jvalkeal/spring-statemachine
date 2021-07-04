@@ -5,7 +5,7 @@ buildscript {
 		eclipsePersistenceVersion = '2.1.1'
 		kryoVersion = '4.0.2'
 // 		springCloudClusterVersion = '1.0.2.RELEASE'
-// 		springShellVersion = '1.1.0.RELEASE'
+		springShellVersion = '1.1.0.RELEASE'
 		eclipseEmfXmiVersion = '2.11.1-v20150805-0538'
 		eclipseUml2CommonVersion = '2.0.0-v20140602-0749'
 		eclipseEmfCommonVersion = '2.11.0-v20150805-0538'
@@ -103,7 +103,7 @@ configure(allprojects) {
 	// 		dependency "log4j:log4j:$log4jVersion"
 			dependency "org.eclipse.persistence:javax.persistence:$eclipsePersistenceVersion"
 			dependency "com.esotericsoftware:kryo-shaded:$kryoVersion"
-	// 		dependency "org.springframework.shell:spring-shell:$springShellVersion"
+			dependency "org.springframework.shell:spring-shell:$springShellVersion"
 			dependency "org.eclipse.uml2:uml:$eclipseUml2UmlVersion"
 			dependency "org.eclipse.uml2:types:$eclipseUml2TypesVersion"
 			dependency "org.eclipse.uml2:common:$eclipseUml2CommonVersion"

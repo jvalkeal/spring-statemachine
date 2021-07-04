@@ -1,0 +1,9 @@
+description = 'Spring State Machine Turnstile Reactive Sample'
+
+dependencies {
+	api project(':spring-statemachine-samples-common')
+	api 'org.springframework.boot:spring-boot-starter-webflux'
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
