@@ -173,6 +173,15 @@ configure(subprojects) { subproject ->
 		registerFeature('persistence') {
 			usingSourceSet(sourceSets.main)
 		}
+		registerFeature('data') {
+			usingSourceSet(sourceSets.main)
+		}
+		registerFeature('metadata') {
+			usingSourceSet(sourceSets.main)
+		}
+		registerFeature('micrometer') {
+			usingSourceSet(sourceSets.main)
+		}
 	}
 
 	// jar {
@@ -231,116 +240,6 @@ configure(subprojects) { subproject ->
 		}
 	}
 }
-
-// project('spring-statemachine-autoconfigure') {
-// 	description = 'Spring State Machine Boot Autoconfigure'
-
-// 	dependencies {
-// 		compile project(':spring-statemachine-core')
-// 		compile 'org.springframework.boot:spring-boot-autoconfigure'
-// 		compile 'org.springframework.boot:spring-boot-actuator-autoconfigure'
-// 		compile 'org.springframework.boot:spring-boot-actuator'
-// 		optional project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
-// 		optional project(':spring-statemachine-data-common:spring-statemachine-data-redis')
-// 		optional project(':spring-statemachine-data-common:spring-statemachine-data-mongodb')
-// 		optional 'org.springframework.boot:spring-boot-autoconfigure-processor'
-// 		optional 'io.micrometer:micrometer-core'
-// 		optional 'org.eclipse.persistence:javax.persistence'
-// 		optional 'org.springframework.boot:spring-boot-starter-data-jpa'
-// 		optional 'org.springframework.boot:spring-boot-starter-data-redis'
-// 		optional 'org.springframework.boot:spring-boot-starter-data-mongodb'
-// 		testRuntime 'com.h2database:h2'
-// 		testCompile 'org.springframework.boot:spring-boot-test'
-// 		testCompile 'org.springframework:spring-test'
-// 		testCompile("org.junit.jupiter:junit-jupiter-api")
-// 		testCompile("org.junit.jupiter:junit-jupiter-engine")
-// 	}
-// }
-
-
-// project('spring-statemachine-data-common') {
-// 	configurations {
-// 		testArtifacts.extendsFrom testRuntime
-// 	}
-// 	dependencies {
-// 		compile project(':spring-statemachine-core')
-// 		compile project(':spring-statemachine-kryo')
-// 		compile 'org.springframework.data:spring-data-commons'
-// 		optional 'org.springframework.security:spring-security-core'
-// 		compile 'com.fasterxml.jackson.core:jackson-core'
-// 		compile 'com.fasterxml.jackson.core:jackson-databind'
-// 		testCompile (project(':spring-statemachine-test')) { dep ->
-// 			exclude group: 'junit', module: 'junit'
-// 			exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-// 		}
-// 		// testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
-// 		testImplementation(testFixtures(project(':spring-statemachine-core')))
-// 		testCompile 'io.projectreactor:reactor-test'
-// 		testCompile 'org.springframework.boot:spring-boot-starter-test'
-// 		testRuntime 'org.springframework.boot:spring-boot-starter-web'
-// 	}
-// 	task testJar(type: Jar) {
-// 		classifier = 'tests'
-// 		from sourceSets.test.output
-// 	}
-// 	artifacts {
-// 		testArtifacts testJar
-// 	}
-// }
-
-
-// project('spring-statemachine-build-tests') {
-// 	description = 'Spring State Machine Build Tests'
-
-// 	dependencies {
-// 		testCompile project(':spring-statemachine-uml')
-// 		testCompile project(':spring-statemachine-test')
-// 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
-// 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-redis')
-// 		testCompile project(':spring-statemachine-data-common:spring-statemachine-data-mongodb')
-// 		// testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
-// 		// testImplementation(project(':spring-statemachine-uml'))
-// 		// testImplementation(project(':spring-statemachine-test'))
-// 		// testImplementation(project(':spring-statemachine-data-common:spring-statemachine-data-jpa'))
-// 		// testImplementation(project(':spring-statemachine-data-common:spring-statemachine-data-redis'))
-// 		// testImplementation(project(':spring-statemachine-data-common:spring-statemachine-data-mongodb'))
-// 		testImplementation(testFixtures(project(':spring-statemachine-core')))
-// 		testCompile 'io.projectreactor:reactor-test'
-// 		testCompile 'org.apache.commons:commons-pool2'
-// 		testRuntime 'org.springframework.boot:spring-boot-starter-data-mongodb'
-// 		testRuntime 'org.springframework.boot:spring-boot-starter-data-redis'
-// 		testRuntime 'redis.clients:jedis'
-// 		testCompile 'org.springframework.boot:spring-boot-starter-data-jpa'
-// 		testCompile 'com.h2database:h2'
-// 		testCompile 'org.springframework.boot:spring-boot-starter'
-// 		testCompile 'org.springframework:spring-test'
-// 	}
-// }
-
-// configure(recipeProjects()) {
-// 	dependencies {
-// 		compile project(':spring-statemachine-recipes-common')
-// 		// testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
-// 		testImplementation(testFixtures(project(':spring-statemachine-core')))
-// 		testCompile 'io.projectreactor:reactor-test'
-// 		testCompile 'org.springframework:spring-test'
-// 		testCompile("org.junit.jupiter:junit-jupiter-api")
-// 		testCompile("org.junit.jupiter:junit-jupiter-engine")
-// 	}
-// }
-
-// project('spring-statemachine-recipes-common') {
-// 	dependencies {
-// 		compile 'org.springframework:spring-context'
-// 		compile project(':spring-statemachine-core')
-// 		// testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
-// 		testImplementation(testFixtures(project(':spring-statemachine-core')))
-// 		testCompile 'io.projectreactor:reactor-test'
-// 		testCompile 'org.springframework:spring-test'
-// 		testCompile("org.junit.jupiter:junit-jupiter-api")
-// 		testCompile("org.junit.jupiter:junit-jupiter-engine")
-// 	}
-// }
 
 // project('spring-statemachine-bom') {
 // 	description = 'Spring Statemachine (Bill of Materials)'

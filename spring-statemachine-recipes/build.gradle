@@ -1,2 +1,11 @@
 description = 'Spring State Machine Recipes Common'
 
+dependencies {
+	api project(':spring-statemachine-core')
+	api 'org.springframework:spring-context'
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework:spring-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api'
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+}

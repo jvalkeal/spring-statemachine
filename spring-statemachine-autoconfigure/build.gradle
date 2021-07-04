@@ -1,0 +1,22 @@
+description = 'Spring State Machine Boot Autoconfigure'
+
+dependencies {
+	api project(':spring-statemachine-core')
+	api 'org.springframework.boot:spring-boot-autoconfigure'
+	api 'org.springframework.boot:spring-boot-actuator-autoconfigure'
+	api 'org.springframework.boot:spring-boot-actuator'
+	dataImplementation project(':spring-statemachine-data-common:spring-statemachine-data-jpa')
+	dataImplementation project(':spring-statemachine-data-common:spring-statemachine-data-redis')
+	dataImplementation project(':spring-statemachine-data-common:spring-statemachine-data-mongodb')
+	metadataImplementation 'org.springframework.boot:spring-boot-autoconfigure-processor'
+	micrometerImplementation 'io.micrometer:micrometer-core'
+	persistenceImplementation 'org.eclipse.persistence:javax.persistence'
+	dataImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	dataImplementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	dataImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	testRuntimeOnly 'com.h2database:h2'
+	testCompileOnly 'org.springframework.boot:spring-boot-test'
+	testCompileOnly 'org.springframework:spring-test'
+	testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
+	testCompileOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
