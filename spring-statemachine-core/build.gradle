@@ -1,0 +1,29 @@
+description = 'Spring State Machine Core'
+
+dependencies {
+	api 'org.springframework:spring-tx'
+	api 'org.springframework:spring-messaging'
+	api 'io.projectreactor:reactor-core'
+	securityImplementation 'org.springframework.security:spring-security-core'
+	testFixturesApi 'io.projectreactor:reactor-test'
+	testFixturesApi 'org.assertj:assertj-core'
+	testFixturesApi('org.mockito:mockito-core') { dep ->
+		exclude group: 'org.hamcrest'
+	}
+	testImplementation 'org.springframework:spring-test'
+	testImplementation 'org.springframework:spring-web'
+	testImplementation 'org.springframework:spring-webmvc'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.apache.tomcat.embed:tomcat-embed-core'
+	testImplementation('org.mockito:mockito-core') { dep ->
+		exclude group: 'org.hamcrest'
+	}
+	testImplementation('org.junit.jupiter:junit-jupiter-api')
+	testImplementation('org.junit.jupiter:junit-jupiter-engine')
+	testImplementation 'org.assertj:assertj-core'
+	testImplementation 'org.springframework.security:spring-security-config'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'javax.servlet:javax.servlet-api'
+	testImplementation 'org.awaitility:awaitility'
+	testRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+}

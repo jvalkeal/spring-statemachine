@@ -1,0 +1,14 @@
+description = 'Spring State Machine Kryo'
+
+dependencies {
+	api project(':spring-statemachine-core')
+	api 'com.esotericsoftware:kryo-shaded'
+	testImplementation (project(':spring-statemachine-test')) { dep ->
+		exclude group: 'junit', module: 'junit'
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testImplementation 'org.springframework:spring-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api'
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+	testRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+}

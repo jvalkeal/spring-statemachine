@@ -1,0 +1,18 @@
+description = 'Spring State Machine Zookeeper'
+
+dependencies {
+	api project(':spring-statemachine-core')
+	api project(':spring-statemachine-kryo')
+	api 'org.springframework:spring-context'
+	api 'org.apache.curator:curator-recipes'
+	// github.com/spring-gradle-plugins/dependency-management-plugin/issues/136
+	testImplementation (project(':spring-statemachine-test')) { dep ->
+		exclude group: 'junit', module: 'junit'
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testImplementation 'org.apache.curator:curator-test'
+	testImplementation 'org.springframework:spring-test'
+	testImplementation("org.junit.jupiter:junit-jupiter-api")
+	testImplementation("org.junit.jupiter:junit-jupiter-engine")
+	testRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+}

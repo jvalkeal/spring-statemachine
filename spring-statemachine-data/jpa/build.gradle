@@ -1,0 +1,15 @@
+description = 'Spring State Machine Data Jpa'
+
+dependencies {
+	api project(':spring-statemachine-data-common')
+	api 'org.springframework:spring-orm'
+	testImplementation project(':spring-statemachine-test')
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation(testFixtures(project(':spring-statemachine-data-common')))
+	testImplementation 'io.projectreactor:reactor-test'
+	persistenceImplementation 'org.eclipse.persistence:javax.persistence'
+	testImplementation 'org.hsqldb:hsqldb'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+	testRuntimeOnly 'org.springframework.boot:spring-boot-starter-web'
+}

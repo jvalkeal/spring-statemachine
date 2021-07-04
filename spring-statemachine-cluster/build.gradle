@@ -1,0 +1,15 @@
+description = 'Spring State Machine Cluster'
+
+dependencies {
+	api project(':spring-statemachine-zookeeper')
+	api 'org.springframework.integration:spring-integration-zookeeper'
+	testImplementation (project(':spring-statemachine-test')) { dep ->
+		exclude group: 'junit', module: 'junit'
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testImplementation 'org.apache.curator:curator-test'
+	testImplementation 'org.springframework:spring-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api'
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+	testRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+}

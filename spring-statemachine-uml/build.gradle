@@ -1,0 +1,35 @@
+description = 'Spring State Machine Uml'
+
+dependencies {
+	api project(':spring-statemachine-core')
+	securityImplementation 'org.springframework.security:spring-security-core'
+
+	// these eclipse maven deps are simply broken
+	api('org.eclipse.uml2:uml') { dep ->
+		exclude group: 'org.eclipse.core', module: 'runtime'
+		exclude group: 'org.eclipse.emf', module: 'ecore'
+		exclude group: 'org.eclipse.emf.ecore', module: 'xmi'
+		exclude group: 'org.eclipse.emf.mapping', module: 'ecore2xml'
+		exclude group: 'org.eclipse.uml2', module: 'common'
+		exclude group: 'org.eclipse.uml2', module: 'types'
+	}
+	api('org.eclipse.uml2:types') { dep ->
+		exclude group: 'org.eclipse.core', module: 'runtime'
+		exclude group: 'org.eclipse.emf', module: 'ecore'
+		exclude group: 'org.eclipse.uml2', module: 'common'
+	}
+	api('org.eclipse.uml2:common') { dep ->
+		exclude group: 'org.eclipse.core', module: 'runtime'
+		exclude group: 'org.eclipse.emf', module: 'ecore'
+	}
+	api 'org.eclipse.emf:org.eclipse.emf.ecore.xmi'
+	api 'org.eclipse.emf:org.eclipse.emf.ecore'
+	api 'org.eclipse.emf:org.eclipse.emf.common'
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework:spring-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api'
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+	testImplementation 'org.awaitility:awaitility'
+	testRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+}

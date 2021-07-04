@@ -1,0 +1,18 @@
+description = "Spring State Machine Test"
+
+dependencies {
+	api project(':spring-statemachine-core')
+	api 'org.springframework:spring-context'
+	api 'org.springframework:spring-test'
+	api 'org.hamcrest:hamcrest-core'
+	api 'org.hamcrest:hamcrest-library'
+	api 'org.assertj:assertj-core'
+	api 'junit:junit'
+	api 'org.junit.jupiter:junit-jupiter-api'
+	api 'org.junit.vintage:junit-vintage-engine'
+	testCompileOnly('org.mockito:mockito-core') { dep ->
+		exclude group: 'org.hamcrest'
+	}
+	testImplementation(testFixtures(project(':spring-statemachine-core')))
+	testCompileOnly 'io.projectreactor:reactor-test'
+}
