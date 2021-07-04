@@ -309,41 +309,6 @@ configure(subprojects) { subproject ->
 // 	}
 // }
 
-// configure(sampleProjects()) {
-// 	apply plugin: 'org.springframework.boot'
-// 	// as samples are not published, we can use jdk8
-// 	compileJava {
-// 		sourceCompatibility = 1.8
-// 		targetCompatibility = 1.8
-// 	}
-// 	dependencies {
-// 		compile project(':spring-statemachine-core')
-// 		compile 'org.springframework:spring-context-support'
-// 		testCompile('org.mockito:mockito-core') { dep ->
-// 			exclude group: 'org.hamcrest'
-// 		}
-// 		testCompile (project(':spring-statemachine-test')) { dep ->
-// 			exclude group: 'junit', module: 'junit'
-// 			exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-// 		}
-// 		testCompile 'org.springframework.boot:spring-boot-test'
-// 		testCompile 'org.springframework:spring-test'
-// 		testCompile("org.junit.jupiter:junit-jupiter-api")
-// 		testCompile("org.junit.jupiter:junit-jupiter-engine")
-// 	}
-// 	build.dependsOn bootJar
-// }
-
-// project('spring-statemachine-samples-common') {
-// 	dependencies {
-// 		compile project(':spring-statemachine-core')
-// 		compile 'org.springframework.shell:spring-shell'
-// 		compile 'org.springframework.boot:spring-boot-starter'
-// 		// testCompile project(path:':spring-statemachine-core', configuration:'testArtifacts')
-// 		testImplementation(testFixtures(project(':spring-statemachine-core')))
-// 	}
-// }
-
 // configure(rootProject) {
 // 	description = 'Spring State Machine'
 
