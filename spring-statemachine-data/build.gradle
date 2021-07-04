@@ -7,12 +7,12 @@ dependencies {
 	securityImplementation 'org.springframework.security:spring-security-core'
 	api 'com.fasterxml.jackson.core:jackson-core'
 	api 'com.fasterxml.jackson.core:jackson-databind'
-	testImplementation (project(':spring-statemachine-test')) { dep ->
+	testFixturesApi (project(':spring-statemachine-test')) { dep ->
 		exclude group: 'junit', module: 'junit'
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
-	testImplementation(testFixtures(project(':spring-statemachine-core')))
-	testImplementation 'io.projectreactor:reactor-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.springframework.boot:spring-boot-starter-web'
+	testFixturesApi(testFixtures(project(':spring-statemachine-core')))
+	testFixturesApi 'io.projectreactor:reactor-test'
+	testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+	testFixturesApi 'org.springframework.boot:spring-boot-starter-web'
 }

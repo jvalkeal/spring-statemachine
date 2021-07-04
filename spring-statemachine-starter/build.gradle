@@ -1,0 +1,6 @@
+description = 'Spring Statemachine Starter'
+
+dependencies {
+	api project(':spring-statemachine-autoconfigure')
+	api 'org.springframework.boot:spring-boot-starter'
+}
