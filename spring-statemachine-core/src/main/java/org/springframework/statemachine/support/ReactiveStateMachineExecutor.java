@@ -206,7 +206,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 			.flatMap(tqi -> Mono.fromRunnable(() -> {
 					triggerSink.emitNext(tqi, EmitFailureHandler.FAIL_FAST);
 				})
-				.retryWhen(Retry.fixedDelay(10, Duration.ofMillis(10))))
+				// .retryWhen(Retry.fixedDelay(10, Duration.ofMillis(10)))
+				)
 			.then()
 			.and(triggerCallbackSink);
 	}
@@ -461,7 +462,8 @@ public class ReactiveStateMachineExecutor<S, E> extends LifecycleObjectSupport i
 									triggerSink.emitNext(tqi, EmitFailureHandler.FAIL_FAST);
 									return null;
 								})
-								.retryWhen(Retry.fixedDelay(10, Duration.ofNanos(10))))
+								// .retryWhen(Retry.fixedDelay(10, Duration.ofNanos(10)))
+								)
 							.subscribe();
 					}
 				});
